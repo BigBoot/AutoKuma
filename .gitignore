@@ -1,0 +1,4 @@
+/target
+config.toml
+docker.sock
+.vscode
