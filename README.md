@@ -44,17 +44,17 @@ services:
 
 AutoKuma can be configured using the following environment variables:
 
-| Variable                            | Description                                      |
-| ----------------------------------- | ------------------------------------------------ |
-| `AUTOKUMA__KUMA__URL`               | The url AutoKuma should use to connect to Uptime Kuma |
-| `AUTOKUMA__KUMA__USERNAME`          | The username for logging into Uptime Kuma (required unless auth is disabled) |
-| `AUTOKUMA__KUMA__PASSWORD`          | The password for logging into Uptime Kuma (required unless auth is disabled) |
-| `AUTOKUMA__KUMA__MFA_TOKEN`         | The MFA token for logging into Uptime Kuma (required if MFA is enabled) |
-| `AUTOKUMA__KUMA__HEADERS`           | List of HTTP headers used when connecting to Uptime Kuma |
-| `AUTOKUMA__KUMA__TAG_NAME`          | The name of the AutoKuma tag, used to track managed containers |
-| `AUTOKUMA__KUMA__TAG_COLOR`         | The color of the AutoKuma tag |
-| `AUTOKUMA__DOCKER__SOCKET`          | Path to the Docker socket |
-| `AUTOKUMA__DOCKER__LABEL_PREFIX`    | Prefix used when scanning for container labels |
+| Variable                         | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| `AUTOKUMA__KUMA__URL`            | The url AutoKuma should use to connect to Uptime Kuma                        |
+| `AUTOKUMA__KUMA__USERNAME`       | The username for logging into Uptime Kuma (required unless auth is disabled) |
+| `AUTOKUMA__KUMA__PASSWORD`       | The password for logging into Uptime Kuma (required unless auth is disabled) |
+| `AUTOKUMA__KUMA__MFA_TOKEN`      | The MFA token for logging into Uptime Kuma (required if MFA is enabled)      |
+| `AUTOKUMA__KUMA__HEADERS`        | List of HTTP headers used when connecting to Uptime Kuma                     |
+| `AUTOKUMA__KUMA__TAG_NAME`       | The name of the AutoKuma tag, used to track managed containers               |
+| `AUTOKUMA__KUMA__TAG_COLOR`      | The color of the AutoKuma tag                                                |
+| `AUTOKUMA__DOCKER__SOCKET`       | Path to the Docker socket                                                    |
+| `AUTOKUMA__DOCKER__LABEL_PREFIX` | Prefix used when scanning for container labels                               |
 
 
 
@@ -78,6 +78,16 @@ Labels are grouped by `<id>` into a single monitor. For example, to create a sim
 kuma.example.http.name: "Example"
 kuma.example.http.url: "https://example.com"
 ```
+
+AutoKuma also provides support for creating and assigning groups:
+
+```plaintext
+kuma.mygroup.group.name: "This is a Group"
+kuma.mymonitor.http.name: "This is a Monitor assigned to a Group"
+kuma.mymonitor.http.parent_name: "mygroup"
+kuma.mymonitor.http.url: "https://example.com"
+```
+
 
 Take a look at [all available monitor types](MONITOR_TYPES.md) and the corresponding settings.
 
