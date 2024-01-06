@@ -12,7 +12,7 @@ AutoKuma is a utility that automates the creation of Uptime Kuma monitors based 
 The AutoKuma Docker container is available on [GitHub Container Registry (GHCR)](https://github.com/BigBoot/AutoKuma/pkgs/container/autokuma). To install, simply pull the container using:
 
 ```bash
-docker pull ghcr.io/bigboot/autokuma:master
+docker pull ghcr.io/bigboot/autokuma:latest
 ```
 
 ## Example Docker Compose
@@ -24,7 +24,7 @@ version: '3'
 
 services:
   autokuma:
-    image: ghcr.io/bigboot/autokuma:master
+    image: ghcr.io/bigboot/autokuma:latest
     restart: unless-stopped
     environment:
       - AUTOKUMA__KUMA__URL=http://localhost:3001
