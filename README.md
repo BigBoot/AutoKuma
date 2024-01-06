@@ -9,7 +9,7 @@ AutoKuma is a utility that automates the creation of Uptime Kuma monitors based 
 
 ## 🔧 How to Install
 
-The AutoKuma Docker container is available on [GitHub Container Registry (GHCR)](https://ghcr.io/username/autokuma). To install, simply pull the container using:
+The AutoKuma Docker container is available on [GitHub Container Registry (GHCR)](https://github.com/BigBoot/AutoKuma/pkgs/container/autokuma). To install, simply pull the container using:
 
 ```bash
 docker pull ghcr.io/bigboot/autokuma:master
@@ -25,19 +25,19 @@ version: '3'
 services:
   autokuma:
     image: ghcr.io/bigboot/autokuma:master
+    restart: unless-stopped
     environment:
       - AUTOKUMA__KUMA__URL=http://localhost:3001
-      - AUTOKUMA__KUMA__USERNAME=<username>
-      - AUTOKUMA__KUMA__PASSWORD=<password>
-      - AUTOKUMA__KUMA__MFA_TOKEN=<token>
-      - AUTOKUMA__KUMA__HEADERS="<header1_key>=<header1_value>, <header2_key>=<header2_value>, ..."
-      - AUTOKUMA__KUMA__TAG_NAME=AutoKuma
-      - AUTOKUMA__KUMA__TAG_COLOR=#42C0FB
-      - AUTOKUMA__DOCKER__SOCKET=/var/run/docker.sock
-      - AUTOKUMA__DOCKER__LABEL_PREFIX=kuma
-    labels:
-      - "kuma.example.http.name=Example"
-      - "kuma.example.http.url=https://example.com"
+      # - AUTOKUMA__KUMA__USERNAME=<username>
+      # - AUTOKUMA__KUMA__PASSWORD=<password>
+      # - AUTOKUMA__KUMA__MFA_TOKEN=<token>
+      # - AUTOKUMA__KUMA__HEADERS="<header1_key>=<header1_value>,<header2_key>=<header2_value>,..."
+      # - AUTOKUMA__KUMA__TAG_NAME=AutoKuma
+      # - AUTOKUMA__KUMA__TAG_COLOR=#42C0FB
+      # - AUTOKUMA__DOCKER__SOCKET=/var/run/docker.sock
+      # - AUTOKUMA__DOCKER__LABEL_PREFIX=kuma
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 ```
 
 ## Configuration
@@ -73,8 +73,6 @@ AutoKuma interprets Docker container labels with the following format:
 - `<value>`: The value for the option.
 
 Labels are grouped by `<id>` into a single monitor. For example, to create a simple HTTP monitor, use the following labels:
-
-### Example Labels
 
 ```plaintext
 kuma.example.http.name: "Example"

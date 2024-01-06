@@ -1,221 +1,421 @@
-## `ping`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `hostname` | localhost    |
-| `packet_size` | 56          |
-| `accepted_statuscodes` | 200-299 |
+# Monitor Types
+- [`dns`](#dns)
+- [`docker`](#docker)
+- [`gamedig`](#gamedig)
+- [`group`](#group)
+- [`grpc-keyword`](#grpc-keyword)
+- [`http`](#http)
+- [`json-query`](#json-query)
+- [`kafka-producer`](#kafka-producer)
+- [`keyword`](#keyword)
+- [`mongodb`](#mongodb)
+- [`mqtt`](#mqtt)
+- [`mysql`](#mysql)
+- [`ping`](#ping)
+- [`port`](#port)
+- [`postgres`](#postgres)
+- [`push`](#push)
+- [`radius`](#radius)
+- [`real-browser`](#real-browser)
+- [`redis`](#redis)
+- [`steam`](#steam)
+- [`sqlserver`](#sqlserver)
+- [`tailscale-ping`](#tailscale-ping)
 
-## `mqtt`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `hostname` | localhost    |
-| `port`   | 0             |
-| `mqtt_username` | null     |
-| `mqtt_password` | null     |
-| `mqtt_topic` | ""          |
-| `mqtt_check_type` | null    |
-| `mqtt_success_message` | null |
-
-## `redis`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `database_connection_string` | null |
-| `accepted_statuscodes` | 200-299 |
-
-## `push`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `push_url` | null         |
-| `accepted_statuscodes` | 200-299 |
-
-## `mysql`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `database_connection_string` | null |
-| `radius_password` | ""      |
-| `accepted_statuscodes` | 200-299 |
-
-## `docker`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `docker_container` | ""  |
-| `docker_host` | ""       |
-| `accepted_statuscodes` | 200-299 |
-
-## `tailscale-ping`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `accepted_statuscodes` | 200-299 |
-
-## `radius`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `hostname` | localhost    |
-| `port`   | 0             |
-| `radius_username` | ""     |
-| `radius_password` | ""     |
-| `radius_secret` | ""       |
-| `radius_called_station_id` | "" |
-| `radius_calling_station_id` | "" |
-| `accepted_statuscodes` | 200-299 |
-
-## `kafka-producer`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `kafka_producer_brokers` | null |
-| `kafka_producer_topic` | null |
-| `kafka_producer_message` | null |
-| `kafka_producer_ssl` | null |
-| `kafka_producer_allow_auto_topic_creation` | null |
-| `accepted_statuscodes` | 200-299 |
-
-## `gamedig`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `game`   | ""            |
-| `hostname` | localhost    |
-| `port`   | 0             |
-| `gamedig_given_port_only` | null |
-| `accepted_statuscodes` | 200-299 |
-
-## `real-browser`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `url`    | https://example.com |
-| `remote_browsers_toggle` | null |
-| `remote_browser` | null   |
-| `accepted_statuscodes` | 200-299 |
-
-## `sqlserver`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `database_connection_string` | null |
-| `accepted_statuscodes` | 200-299 |
-
-## `group`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `accepted_statuscodes` | 200-299 |
-
-## `http`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `url`    | https://example.com |
-| `timeout` | 48            |
-| `method` | GET           |
-| `accepted_statuscodes` | 200-299 |
-
-## `grpc-keyword`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `keyword` | ""            |
-| `invert_keyword` | null    |
-| `grpc_url` | ""            |
-| `maxredirects` | 10       |
-| `grpc_enable_tls` | null   |
-| `grpc_service_name` | ""    |
-| `grpc_method` | ""         |
-| `grpc_protobuf` | null     |
-| `grpc_body` | null         |
-| `grpc_metadata` | null     |
-| `accepted_statuscodes` | 200-299 |
-
-## `mongodb`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `database_connection_string` | null |
-| `accepted_statuscodes` | 200-299 |
-
-## `keyword`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `url`    | https://example.com |
-| `timeout` | 48            |
-| `method` | GET           |
-| `keyword` | ""            |
-| `invert_keyword` | null    |
-| `accepted_statuscodes` | 200-299 |
-
-## `json-query`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `url`    | https://example.com |
-| `timeout` | 48            |
-| `json_path` | null         |
-| `expected_Example value` | null   
-
- |
-| `accepted_statuscodes` | 200-299 |
-
-## `steam`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `hostname` | localhost    |
-| `port`   | 0             |
-| `accepted_statuscodes` | 200-299 |
 
 ## `dns`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `hostname` | localhost    |
-| `dns_resolve_server` | 1.1.1.1 |
-| `port`   | 0             |
-| `dns_resolve_type` | A   |
-| `accepted_statuscodes` | 200-299 |
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `dns_resolve_server`   | 1.1.1.1       |
+| `dns_resolve_type`     | A             |
+| `hostname`             | localhost     |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `port`                 | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
+
+## `docker`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `docker_container`     |               |
+| `docker_host`          |               |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
+
+## `gamedig`
+| Property                  | Example Value |
+|---------------------------|---------------|
+| `accepted_statuscodes`    | 200-299       |
+| `active`                  | true          |
+| `game`                    |               |
+| `gamedig_given_port_only` |               |
+| `hostname`                | localhost     |
+| `interval`                | 60            |
+| `max_retries`             | 0             |
+| `name`                    | Example       |
+| `parent`                  | 0             |
+| `port`                    | 0             |
+| `retry_interval`          | 60            |
+| `upside_down`             | bool          |
+
+## `group`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
+
+## `grpc-keyword`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `grpc_body`            |               |
+| `grpc_enable_tls`      |               |
+| `grpc_metadata`        |               |
+| `grpc_method`          |               |
+| `grpc_protobuf`        |               |
+| `grpc_service_name`    |               |
+| `grpc_url`             |               |
+| `interval`             | 60            |
+| `invert_keyword`       |               |
+| `keyword`              |               |
+| `max_retries`          | 0             |
+| `max_redirects`        | 10            |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
+
+## `http`
+| Property               | Example Value       |
+|------------------------|---------------------|
+| `accepted_statuscodes` | 200-299             |
+| `active`               | true                |
+| `auth_domain`          |                     |
+| `auth_method`          |                     |
+| `auth_workstation`     |                     |
+| `basic_auth_user`      |                     |
+| `body`                 |                     |
+| `expiry_notification`  | true                |
+| `http_body_encoding`   |                     |
+| `ignore_tls`           | false               |
+| `interval`             | 60                  |
+| `max_redirects`        | 10                  |
+| `max_retries`          | 0                   |
+| `method`               | GET                 |
+| `name`                 | Example             |
+| `oauth_auth_method`    |                     |
+| `oauth_client_id`      |                     |
+| `oauth_client_secret`  |                     |
+| `oauth_scopes`         |                     |
+| `oauth_token_url`      |                     |
+| `parent`               | 0                   |
+| `proxy_id`             |                     |
+| `resend_interval`      | 60                  |
+| `retry_interval`       | 60                  |
+| `timeout`              | 48                  |
+| `tls_ca`               |                     |
+| `tls_cert`             |                     |
+| `tls_key`              |                     |
+| `upside_down`          | bool                |
+| `url`                  | https://example.com |
+
+## `json-query`
+| Property               | Example Value       |
+|------------------------|---------------------|
+| `accepted_statuscodes` | 200-299             |
+| `active`               | true                |
+| `auth_domain`          |                     |
+| `auth_method`          |                     |
+| `auth_workstation`     |                     |
+| `basic_auth_user`      |                     |
+| `body`                 |                     |
+| `expected_value`       |                     |
+| `expiry_notification`  | true                |
+| `http_body_encoding`   |                     |
+| `ignore_tls`           | false               |
+| `interval`             | 60                  |
+| `json_path`            |                     |
+| `max_redirects`        | 10                  |
+| `max_retries`          | 0                   |
+| `method`               | GET                 |
+| `name`                 | Example             |
+| `oauth_auth_method`    |                     |
+| `oauth_client_id`      |                     |
+| `oauth_client_secret`  |                     |
+| `oauth_scopes`         |                     |
+| `oauth_token_url`      |                     |
+| `parent`               | 0                   |
+| `proxy_id`             |                     |
+| `resend_interval`      | 60                  |
+| `retry_interval`       | 60                  |
+| `timeout`              | 48                  |
+| `tls_ca`               |                     |
+| `tls_cert`             |                     |
+| `tls_key`              |                     |
+| `upside_down`          | bool                |
+| `url`                  | https://example.com |
+
+## `kafka-producer`
+| Property                                             | Example Value |
+|------------------------------------------------------|---------------|
+| `accepted_statuscodes`                               | 200-299       |
+| `active`                                             | true          |
+| `interval`                                           | 60            |
+| `kafka_producer_allow_auto_topic_creation`           |               |
+| `kafka_producer_brokers`                             |               |
+| `kafka_producer_message`                             |               |
+| `kafka_producer_ssl`                                 |               |
+| `kafka_producer_topic`                               |               |
+| `kafka_producer_sasl_options.mechanism`              | plain         |
+| `kafka_producer_sasl_options.username`               |               |
+| `kafka_producer_sasl_options.password`               |               |
+| `kafka_producer_sasl_options.authorization_identity` |               |
+| `kafka_producer_sasl_options.access_key_id`          |               |
+| `kafka_producer_sasl_options.secret_access_key`      |               |
+| `kafka_producer_sasl_options.session_token`          |               |
+| `max_retries`                                        | 0             |
+| `name`                                               | Example       |
+| `parent`                                             | 0             |
+| `retry_interval`                                     | 60            |
+| `upside_down`                                        | bool          |
+
+## `keyword`
+| Property               | Example Value       |
+|------------------------|---------------------|
+| `accepted_statuscodes` | 200-299             |
+| `active`               | true                |
+| `auth_domain`          |                     |
+| `auth_method`          |                     |
+| `auth_workstation`     |                     |
+| `basic_auth_user`      |                     |
+| `body`                 |                     |
+| `expiry_notification`  | true                |
+| `http_body_encoding`   |                     |
+| `ignore_tls`           | false               |
+| `interval`             | 60                  |
+| `invert_keyword`       |                     |
+| `keyword`              |                     |
+| `max_redirects`        | 10                  |
+| `max_retries`          | 0                   |
+| `method`               | GET                 |
+| `method`               | GET                 |
+| `name`                 | Example             |
+| `oauth_auth_method`    |                     |
+| `oauth_client_id`      |                     |
+| `oauth_client_secret`  |                     |
+| `oauth_scopes`         |                     |
+| `oauth_token_url`      |                     |
+| `parent`               | 0                   |
+| `proxy_id`             |                     |
+| `resend_interval`      | 60                  |
+| `retry_interval`       | 60                  |
+| `timeout`              | 48                  |
+| `tls_ca`               |                     |
+| `tls_cert`             |                     |
+| `tls_key`              |                     |
+| `upside_down`          | bool                |
+| `url`                  | https://example.com |
+
+## `mongodb`
+| Property                     | Example Value |
+|------------------------------|---------------|
+| `accepted_statuscodes`       | 200-299       |
+| `active`                     | true          |
+| `database_connection_string` |               |
+| `interval`                   | 60            |
+| `max_retries`                | 0             |
+| `name`                       | Example       |
+| `parent`                     | 0             |
+| `retry_interval`             | 60            |
+| `upside_down`                | bool          |
+
+## `mqtt`
+| Property               | Example Value |
+|------------------------|---------------|
+| `active`               | true          |
+| `hostname`             | localhost     |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `mqtt_check_type`      |               |
+| `mqtt_password`        |               |
+| `mqtt_success_message` |               |
+| `mqtt_topic`           |               |
+| `mqtt_username`        |               |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `port`                 | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
+
+## `mysql`
+| Property                     | Example Value |
+|------------------------------|---------------|
+| `accepted_statuscodes`       | 200-299       |
+| `active`                     | true          |
+| `database_connection_string` |               |
+| `interval`                   | 60            |
+| `max_retries`                | 0             |
+| `name`                       | Example       |
+| `parent`                     | 0             |
+| `radius_password`            |               |
+| `retry_interval`             | 60            |
+| `upside_down`                | bool          |
+
+## `ping`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `hostname`             | localhost     |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `packet_size`          | 56            |
+| `parent`               | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
 
 ## `port`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `hostname` | localhost    |
-| `port`   | 0             |
-| `accepted_statuscodes` | 200-299 |
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `hostname`             | localhost     |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `port`                 | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
 
 ## `postgres`
-| Property | Example Value         |
-|----------|---------------|
-| `name`   | Example       |
-| `interval` | 60           |
-| `database_connection_string` | null |
-| `accepted_statuscodes` | 200-299 |
+| Property                     | Example Value |
+|------------------------------|---------------|
+| `accepted_statuscodes`       | 200-299       |
+| `active`                     | true          |
+| `database_connection_string` |               |
+| `interval`                   | 60            |
+| `max_retries`                | 0             |
+| `name`                       | Example       |
+| `parent`                     | 0             |
+| `retry_interval`             | 60            |
+| `upside_down`                | bool          |
+
+## `push`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `push_url`             |               |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
+
+## `radius`
+| Property                    | Example Value |
+|-----------------------------|---------------|
+| `accepted_statuscodes`      | 200-299       |
+| `active`                    | true          |
+| `hostname`                  | localhost     |
+| `interval`                  | 60            |
+| `max_retries`               | 0             |
+| `name`                      | Example       |
+| `parent`                    | 0             |
+| `port`                      | 0             |
+| `radius_called_station_id`  |               |
+| `radius_calling_station_id` |               |
+| `radius_password`           |               |
+| `radius_secret`             |               |
+| `radius_username`           |               |
+| `retry_interval`            | 60            |
+| `upside_down`               | bool          |
+
+## `real-browser`
+| Property                 | Example Value       |
+|--------------------------|---------------------|
+| `accepted_statuscodes`   | 200-299             |
+| `active`                 | true                |
+| `interval`               | 60                  |
+| `max_retries`            | 0                   |
+| `name`                   | Example             |
+| `parent`                 | 0                   |
+| `remote_browser`         |                     |
+| `remote_browsers_toggle` |                     |
+| `retry_interval`         | 60                  |
+| `upside_down`            | bool                |
+| `url`                    | https://example.com |
+
+## `redis`
+| Property                     | Example Value |
+|------------------------------|---------------|
+| `accepted_statuscodes`       | 200-299       |
+| `active`                     | true          |
+| `database_connection_string` |               |
+| `interval`                   | 60            |
+| `max_retries`                | 0             |
+| `name`                       | Example       |
+| `parent`                     | 0             |
+| `retry_interval`             | 60            |
+| `upside_down`                | bool          |
+
+## `steam`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `hostname`             | localhost     |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `port`                 | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |
+
+## `sqlserver`
+| Property                     | Example Value |
+|------------------------------|---------------|
+| `accepted_statuscodes`       | 200-299       |
+| `active`                     | true          |
+| `database_connection_string` |               |
+| `interval`                   | 60            |
+| `max_retries`                | 0             |
+| `name`                       | Example       |
+| `parent`                     | 0             |
+| `retry_interval`             | 60            |
+| `upside_down`                | bool          |
+
+## `tailscale-ping`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `hostname`             | localhost     |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | bool          |

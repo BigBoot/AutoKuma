@@ -223,7 +223,7 @@ impl Worker {
                 .find(|x| {
                     x.1.monitor_type() == MonitorType::Group
                         && x.1.common().tags.iter().any(|tag| {
-                            tag.name == "AutoKuma"
+                            tag.name.as_ref().is_some_and(|tag| tag == "AutoKuma")
                                 && tag
                                     .value
                                     .as_ref()

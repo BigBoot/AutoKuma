@@ -49,7 +49,7 @@ impl Sync {
         let config = vec![("type".to_owned(), monitor_type.to_owned())]
             .into_iter()
             .chain(settings.into_iter())
-            .map(|(key, value)| format!("{} = \"{}\"", key, value))
+            .map(|(key, value)| format!("{} = {}", key, toml::Value::String(value)))
             .join("\n");
 
         if let Ok(toml) = toml::from_str::<serde_json::Value>(&config) {
@@ -120,13 +120,13 @@ impl Sync {
             .tags()
             .await
             .into_iter()
-            .find(|tag| tag.name == self.config.kuma.tag_name)
+            .find(|tag| tag.name.as_deref() == Some(&self.config.kuma.tag_name))
         {
             Some(tag) => tag,
             None => {
                 kuma.add_tag(Tag {
-                    name: self.config.kuma.tag_name.clone(),
-                    color: self.config.kuma.tag_color.clone(),
+                    name: Some(self.config.kuma.tag_name.clone()),
+                    color: Some(self.config.kuma.tag_color.clone()),
                     ..Default::default()
                 })
                 .await
@@ -143,7 +143,7 @@ impl Sync {
                     .common()
                     .tags
                     .iter()
-                    .filter(|tag| tag.name == self.config.kuma.tag_name)
+                    .filter(|tag| tag.name.as_deref() == Some(&self.config.kuma.tag_name))
                     .find_map(|tag| tag.value.as_ref())
                 {
                     Some(id) => Some((id.to_owned(), monitor)),
