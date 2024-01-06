@@ -1,6 +1,6 @@
 use crate::{
     config::Config,
-    kuma::{Client, Monitor, Tag},
+    kuma::{Client, Monitor, MonitorType, Tag, TagDefinition},
     util::{group_by_prefix, ResultLogger},
 };
 use bollard::{
@@ -115,7 +115,7 @@ impl Sync {
             .collect::<HashMap<_, _>>()
     }
 
-    async fn get_autokuma_tag(&self, kuma: &Client) -> Tag {
+    async fn get_autokuma_tag(&self, kuma: &Client) -> TagDefinition {
         match kuma
             .tags()
             .await
@@ -124,7 +124,7 @@ impl Sync {
         {
             Some(tag) => tag,
             None => {
-                kuma.add_tag(Tag {
+                kuma.add_tag(TagDefinition {
                     name: Some(self.config.kuma.tag_name.clone()),
                     color: Some(self.config.kuma.tag_color.clone()),
                     ..Default::default()
@@ -153,6 +153,44 @@ impl Sync {
             .collect::<HashMap<_, _>>()
     }
 
+    fn merge_monitors(
+        &self,
+        current: &Monitor,
+        new: &Monitor,
+        addition_tags: Option<Vec<Tag>>,
+    ) -> Monitor {
+        let mut new = new.clone();
+
+        let current_tags = current
+            .common()
+            .tags
+            .iter()
+            .filter_map(|tag| tag.tag_id.as_ref().map(|id| (*id, tag)))
+            .collect::<HashMap<_, _>>();
+
+        let merged_tags: Vec<Tag> = new
+            .common_mut()
+            .tags
+            .drain(..)
+            .chain(addition_tags.unwrap_or_default())
+            .map(|new_tag| {
+                new_tag
+                    .tag_id
+                    .as_ref()
+                    .and_then(|id| {
+                        current_tags.get(id).and_then(|current_tag| {
+                            serde_merge::omerge(current_tag, &new_tag).unwrap()
+                        })
+                    })
+                    .unwrap_or_else(|| new_tag)
+            })
+            .collect_vec();
+
+        new.common_mut().tags = merged_tags;
+
+        serde_merge::omerge(current, new).unwrap()
+    }
+
     pub async fn run(&self) {
         let docker =
             Docker::connect_with_socket(&self.config.docker.socket_path, 120, API_DEFAULT_VERSION)
@@ -164,6 +202,17 @@ impl Sync {
             let containers = self.get_kuma_containers(&docker).await;
             let new_monitors = self.get_monitors_from_containers(&containers);
             let current_monitors = self.get_managed_monitors(&kuma).await;
+            let groups = current_monitors
+                .iter()
+                .filter(|(_, monitor)| monitor.monitor_type() == MonitorType::Group)
+                .filter_map(|(id, monitor)| {
+                    monitor
+                        .common()
+                        .id
+                        .as_ref()
+                        .map(|parent_id| (parent_id, id))
+                })
+                .collect::<HashMap<_, _>>();
 
             let to_delete = current_monitors
                 .iter()
@@ -189,7 +238,7 @@ impl Sync {
                 println!("Creating new monitor: {}", id);
 
                 let mut monitor = monitor.clone();
-                let mut tag = autokuma_tag.clone();
+                let mut tag = Tag::from(autokuma_tag.clone());
 
                 tag.value = Some(id.clone());
                 monitor.common_mut().tags.push(tag);
@@ -198,9 +247,17 @@ impl Sync {
             }
 
             for (id, current, new) in to_update {
-                let merge: Monitor = serde_merge::omerge(current, new).unwrap();
+                let mut tag = Tag::from(autokuma_tag.clone());
+                tag.value = Some(id.clone());
 
-                if current != &merge {
+                let merge: Monitor = self.merge_monitors(current, new, Some(vec![tag]));
+
+                if current != &merge
+                    || merge.common().parent_name.is_some() != current.common().parent.is_some()
+                    || merge.common().parent_name.as_ref().is_some_and(|name| {
+                        Some(name) != current.common().parent.map(|id| groups[&id])
+                    })
+                {
                     println!("Updating monitor: {}", id);
                     kuma.edit_monitor(merge).await;
                 }

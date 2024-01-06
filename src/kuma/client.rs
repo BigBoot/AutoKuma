@@ -1,4 +1,4 @@
-use super::{Event, Monitor, MonitorList, MonitorType, Tag, TagList};
+use super::{Event, Monitor, MonitorList, MonitorType, Tag, TagDefinition};
 use crate::config::Config;
 use crate::util::ResultLogger;
 use futures_util::FutureExt;
@@ -26,7 +26,7 @@ struct Worker {
     config: Arc<Config>,
     socket_io: Arc<Mutex<Option<SocketIO>>>,
     event_sender: Arc<Sender>,
-    tags: Arc<Mutex<TagList>>,
+    tags: Arc<Mutex<Vec<TagDefinition>>>,
     monitors: Arc<Mutex<MonitorList>>,
     is_ready: Arc<Mutex<bool>>,
 }
@@ -81,7 +81,7 @@ impl Worker {
             .ok_or_else(|| ())
     }
 
-    async fn get_tags(&self) -> TagList {
+    async fn get_tags(&self) -> Vec<TagDefinition> {
         self.call("getTags", vec![], "/tags", Duration::from_secs(2))
             .await
             .unwrap_or_default()
@@ -174,7 +174,7 @@ impl Worker {
         .unwrap_or_else(|_| false)
     }
 
-    pub async fn add_tag(&self, tag: Tag) -> Tag {
+    pub async fn add_tag(&self, tag: TagDefinition) -> TagDefinition {
         self.call(
             "addTag",
             vec![serde_json::to_value(tag.clone()).unwrap()],
@@ -201,6 +201,38 @@ impl Worker {
             .unwrap_or_default();
     }
 
+    pub async fn edit_monitor_tag(&self, monitor_id: i32, tag_id: i32, value: Option<String>) {
+        let _: bool = self
+            .call(
+                "editMonitorTag",
+                vec![
+                    json!(tag_id),
+                    json!(monitor_id),
+                    json!(value.unwrap_or_default()),
+                ],
+                "/ok",
+                Duration::from_secs(2),
+            )
+            .await
+            .unwrap_or_default();
+    }
+
+    pub async fn delete_monitor_tag(&self, monitor_id: i32, tag_id: i32, value: Option<String>) {
+        let _: bool = self
+            .call(
+                "deleteMonitorTag",
+                vec![
+                    json!(tag_id),
+                    json!(monitor_id),
+                    json!(value.unwrap_or_default()),
+                ],
+                "/ok",
+                Duration::from_secs(2),
+            )
+            .await
+            .unwrap_or_default();
+    }
+
     pub async fn delete_monitor(&self, monitor_id: i32) {
         let _: bool = self
             .call(
@@ -214,7 +246,9 @@ impl Worker {
     }
 
     async fn resolve_group(&self, monitor: &mut Monitor) -> bool {
-        if let Some(group_name) = &monitor.common().group {
+        if let Some(group_name) = monitor.common().parent_name.clone() {
+            monitor.common_mut().parent_name = None;
+
             if let Some(Some(group_id)) = self
                 .monitors
                 .lock()
@@ -227,7 +261,7 @@ impl Worker {
                                 && tag
                                     .value
                                     .as_ref()
-                                    .is_some_and(|tag_value| tag_value == group_name)
+                                    .is_some_and(|tag_value| tag_value == &group_name)
                         })
                 })
                 .map(|x| x.1.common().id)
@@ -236,15 +270,79 @@ impl Worker {
             } else {
                 return false;
             }
+        } else {
+            monitor.common_mut().parent = None;
         }
         return true;
     }
 
     async fn update_monitor_tags(&self, monitor_id: i32, tags: &Vec<Tag>) {
-        for tag in tags {
-            if let Some(tag_id) = tag.id {
-                self.add_monitor_tag(monitor_id, tag_id, tag.value.clone())
+        let new_tags = tags
+            .iter()
+            .filter_map(|tag| tag.tag_id.and_then(|id| Some((id, tag))))
+            .collect::<HashMap<_, _>>();
+
+        if let Some(monitor) = self.monitors.lock().await.get(&monitor_id.to_string()) {
+            let current_tags = monitor
+                .common()
+                .tags
+                .iter()
+                .filter_map(|tag| tag.tag_id.and_then(|id| Some((id, tag))))
+                .collect::<HashMap<_, _>>();
+
+            let duplicates = monitor
+                .common()
+                .tags
+                .iter()
+                .duplicates_by(|tag| tag.tag_id)
+                .filter_map(|tag| tag.tag_id.as_ref().map(|id| (id, tag)))
+                .collect::<HashMap<_, _>>();
+
+            let to_delete = current_tags
+                .iter()
+                .filter(|(id, _)| !new_tags.contains_key(*id) && !duplicates.contains_key(*id))
+                .collect_vec();
+
+            let to_create = new_tags
+                .iter()
+                .filter(|(id, _)| !current_tags.contains_key(*id))
+                .collect_vec();
+
+            let to_update = current_tags
+                .keys()
+                .filter_map(|id| match (current_tags.get(id), new_tags.get(id)) {
+                    (Some(current), Some(new)) => Some((id, current, new)),
+                    _ => None,
+                })
+                .collect_vec();
+
+            for (tag_id, tag) in duplicates {
+                self.delete_monitor_tag(monitor_id, *tag_id, tag.value.clone())
                     .await;
+            }
+
+            for (tag_id, tag) in to_delete {
+                self.delete_monitor_tag(monitor_id, *tag_id, tag.value.clone())
+                    .await;
+            }
+
+            for (tag_id, tag) in to_create {
+                self.add_monitor_tag(monitor_id, *tag_id, tag.value.clone())
+                    .await
+            }
+
+            for (tag_id, current, new) in to_update {
+                if current.value != new.value {
+                    self.edit_monitor_tag(monitor_id, *tag_id, new.value.clone())
+                        .await;
+                }
+            }
+        } else {
+            for tag in tags {
+                if let Some(tag_id) = tag.tag_id {
+                    self.add_monitor_tag(monitor_id, tag_id, tag.value.clone())
+                        .await;
+                }
             }
         }
     }
@@ -288,11 +386,10 @@ impl Worker {
             return monitor;
         }
 
-        // TODO: Tags
         let mut tags = vec![];
         mem::swap(&mut tags, &mut monitor.common_mut().tags);
 
-        let _: i32 = self
+        let id: i32 = self
             .call(
                 "editMonitor",
                 vec![serde_json::to_value(&monitor).unwrap()],
@@ -301,6 +398,8 @@ impl Worker {
             )
             .await
             .unwrap_or_default();
+
+        self.update_monitor_tags(id, &tags).await;
 
         monitor.common_mut().tags = tags;
 
@@ -408,11 +507,11 @@ impl Client {
         self.worker.monitors.lock().await.clone()
     }
 
-    pub async fn tags(&self) -> TagList {
+    pub async fn tags(&self) -> Vec<TagDefinition> {
         self.worker.tags.lock().await.clone()
     }
 
-    pub async fn add_tag(&self, tag: Tag) -> Tag {
+    pub async fn add_tag(&self, tag: TagDefinition) -> TagDefinition {
         self.worker.add_tag(tag).await
     }
 

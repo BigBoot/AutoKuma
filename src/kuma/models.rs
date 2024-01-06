@@ -1,9 +1,10 @@
-use crate::util::{DeserializeBoolLenient, DeserializeNumberLenient};
+use crate::util::{DeserializeBoolLenient, DeserializeNumberLenient, DeserializeVecLenient};
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use serde_alias::serde_alias;
 use serde_inline_default::serde_inline_default;
 use serde_with::{serde_as, skip_serializing_none};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use strum::EnumString;
 
 #[derive(Debug, EnumString)]
@@ -126,11 +127,27 @@ pub enum HttpMethod {
 #[skip_serializing_none]
 #[serde_alias(SnakeCase)]
 #[serde_as]
-#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tag {
+#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize, Hash, Eq)]
+pub struct TagDefinition {
     #[serde(rename = "id")]
     #[serde_as(as = "Option<DeserializeNumberLenient>")]
-    pub id: Option<i32>,
+    pub tag_id: Option<i32>,
+
+    #[serde(rename = "name")]
+    pub name: Option<String>,
+
+    #[serde(rename = "color")]
+    pub color: Option<String>,
+}
+
+#[skip_serializing_none]
+#[serde_alias(SnakeCase)]
+#[serde_as]
+#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize, Hash, Eq)]
+pub struct Tag {
+    #[serde(rename = "tag_id")]
+    #[serde_as(as = "Option<DeserializeNumberLenient>")]
+    pub tag_id: Option<i32>,
 
     #[serde(rename = "name")]
     pub name: Option<String>,
@@ -138,12 +155,29 @@ pub struct Tag {
     #[serde(rename = "color")]
     pub color: Option<String>,
 
-    #[serde(rename = "tag_id")]
-    #[serde_as(as = "Option<DeserializeNumberLenient>")]
-    pub tag_id: Option<i32>,
-
     #[serde(rename = "value")]
     pub value: Option<String>,
+}
+
+impl From<TagDefinition> for Tag {
+    fn from(value: TagDefinition) -> Self {
+        Tag {
+            name: value.name,
+            color: value.color,
+            tag_id: value.tag_id,
+            value: None,
+        }
+    }
+}
+
+impl From<Tag> for TagDefinition {
+    fn from(value: Tag) -> Self {
+        TagDefinition {
+            tag_id: value.tag_id,
+            name: value.name,
+            color: value.color,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -203,7 +237,8 @@ pub enum KafkaProducerSaslOptions {
 #[skip_serializing_none]
 #[serde_alias(SnakeCase)]
 #[serde_as]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Derivative, Serialize, Deserialize)]
+#[derivative(PartialEq)]
 pub struct MonitorCommon {
     #[serde(rename = "id")]
     #[serde_as(as = "Option<DeserializeNumberLenient>")]
@@ -237,15 +272,19 @@ pub struct MonitorCommon {
 
     #[serde(rename = "parent")]
     #[serde_as(as = "Option<DeserializeNumberLenient>")]
+    #[serialize_always]
     pub parent: Option<i32>,
 
-    #[serde(rename = "group")]
-    #[serde(skip_serializing)]
-    pub group: Option<String>,
+    #[serde(rename = "parent_name")]
+    #[derivative(PartialEq = "ignore")]
+    #[derivative(Hash = "ignore")]
+    pub parent_name: Option<String>,
 
     #[serde(rename = "tags")]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
+    #[serde_as(as = "DeserializeVecLenient<Tag>")]
+    #[derivative(PartialEq(compare_with = "compare_tags"))]
     pub tags: Vec<Tag>,
 
     #[serde(rename = "notificationIDList")]
@@ -254,6 +293,14 @@ pub struct MonitorCommon {
     #[serde(rename = "accepted_statuscodes")]
     #[serde_inline_default(vec!["200-299".to_owned()])]
     pub accepted_statuscodes: Vec<String>,
+}
+
+fn compare_tags(a: &Vec<Tag>, b: &Vec<Tag>) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+
+    a.iter().collect::<HashSet<_>>() == b.iter().collect::<HashSet<_>>()
 }
 
 #[skip_serializing_none]
@@ -899,4 +946,3 @@ impl Monitor {
 }
 
 pub type MonitorList = HashMap<String, Monitor>;
-pub type TagList = Vec<Tag>;

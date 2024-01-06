@@ -1,6 +1,9 @@
-use std::{collections::BTreeMap, str::FromStr};
+use std::{collections::BTreeMap, marker::PhantomData, str::FromStr};
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    de::{DeserializeOwned, IntoDeserializer},
+    Deserialize, Deserializer, Serialize,
+};
 use serde_json::Value;
 use serde_with::{DeserializeAs, SerializeAs};
 
@@ -30,7 +33,9 @@ where
                     std::any::type_name::<T>()
                 ))
             }),
-            _ => Err(serde::de::Error::custom("Unexpected type for x")),
+            _ => Err(serde::de::Error::custom(
+                "Unexpected type for deserialization",
+            )),
         };
 
         result
@@ -66,7 +71,9 @@ impl<'de> DeserializeAs<'de, bool> for DeserializeBoolLenient {
                     std::any::type_name::<bool>()
                 ))
             }),
-            _ => Err(serde::de::Error::custom("Unexpected type for x")),
+            _ => Err(serde::de::Error::custom(
+                "Unexpected type for deserialization",
+            )),
         };
 
         result
@@ -78,6 +85,44 @@ where
     T: Serialize,
 {
     fn serialize_as<S>(source: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        source.serialize(serializer)
+    }
+}
+
+pub struct DeserializeVecLenient<T>(PhantomData<T>);
+
+impl<'de, T> DeserializeAs<'de, Vec<T>> for DeserializeVecLenient<T>
+where
+    T: DeserializeOwned,
+{
+    fn deserialize_as<D>(deserializer: D) -> Result<Vec<T>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer)
+            .map_err(serde::de::Error::custom)?
+            .clone();
+
+        return match value {
+            Value::Array(_) => {
+                Vec::<T>::deserialize(value.into_deserializer()).map_err(serde::de::Error::custom)
+            }
+            Value::String(s) => serde_json::from_str(&s).map_err(serde::de::Error::custom),
+            _ => Err(serde::de::Error::custom(
+                "Unexpected type for deserialization",
+            )),
+        };
+    }
+}
+
+impl<T> SerializeAs<Vec<T>> for DeserializeVecLenient<T>
+where
+    T: Serialize,
+{
+    fn serialize_as<S>(source: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {

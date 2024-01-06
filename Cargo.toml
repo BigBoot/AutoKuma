@@ -5,8 +5,9 @@ edition = "2021"
 
 [dependencies]
 bollard = { version = "0.15.0" }
-cute_custom_default = { version = "2.1.0" }
 confique = { version = "0.2.5", default-features = false, features = ["toml"] }
+cute_custom_default = { version = "2.1.0" }
+derivative = { version = "2.2.0" }
 futures-util = { version = "0.3.30" }
 itertools = { version = "0.12.0" }
 rust_socketio = { git = "https://github.com/1c3t3a/rust-socketio.git", rev = "9ccf67b", features = [
