@@ -10,6 +10,8 @@ cute_custom_default = { version = "2.1.0" }
 derivative = { version = "2.2.0" }
 futures-util = { version = "0.3.30" }
 itertools = { version = "0.12.0" }
+log = { version = "0.4.20" }
+pretty_env_logger = { version = "0.5.0" }
 rust_socketio = { git = "https://github.com/1c3t3a/rust-socketio.git", rev = "9ccf67b", features = [
     "async",
 ] }
@@ -20,5 +22,6 @@ serde_merge = { version = "0.1.3" }
 serde_with = { version = "3.4.0" }
 serde-inline-default = { version = "0.1.1" }
 strum = { version = "0.25.0", features = ["derive"] }
+thiserror = { version = "1.0.56" }
 tokio = { version = "1.35.1", features = ["full"] }
 toml = { version = "0.8.8" }

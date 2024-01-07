@@ -1,4 +1,8 @@
-use crate::util::{DeserializeBoolLenient, DeserializeNumberLenient, DeserializeVecLenient};
+use super::Result;
+use crate::util::{
+    DeserializeBoolLenient, DeserializeHashMapLenient, DeserializeNumberLenient,
+    DeserializeVecLenient,
+};
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use serde_alias::serde_alias;
@@ -6,6 +10,8 @@ use serde_inline_default::serde_inline_default;
 use serde_with::{serde_as, skip_serializing_none};
 use std::collections::{HashMap, HashSet};
 use strum::EnumString;
+
+use super::Error;
 
 #[derive(Debug, EnumString)]
 #[strum(serialize_all = "camelCase")]
@@ -288,6 +294,7 @@ pub struct MonitorCommon {
     pub tags: Vec<Tag>,
 
     #[serde(rename = "notificationIDList")]
+    #[serde_as(as = "Option<DeserializeHashMapLenient<String, bool>>")]
     pub notification_id_list: Option<HashMap<String, bool>>,
 
     #[serde(rename = "accepted_statuscodes")]
@@ -333,13 +340,15 @@ pub struct MonitorDns {
 
 #[skip_serializing_none]
 #[serde_alias(SnakeCase)]
+#[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorDocker {
     #[serde(rename = "docker_container")]
     docker_container: Option<String>,
 
     #[serde(rename = "docker_host")]
-    docker_host: Option<String>,
+    #[serde_as(as = "Option<DeserializeNumberLenient>")]
+    docker_host: Option<i32>,
 }
 
 #[skip_serializing_none]
@@ -942,6 +951,20 @@ impl Monitor {
             Monitor::Redis { .. } => MonitorType::Redis,
             Monitor::TailscalePing { .. } => MonitorType::TailscalePing,
         }
+    }
+
+    pub fn validate(&self, id: impl AsRef<str>) -> Result<()> {
+        let mut errors = vec![];
+
+        if self.common().name.is_none() {
+            errors.push("Missing property 'name'".to_owned());
+        }
+
+        if !errors.is_empty() {
+            return Err(Error::ValidationError(id.as_ref().to_owned(), errors));
+        }
+
+        Ok(())
     }
 }
 

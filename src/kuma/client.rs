@@ -1,8 +1,9 @@
-use super::{Event, Monitor, MonitorList, MonitorType, Tag, TagDefinition};
+use super::{Error, Event, Monitor, MonitorList, MonitorType, Result, Tag, TagDefinition};
 use crate::config::Config;
 use crate::util::ResultLogger;
 use futures_util::FutureExt;
 use itertools::Itertools;
+use log::{debug, warn};
 use rust_socketio::Payload;
 use rust_socketio::{
     asynchronous::{Client as SocketIO, ClientBuilder},
@@ -19,8 +20,6 @@ use tokio::sync::{mpsc, Mutex};
 
 type EventArgs = (Event, Value);
 type Sender = mpsc::Sender<EventArgs>;
-type Err = ();
-type Result<T> = std::result::Result<T, Err>;
 
 struct Worker {
     config: Arc<Config>,
@@ -43,48 +42,71 @@ impl Worker {
         }
     }
 
-    async fn on_monitor_list(&self, monitor_list: MonitorList) {
+    async fn on_monitor_list(&self, monitor_list: MonitorList) -> Result<()> {
         *self.monitors.lock().await = monitor_list;
 
         let tags = self.get_tags().await;
-        *self.tags.lock().await = tags;
+        *self.tags.lock().await = tags?;
         *self.is_ready.lock().await = true;
+
+        Ok(())
     }
 
-    async fn on_connect(&self) {
+    async fn on_connect(&self) -> Result<()> {
         if let (Some(username), Some(password)) =
             (&self.config.kuma.username, &self.config.kuma.password)
         {
             self.login(username, password, self.config.kuma.mfa_token.clone())
-                .await;
+                .await?;
         }
+
+        Ok(())
     }
 
-    async fn on_event(&self, event: Event, payload: Value) {
+    async fn on_event(&self, event: Event, payload: Value) -> Result<()> {
         match event {
             Event::MonitorList => {
                 self.on_monitor_list(serde_json::from_value(payload).unwrap())
-                    .await
+                    .await?
             }
-            Event::Connect => self.on_connect().await,
+            Event::Connect => self.on_connect().await?,
             _ => {}
         }
+
+        Ok(())
     }
 
     fn verify_response<T: DeserializeOwned>(
         response: Vec<Value>,
         result_ptr: impl AsRef<str>,
     ) -> Result<T> {
-        json!(response)
-            .pointer(&format!("/0/0{}", result_ptr.as_ref()))
+        let json = json!(response);
+
+        if !json
+            .pointer("/0/0/ok")
+            .ok_or_else(|| {
+                Error::InvalidResponse(response.clone(), result_ptr.as_ref().to_owned())
+            })?
+            .as_bool()
+            .unwrap_or_default()
+        {
+            let error_msg = json
+                .pointer("/0/0/msg")
+                .unwrap_or_else(|| &json!(null))
+                .as_str()
+                .unwrap_or_else(|| "Unknown error");
+
+            return Err(Error::ServerError(error_msg.to_owned()));
+        }
+
+        json.pointer(&format!("/0/0{}", result_ptr.as_ref()))
             .and_then(|value| serde_json::from_value(value.to_owned()).ok())
-            .ok_or_else(|| ())
+            .ok_or_else(|| Error::InvalidResponse(response, result_ptr.as_ref().to_owned()))
     }
 
-    async fn get_tags(&self) -> Vec<TagDefinition> {
+    async fn get_tags(&self) -> Result<Vec<TagDefinition>> {
         self.call("getTags", vec![], "/tags", Duration::from_secs(2))
             .await
-            .unwrap_or_default()
     }
 
     async fn call<A, T>(
@@ -101,56 +123,43 @@ impl Worker {
         let method = method.into();
         let result_ptr: String = result_ptr.into();
 
-        for i in 0..5 {
-            let method = method.clone();
-            let args = args.clone();
-            let result_ptr = result_ptr.clone();
-            let (tx, mut rx) = tokio::sync::mpsc::channel::<Result<T>>(1);
+        let method = method.clone();
+        let args = args.clone();
+        let result_ptr = result_ptr.clone();
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<Result<T>>(1);
 
-            if let Some(socket_io) = &*self.socket_io.lock().await {
-                let result = socket_io
-                    .emit_with_ack(
-                        method,
-                        Payload::Text(args.into_iter().collect_vec()),
-                        timeout,
-                        move |message: Payload, _: SocketIO| {
-                            let tx = tx.clone();
-                            let result_ptr = result_ptr.clone();
-                            async move {
-                                match message {
-                                    Payload::Text(response) => {
-                                        let _ = tx
-                                            .send(Self::verify_response(response, result_ptr))
-                                            .await;
-                                    }
-                                    _ => {}
-                                }
+        let lock = self.socket_io.lock().await;
+        let socket_io = match &*lock {
+            Some(socket_io) => socket_io,
+            None => Err(Error::Disconnected)?,
+        };
+
+        socket_io
+            .emit_with_ack(
+                method.clone(),
+                Payload::Text(args.into_iter().collect_vec()),
+                timeout,
+                move |message: Payload, _: SocketIO| {
+                    let tx = tx.clone();
+                    let result_ptr = result_ptr.clone();
+                    async move {
+                        _ = match message {
+                            Payload::Text(response) => {
+                                tx.send(Self::verify_response(response, result_ptr)).await
                             }
-                            .boxed()
-                        },
-                    )
-                    .await;
-
-                match result {
-                    Ok(_) => match tokio::time::timeout(Duration::from_secs(3), rx.recv()).await {
-                        Ok(Some(Ok(value))) => return Ok(value),
-                        _ => {
-                            println!("Error during send");
+                            _ => tx.send(Err(Error::UnsupportedResponse)).await,
                         }
-                    },
-                    Err(e) => {
-                        println!("{}", e.to_string());
                     }
-                };
-            }
+                    .boxed()
+                },
+            )
+            .await
+            .map_err(|e| Error::CommunicationError(e.to_string()))?;
 
-            tokio::time::sleep(Duration::from_millis(200 * i)).await;
-
-            println!("Reconnecting...");
-            self.connect().await;
-        }
-
-        Err(())
+        tokio::time::timeout(Duration::from_secs(3), rx.recv())
+            .await
+            .map_err(|_| Error::CallTimeout(method.clone()))?
+            .ok_or_else(|| Error::CallTimeout(method))?
     }
 
     pub async fn login(
@@ -158,7 +167,7 @@ impl Worker {
         username: impl AsRef<str>,
         password: impl AsRef<str>,
         token: Option<String>,
-    ) -> bool {
+    ) -> Result<bool> {
         self.call(
             "login",
             vec![serde_json::to_value(HashMap::from([
@@ -171,10 +180,9 @@ impl Worker {
             Duration::from_secs(2),
         )
         .await
-        .unwrap_or_else(|_| false)
     }
 
-    pub async fn add_tag(&self, tag: TagDefinition) -> TagDefinition {
+    pub async fn add_tag(&self, tag: TagDefinition) -> Result<TagDefinition> {
         self.call(
             "addTag",
             vec![serde_json::to_value(tag.clone()).unwrap()],
@@ -182,10 +190,14 @@ impl Worker {
             Duration::from_secs(2),
         )
         .await
-        .unwrap_or_else(|_| tag)
     }
 
-    pub async fn add_monitor_tag(&self, monitor_id: i32, tag_id: i32, value: Option<String>) {
+    pub async fn add_monitor_tag(
+        &self,
+        monitor_id: i32,
+        tag_id: i32,
+        value: Option<String>,
+    ) -> Result<()> {
         let _: bool = self
             .call(
                 "addMonitorTag",
@@ -197,11 +209,17 @@ impl Worker {
                 "/ok",
                 Duration::from_secs(2),
             )
-            .await
-            .unwrap_or_default();
+            .await?;
+
+        Ok(())
     }
 
-    pub async fn edit_monitor_tag(&self, monitor_id: i32, tag_id: i32, value: Option<String>) {
+    pub async fn edit_monitor_tag(
+        &self,
+        monitor_id: i32,
+        tag_id: i32,
+        value: Option<String>,
+    ) -> Result<()> {
         let _: bool = self
             .call(
                 "editMonitorTag",
@@ -213,11 +231,17 @@ impl Worker {
                 "/ok",
                 Duration::from_secs(2),
             )
-            .await
-            .unwrap_or_default();
+            .await?;
+
+        Ok(())
     }
 
-    pub async fn delete_monitor_tag(&self, monitor_id: i32, tag_id: i32, value: Option<String>) {
+    pub async fn delete_monitor_tag(
+        &self,
+        monitor_id: i32,
+        tag_id: i32,
+        value: Option<String>,
+    ) -> Result<()> {
         let _: bool = self
             .call(
                 "deleteMonitorTag",
@@ -229,11 +253,12 @@ impl Worker {
                 "/ok",
                 Duration::from_secs(2),
             )
-            .await
-            .unwrap_or_default();
+            .await?;
+
+        Ok(())
     }
 
-    pub async fn delete_monitor(&self, monitor_id: i32) {
+    pub async fn delete_monitor(&self, monitor_id: i32) -> Result<()> {
         let _: bool = self
             .call(
                 "deleteMonitor",
@@ -241,11 +266,12 @@ impl Worker {
                 "/ok",
                 Duration::from_secs(2),
             )
-            .await
-            .unwrap_or_default();
+            .await?;
+
+        Ok(())
     }
 
-    async fn resolve_group(&self, monitor: &mut Monitor) -> bool {
+    async fn resolve_group(&self, monitor: &mut Monitor) -> Result<bool> {
         if let Some(group_name) = monitor.common().parent_name.clone() {
             monitor.common_mut().parent_name = None;
 
@@ -268,15 +294,15 @@ impl Worker {
             {
                 monitor.common_mut().parent = Some(group_id);
             } else {
-                return false;
+                return Ok(false);
             }
         } else {
             monitor.common_mut().parent = None;
         }
-        return true;
+        return Ok(true);
     }
 
-    async fn update_monitor_tags(&self, monitor_id: i32, tags: &Vec<Tag>) {
+    async fn update_monitor_tags(&self, monitor_id: i32, tags: &Vec<Tag>) -> Result<()> {
         let new_tags = tags
             .iter()
             .filter_map(|tag| tag.tag_id.and_then(|id| Some((id, tag))))
@@ -318,57 +344,59 @@ impl Worker {
 
             for (tag_id, tag) in duplicates {
                 self.delete_monitor_tag(monitor_id, *tag_id, tag.value.clone())
-                    .await;
+                    .await?;
             }
 
             for (tag_id, tag) in to_delete {
                 self.delete_monitor_tag(monitor_id, *tag_id, tag.value.clone())
-                    .await;
+                    .await?;
             }
 
             for (tag_id, tag) in to_create {
                 self.add_monitor_tag(monitor_id, *tag_id, tag.value.clone())
-                    .await
+                    .await?
             }
 
             for (tag_id, current, new) in to_update {
                 if current.value != new.value {
                     self.edit_monitor_tag(monitor_id, *tag_id, new.value.clone())
-                        .await;
+                        .await?;
                 }
             }
         } else {
             for tag in tags {
                 if let Some(tag_id) = tag.tag_id {
                     self.add_monitor_tag(monitor_id, tag_id, tag.value.clone())
-                        .await;
+                        .await?;
                 }
             }
         }
+
+        Ok(())
     }
 
-    pub async fn add_monitor(&self, mut monitor: Monitor) -> Monitor {
+    pub async fn add_monitor(&self, mut monitor: Monitor) -> Result<Monitor> {
         let mut tags = vec![];
         mem::swap(&mut tags, &mut monitor.common_mut().tags);
 
-        if !self.resolve_group(&mut monitor).await {
-            return monitor;
+        if !self.resolve_group(&mut monitor).await? {
+            return Ok(monitor);
         }
 
-        let id: i32 = match self
+        if let Some(notifications) = &mut monitor.common_mut().notification_id_list {
+            notifications.clear();
+        }
+
+        let id: i32 = self
             .call(
                 "add",
                 vec![serde_json::to_value(&monitor).unwrap()],
                 "/monitorID",
                 Duration::from_secs(2),
             )
-            .await
-        {
-            Ok(id) => id,
-            Err(_) => return monitor,
-        };
+            .await?;
 
-        self.update_monitor_tags(id, &tags).await;
+        self.update_monitor_tags(id, &tags).await?;
 
         monitor.common_mut().id = Some(id);
         monitor.common_mut().tags = tags;
@@ -378,12 +406,12 @@ impl Worker {
             .await
             .insert(id.to_string(), monitor.clone());
 
-        monitor
+        Ok(monitor)
     }
 
-    pub async fn edit_monitor(&self, mut monitor: Monitor) -> Monitor {
-        if !self.resolve_group(&mut monitor).await {
-            return monitor;
+    pub async fn edit_monitor(&self, mut monitor: Monitor) -> Result<Monitor> {
+        if !self.resolve_group(&mut monitor).await? {
+            return Ok(monitor);
         }
 
         let mut tags = vec![];
@@ -396,17 +424,16 @@ impl Worker {
                 "/monitorID",
                 Duration::from_secs(2),
             )
-            .await
-            .unwrap_or_default();
+            .await?;
 
-        self.update_monitor_tags(id, &tags).await;
+        self.update_monitor_tags(id, &tags).await?;
 
         monitor.common_mut().tags = tags;
 
-        monitor
+        Ok(monitor)
     }
 
-    pub async fn connect(&self) {
+    pub async fn connect(&self) -> Result<()> {
         *self.is_ready.lock().await = false;
         *self.socket_io.lock().await = None;
 
@@ -432,13 +459,13 @@ impl Worker {
                             if let Ok(e) = Event::from_str(
                                 &params[0]
                                     .as_str()
-                                    .on_error_log(|| "Error while deserializing Event...")
+                                    .log_warn(|| "Error while deserializing Event...")
                                     .unwrap_or(""),
                             ) {
                                 callback_tx
                                     .send((e, json!(null)))
                                     .await
-                                    .on_error_log(|_| "Error while sending Message event")
+                                    .log_warn(|_| "Error while sending Message event")
                                     .unwrap();
                             }
                         }
@@ -447,7 +474,7 @@ impl Worker {
                                 callback_tx
                                     .send((e, params.into_iter().next().unwrap()))
                                     .await
-                                    .on_error_log(|_| "Error while sending event")
+                                    .log_warn(|_| "Error while sending event")
                                     .unwrap();
                             }
                         }
@@ -458,7 +485,7 @@ impl Worker {
             })
             .connect()
             .await
-            .on_error_log(|_| "Error during connect")
+            .log_error(|_| "Error during connect")
             .ok();
 
         self.event_sender
@@ -470,14 +497,28 @@ impl Worker {
 
         for i in 0..10 {
             if *self.is_ready.lock().await {
-                println!("Connected!");
-                return;
+                debug!("Connected!");
+                return Ok(());
             }
-            println!("Waiting for Kuma to get ready...");
+            debug!("Waiting for Kuma to get ready...");
             tokio::time::sleep(Duration::from_millis(200 * i)).await;
         }
 
-        println!("Timeout while waiting for Kuma to get ready...");
+        warn!("Timeout while waiting for Kuma to get ready...");
+        Err(Error::ConnectionTimeout)
+    }
+    pub async fn disconnect(&self) -> Result<()> {
+        let mut lock = self.socket_io.lock().await;
+        if let Some(socket_io) = &*lock {
+            socket_io
+                .disconnect()
+                .await
+                .map_err(|e| Error::CommunicationError(e.to_string()))?;
+        }
+
+        *lock = None;
+
+        Ok(())
     }
 }
 
@@ -486,7 +527,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn connect(config: Arc<Config>) -> Client {
+    pub async fn connect(config: Arc<Config>) -> Result<Client> {
         let (tx, mut rx) = mpsc::channel::<EventArgs>(100);
 
         let worker = Arc::new(Worker::new(config, tx));
@@ -494,36 +535,48 @@ impl Client {
         let worker_ref = worker.clone();
         tokio::spawn(async move {
             while let Some((event, payload)) = rx.recv().await {
-                worker_ref.on_event(event, payload).await;
+                if let Err(err) = worker_ref.on_event(event, payload).await {
+                    print!("{:?}", err);
+                };
             }
         });
 
-        worker.connect().await;
+        worker.connect().await?;
 
-        Self { worker }
+        Ok(Self { worker })
     }
 
-    pub async fn monitors(&self) -> MonitorList {
-        self.worker.monitors.lock().await.clone()
+    pub async fn monitors(&self) -> Result<MonitorList> {
+        match *self.worker.is_ready.lock().await {
+            true => Ok(self.worker.monitors.lock().await.clone()),
+            false => Err(Error::NotReady),
+        }
     }
 
-    pub async fn tags(&self) -> Vec<TagDefinition> {
-        self.worker.tags.lock().await.clone()
+    pub async fn tags(&self) -> Result<Vec<TagDefinition>> {
+        match *self.worker.is_ready.lock().await {
+            true => Ok(self.worker.tags.lock().await.clone()),
+            false => Err(Error::NotReady),
+        }
     }
 
-    pub async fn add_tag(&self, tag: TagDefinition) -> TagDefinition {
+    pub async fn add_tag(&self, tag: TagDefinition) -> Result<TagDefinition> {
         self.worker.add_tag(tag).await
     }
 
-    pub async fn add_monitor(&self, monitor: Monitor) -> Monitor {
+    pub async fn add_monitor(&self, monitor: Monitor) -> Result<Monitor> {
         self.worker.add_monitor(monitor).await
     }
 
-    pub async fn edit_monitor(&self, monitor: Monitor) -> Monitor {
+    pub async fn edit_monitor(&self, monitor: Monitor) -> Result<Monitor> {
         self.worker.edit_monitor(monitor).await
     }
 
-    pub async fn delete_monitor(&self, monitor_id: i32) {
+    pub async fn delete_monitor(&self, monitor_id: i32) -> Result<()> {
         self.worker.delete_monitor(monitor_id).await
+    }
+
+    pub async fn disconnect(&self) -> Result<()> {
+        self.worker.disconnect().await
     }
 }
