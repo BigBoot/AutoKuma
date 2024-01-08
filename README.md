@@ -27,15 +27,22 @@ services:
     image: ghcr.io/bigboot/autokuma:latest
     restart: unless-stopped
     environment:
-      - AUTOKUMA__KUMA__URL=http://localhost:3001
-      # - AUTOKUMA__KUMA__USERNAME=<username>
-      # - AUTOKUMA__KUMA__PASSWORD=<password>
-      # - AUTOKUMA__KUMA__MFA_TOKEN=<token>
-      # - AUTOKUMA__KUMA__HEADERS="<header1_key>=<header1_value>,<header2_key>=<header2_value>,..."
-      # - AUTOKUMA__KUMA__TAG_NAME=AutoKuma
-      # - AUTOKUMA__KUMA__TAG_COLOR=#42C0FB
-      # - AUTOKUMA__DOCKER__SOCKET=/var/run/docker.sock
-      # - AUTOKUMA__DOCKER__LABEL_PREFIX=kuma
+      AUTOKUMA__KUMA__URL: http://localhost:3001
+      # AUTOKUMA__KUMA__USERNAME: <username> 
+      # AUTOKUMA__KUMA__PASSWORD: <password>
+      # AUTOKUMA__KUMA__MFA_TOKEN: <token>
+      # AUTOKUMA__KUMA__HEADERS: "<header1_key>=<header1_value>,<header2_key>=<header2_value>,..."
+      # AUTOKUMA__KUMA__TAG_NAME: AutoKuma
+      # AUTOKUMA__KUMA__TAG_COLOR: "#42C0FB"
+      # AUTOKUMA__KUMA__CALL_TIMEOUT: 5s
+      # AUTOKUMA__KUMA__CONNECT_TIMEOUT: 5s
+      # AUTOKUMA__KUMA__DEFAULT_SETTINGS: >- 
+      #    docker.docker_container: {{container_name}}
+      #    http.max_redirects: 10
+      #    *.max_retries: 3
+      # AUTOKUMA__DOCKER__SOCKET: /var/run/docker.sock
+      # AUTOKUMA__DOCKER__LABEL_PREFIX: kuma
+      
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
@@ -44,17 +51,21 @@ services:
 
 AutoKuma can be configured using the following environment variables:
 
-| Variable                         | Description                                                                  |
-|----------------------------------|------------------------------------------------------------------------------|
-| `AUTOKUMA__KUMA__URL`            | The url AutoKuma should use to connect to Uptime Kuma                        |
-| `AUTOKUMA__KUMA__USERNAME`       | The username for logging into Uptime Kuma (required unless auth is disabled) |
-| `AUTOKUMA__KUMA__PASSWORD`       | The password for logging into Uptime Kuma (required unless auth is disabled) |
-| `AUTOKUMA__KUMA__MFA_TOKEN`      | The MFA token for logging into Uptime Kuma (required if MFA is enabled)      |
-| `AUTOKUMA__KUMA__HEADERS`        | List of HTTP headers used when connecting to Uptime Kuma                     |
-| `AUTOKUMA__KUMA__TAG_NAME`       | The name of the AutoKuma tag, used to track managed containers               |
-| `AUTOKUMA__KUMA__TAG_COLOR`      | The color of the AutoKuma tag                                                |
-| `AUTOKUMA__DOCKER__SOCKET`       | Path to the Docker socket                                                    |
-| `AUTOKUMA__DOCKER__LABEL_PREFIX` | Prefix used when scanning for container labels                               |
+| Variable                           | Description                                                                                                           |
+|------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| `AUTOKUMA__STATIC_MONITORS`        | The path to the folder in which AutoKuma will search for static Monitor definitions                                   |
+| `AUTOKUMA__KUMA__URL`              | The url AutoKuma should use to connect to Uptime Kuma                                                                 |
+| `AUTOKUMA__KUMA__USERNAME`         | The username for logging into Uptime Kuma (required unless auth is disabled)                                          |
+| `AUTOKUMA__KUMA__PASSWORD`         | The password for logging into Uptime Kuma (required unless auth is disabled)                                          |
+| `AUTOKUMA__KUMA__MFA_TOKEN`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                               |
+| `AUTOKUMA__KUMA__HEADERS`          | List of HTTP headers used when connecting to Uptime Kuma                                                              |
+| `AUTOKUMA__KUMA__TAG_NAME`         | The name of the AutoKuma tag, used to track managed containers                                                        |
+| `AUTOKUMA__KUMA__TAG_COLOR`        | The color of the AutoKuma tag                                                                                         |
+| `AUTOKUMA__KUMA__CONNECT_TIMEOUT`  | Timeout for the initial connection to Uptime Kuma                                                                     |
+| `AUTOKUMA__KUMA__CALL_TIMEOUT`     | Timeout for calls to Uptime Kuma                                                                                      |
+| `AUTOKUMA__KUMA__DEFAULT_SETTINGS` | Provide defaults for all created Monitors, can be overriden by container labels, see the example above for the syntax |
+| `AUTOKUMA__DOCKER__SOCKET`         | Path to the Docker socket                                                                                             |
+| `AUTOKUMA__DOCKER__LABEL_PREFIX`   | Prefix used when scanning for container labels                                                                        |
 
 
 
@@ -79,6 +90,9 @@ kuma.example.http.name: "Example"
 kuma.example.http.url: "https://example.com"
 ```
 
+Take a look at [all available monitor types](MONITOR_TYPES.md) and the corresponding settings.
+
+
 AutoKuma also provides support for creating and assigning groups:
 
 ```plaintext
@@ -88,8 +102,23 @@ kuma.mymonitor.http.parent_name: "mygroup"
 kuma.mymonitor.http.url: "https://example.com"
 ```
 
+There are also some text replacements available which will be replaced by details about the corresponding docker container:
+| Template             | Description                   | Example Value                                                           |
+|----------------------|-------------------------------|-------------------------------------------------------------------------|
+| `{{container_id}}`   | The container id              | 92366941fb1f211c573c56d261f3b3e5302f354941f2aa295ae56d5781e97221        |
+| `{{image_id}}`       | Sha256 of the container image | sha256:c2e38600b252f147de1df1a5ca7964f9c8e8bace97111e56471a4a431639287a |
+| `{{image}}`          | Name of the container image   | ghcr.io/immich-app/immich-server:release                                |
+| `{{container_name}}` | Name of the container         | /immich-immich-1                                                        |
 
-Take a look at [all available monitor types](MONITOR_TYPES.md) and the corresponding settings.
+
+### Static Monitors
+In addition to reading Monitors from Docker labels, AutoKuma can create Monitors from files, this can be usefull if you have want AutoKuma to manage monitors which aren't directly related to a container. 
+
+To create static Monitors just a a .json or .toml file in the directory specified by `AUTOKUMA__STATIC_MONITORS`, take a look at [the examples here](monitors).
+
+In case of static Monitors the id is determined by the filename (without the extension).
+
+
 
 
 ## Contributing

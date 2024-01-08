@@ -2,22 +2,70 @@ use crate::{
     config::Config,
     error::{Error, Result},
     kuma::{Client, Monitor, MonitorType, Tag, TagDefinition},
-    util::{group_by_prefix, ResultLogger},
+    util::{self, group_by_prefix, ResultLogger},
 };
 use bollard::{
     container::ListContainersOptions, service::ContainerSummary, Docker, API_DEFAULT_VERSION,
 };
 use itertools::Itertools;
 use log::{info, warn};
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{
+    collections::{BTreeMap, HashMap},
+    sync::Arc,
+    time::Duration,
+};
 
 pub struct Sync {
     config: Arc<Config>,
+    defaults: BTreeMap<String, Vec<(String, String)>>,
 }
 
 impl Sync {
-    pub fn new(config: Arc<Config>) -> Self {
-        Self { config: config }
+    pub fn new(config: Arc<Config>) -> Result<Self> {
+        let defaults = config
+            .kuma
+            .default_settings
+            .lines()
+            .map(|line| {
+                line.split_once(":")
+                    .map(|(key, value)| (key.trim().to_owned(), value.trim().to_owned()))
+                    .ok_or_else(|| {
+                        Error::InvalidConfig("kuma.default_settings".to_owned(), line.to_owned())
+                    })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Self {
+            config: config.clone(),
+            defaults: util::group_by_prefix(defaults, "."),
+        })
+    }
+
+    fn fill_templates(
+        config: impl Into<String>,
+        template_values: &Vec<(String, String)>,
+    ) -> String {
+        template_values
+            .iter()
+            .fold(config.into(), |config, (key, value)| {
+                config.replace(&format!("{{{{{}}}}}", key), &value)
+            })
+    }
+
+    fn get_defaults(&self, monitor_type: impl AsRef<str>) -> Vec<(String, String)> {
+        vec![
+            self.defaults.get("*"),
+            self.defaults.get(monitor_type.as_ref()),
+        ]
+        .into_iter()
+        .flat_map(|defaults| {
+            defaults
+                .into_iter()
+                .map(|entry| entry.to_owned())
+                .collect_vec()
+        })
+        .flatten()
+        .collect_vec()
     }
 
     async fn get_kuma_containers(&self, docker: &Docker) -> Result<Vec<ContainerSummary>> {
@@ -46,12 +94,21 @@ impl Sync {
         id: &str,
         monitor_type: &str,
         settings: Vec<(String, String)>,
+        template_values: &Vec<(String, String)>,
     ) -> Result<Monitor> {
-        let config = vec![("type".to_owned(), monitor_type.to_owned())]
-            .into_iter()
-            .chain(settings.into_iter())
-            .map(|(key, value)| format!("{} = {}", key, toml::Value::String(value)))
-            .join("\n");
+        let defaults = self.get_defaults(monitor_type);
+
+        let config = Self::fill_templates(
+            vec![("type".to_owned(), monitor_type.to_owned())]
+                .into_iter()
+                .chain(settings.into_iter())
+                .chain(defaults.into_iter())
+                .sorted_by(|a, b| Ord::cmp(&a.0, &b.0))
+                .unique_by(|(key, _)| key.to_owned())
+                .map(|(key, value)| format!("{} = {}", key, toml::Value::String(value)))
+                .join("\n"),
+            template_values,
+        );
 
         let toml = toml::from_str::<serde_json::Value>(&config)
             .map_err(|e| Error::LabelParseError(e.to_string()))?;
@@ -68,6 +125,7 @@ impl Sync {
     fn get_monitors_from_labels(
         &self,
         labels: Vec<(String, String)>,
+        template_values: &Vec<(String, String)>,
     ) -> Result<Vec<(String, Monitor)>> {
         group_by_prefix(
             labels.iter().map(|(key, value)| {
@@ -82,7 +140,7 @@ impl Sync {
         .map(|(key, value)| (key, group_by_prefix(value, ".")))
         .flat_map(|(id, monitors)| {
             monitors.into_iter().map(move |(monitor_type, settings)| {
-                self.get_monitor_from_labels(&id, &monitor_type, settings)
+                self.get_monitor_from_labels(&id, &monitor_type, settings, template_values)
                     .map(|monitor| (id.clone(), monitor))
             })
         })
@@ -109,7 +167,27 @@ impl Sync {
                     },
                 );
 
-                self.get_monitors_from_labels(kuma_labels)
+                let template_values = [
+                    ("container_id", &container.id),
+                    ("image_id", &container.image_id),
+                    ("image", &container.image),
+                    (
+                        "container_name",
+                        &container
+                            .names
+                            .as_ref()
+                            .and_then(|names| names.first().cloned()),
+                    ),
+                ]
+                .into_iter()
+                .filter_map(|(key, value)| {
+                    value
+                        .as_ref()
+                        .map(|value| (key.to_owned(), value.to_owned()))
+                })
+                .collect_vec();
+
+                self.get_monitors_from_labels(kuma_labels, &template_values)
             })
             .flatten_ok()
             .try_collect()
@@ -153,6 +231,35 @@ impl Sync {
             .collect::<HashMap<_, _>>())
     }
 
+    async fn get_monitor_from_file(file: impl AsRef<str>) -> Result<Option<(String, Monitor)>> {
+        let file = file.as_ref();
+        let id = std::path::Path::new(file)
+            .file_stem()
+            .and_then(|os| os.to_str().map(|str| str.to_owned()))
+            .ok_or_else(|| Error::IO(format!("Unable to determine file: '{}'", file)))?;
+
+        Ok(if file.ends_with(".json") {
+            let content = tokio::fs::read_to_string(file)
+                .await
+                .map_err(|e| Error::IO(e.to_string()))?;
+            Some((
+                id,
+                serde_json::from_str(&content)
+                    .map_err(|e| Error::DeserializeError(e.to_string()))?,
+            ))
+        } else if file.ends_with(".toml") {
+            let content = tokio::fs::read_to_string(file)
+                .await
+                .map_err(|e| Error::IO(e.to_string()))?;
+            Some((
+                id,
+                toml::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?,
+            ))
+        } else {
+            None
+        })
+    }
+
     fn merge_monitors(
         &self,
         current: &Monitor,
@@ -192,14 +299,51 @@ impl Sync {
     }
 
     async fn do_sync(&self) -> Result<()> {
-        let docker =
-            Docker::connect_with_socket(&self.config.docker.socket_path, 120, API_DEFAULT_VERSION)?;
         let kuma = Client::connect(self.config.clone()).await?;
 
         let autokuma_tag = self.get_autokuma_tag(&kuma).await?;
-        let containers = self.get_kuma_containers(&docker).await?;
-        let new_monitors = self.get_monitors_from_containers(&containers)?;
         let current_monitors = self.get_managed_monitors(&kuma).await?;
+
+        let mut new_monitors: HashMap<String, Monitor> = HashMap::new();
+
+        if self.config.docker.enabled {
+            let docker = Docker::connect_with_socket(
+                &self.config.docker.socket_path,
+                120,
+                API_DEFAULT_VERSION,
+            )?;
+
+            let containers = self.get_kuma_containers(&docker).await?;
+            new_monitors.extend(self.get_monitors_from_containers(&containers)?);
+        }
+
+        if tokio::fs::metadata(&self.config.static_monitors)
+            .await
+            .is_ok_and(|md| md.is_dir())
+        {
+            let mut dir = tokio::fs::read_dir(&self.config.static_monitors)
+                .await
+                .log_warn(|e| e.to_string());
+
+            if let Ok(dir) = &mut dir {
+                loop {
+                    if let Some(f) = dir
+                        .next_entry()
+                        .await
+                        .map_err(|e| Error::IO(e.to_string()))?
+                    {
+                        if let Some((id, monitor)) =
+                            Self::get_monitor_from_file(f.path().to_string_lossy()).await?
+                        {
+                            new_monitors.insert(id, monitor);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
         let groups = current_monitors
             .iter()
             .filter(|(_, monitor)| monitor.monitor_type() == MonitorType::Group)

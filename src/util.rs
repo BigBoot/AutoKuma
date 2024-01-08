@@ -193,6 +193,19 @@ where
         })
 }
 
+pub trait ResultOrDie<T> {
+    fn unwrap_or_die(self, exit_code: i32) -> T;
+}
+
+impl<T, E> ResultOrDie<T> for std::result::Result<T, E> {
+    fn unwrap_or_die(self, exit_code: i32) -> T {
+        match self {
+            Ok(t) => t,
+            Err(_) => std::process::exit(exit_code),
+        }
+    }
+}
+
 pub trait ResultLogger<F> {
     fn log_trace(self, cb: F) -> Self;
     fn log_debug(self, cb: F) -> Self;

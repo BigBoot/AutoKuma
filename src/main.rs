@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use util::ResultLogger;
 
+use crate::util::ResultOrDie;
+
 mod config;
 mod error;
 mod kuma;
@@ -62,9 +64,12 @@ async fn main() {
             .file("config.toml")
             .load()
             .log_error(|e| format!("Invalid config: {}", e))
-            .unwrap(),
+            .unwrap_or_die(1),
     );
 
-    let sync = sync::Sync::new(config);
+    let sync = sync::Sync::new(config)
+        .log_error(|e| format!("Invalid config: {}", e))
+        .unwrap_or_die(1);
+
     sync.run().await;
 }

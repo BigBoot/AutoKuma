@@ -105,8 +105,7 @@ impl Worker {
     }
 
     async fn get_tags(&self) -> Result<Vec<TagDefinition>> {
-        self.call("getTags", vec![], "/tags", Duration::from_secs(2))
-            .await
+        self.call("getTags", vec![], "/tags").await
     }
 
     async fn call<A, T>(
@@ -114,7 +113,6 @@ impl Worker {
         method: impl Into<String>,
         args: A,
         result_ptr: impl Into<String>,
-        timeout: Duration,
     ) -> Result<T>
     where
         A: IntoIterator<Item = Value> + Send + Clone,
@@ -138,7 +136,7 @@ impl Worker {
             .emit_with_ack(
                 method.clone(),
                 Payload::Text(args.into_iter().collect_vec()),
-                timeout,
+                Duration::from_secs_f64(self.config.kuma.call_timeout),
                 move |message: Payload, _: SocketIO| {
                     let tx = tx.clone();
                     let result_ptr = result_ptr.clone();
@@ -156,10 +154,13 @@ impl Worker {
             .await
             .map_err(|e| Error::CommunicationError(e.to_string()))?;
 
-        tokio::time::timeout(Duration::from_secs(3), rx.recv())
-            .await
-            .map_err(|_| Error::CallTimeout(method.clone()))?
-            .ok_or_else(|| Error::CallTimeout(method))?
+        tokio::time::timeout(
+            Duration::from_secs_f64(self.config.kuma.connect_timeout),
+            rx.recv(),
+        )
+        .await
+        .map_err(|_| Error::CallTimeout(method.clone()))?
+        .ok_or_else(|| Error::CallTimeout(method))?
     }
 
     pub async fn login(
@@ -177,7 +178,6 @@ impl Worker {
             ]))
             .unwrap()],
             "/ok",
-            Duration::from_secs(2),
         )
         .await
     }
@@ -187,7 +187,6 @@ impl Worker {
             "addTag",
             vec![serde_json::to_value(tag.clone()).unwrap()],
             "/tag",
-            Duration::from_secs(2),
         )
         .await
     }
@@ -207,7 +206,6 @@ impl Worker {
                     json!(value.unwrap_or_default()),
                 ],
                 "/ok",
-                Duration::from_secs(2),
             )
             .await?;
 
@@ -229,7 +227,6 @@ impl Worker {
                     json!(value.unwrap_or_default()),
                 ],
                 "/ok",
-                Duration::from_secs(2),
             )
             .await?;
 
@@ -251,7 +248,6 @@ impl Worker {
                     json!(value.unwrap_or_default()),
                 ],
                 "/ok",
-                Duration::from_secs(2),
             )
             .await?;
 
@@ -260,12 +256,7 @@ impl Worker {
 
     pub async fn delete_monitor(&self, monitor_id: i32) -> Result<()> {
         let _: bool = self
-            .call(
-                "deleteMonitor",
-                vec![json!(monitor_id)],
-                "/ok",
-                Duration::from_secs(2),
-            )
+            .call("deleteMonitor", vec![json!(monitor_id)], "/ok")
             .await?;
 
         Ok(())
@@ -392,7 +383,6 @@ impl Worker {
                 "add",
                 vec![serde_json::to_value(&monitor).unwrap()],
                 "/monitorID",
-                Duration::from_secs(2),
             )
             .await?;
 
@@ -422,7 +412,6 @@ impl Worker {
                 "editMonitor",
                 vec![serde_json::to_value(&monitor).unwrap()],
                 "/monitorID",
-                Duration::from_secs(2),
             )
             .await?;
 
@@ -438,7 +427,8 @@ impl Worker {
         *self.socket_io.lock().await = None;
 
         let callback_tx = self.event_sender.clone();
-        let mut builder = ClientBuilder::new(self.config.kuma.url.clone());
+        let mut builder = ClientBuilder::new(self.config.kuma.url.clone())
+            .transport_type(rust_socketio::TransportType::Websocket);
 
         for (key, value) in self
             .config
@@ -536,7 +526,7 @@ impl Client {
         tokio::spawn(async move {
             while let Some((event, payload)) = rx.recv().await {
                 if let Err(err) = worker_ref.on_event(event, payload).await {
-                    print!("{:?}", err);
+                    println!("{:?}", err);
                 };
             }
         });

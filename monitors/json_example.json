@@ -1,0 +1,5 @@
+{
+    "name": "Static Json Example",
+    "type": "http",
+    "url": "https://example.com"
+}
