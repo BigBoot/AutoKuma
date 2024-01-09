@@ -3,7 +3,8 @@
 </div>
 
 
-# AutoKuma
+
+# AutoKuma ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/BigBoot/AutoKuma/docker-build-push.yml?style=flat&logo=rust) ![GitHub Tag](https://img.shields.io/github/v/tag/BigBoot/AutoKuma?logo=github&label=latest)
 
 AutoKuma is a utility that automates the creation of Uptime Kuma monitors based on Docker container labels. With AutoKuma, you can eliminate the need for manual monitor creation in the Uptime Kuma UI.
 
