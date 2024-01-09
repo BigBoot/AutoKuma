@@ -968,4 +968,15 @@ impl Monitor {
     }
 }
 
+#[skip_serializing_none]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LoginResponse {
+    #[serde(rename = "ok")]
+    pub ok: bool,
+    #[serde(rename = "msg")]
+    pub msg: Option<String>,
+    #[serde(rename = "token")]
+    pub token: Option<String>,
+}
+
 pub type MonitorList = HashMap<String, Monitor>;

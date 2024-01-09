@@ -17,10 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Changed
-- Increase default timeout for calls and connecting to 5s
+- Increase default timeout for calls and connecting to 30s
 
 ### Fixed
+- Support for authentication using credentials
 - Fix typo in env variable: AUTOKUMA__DOCKER__LABEL_PREFOX -> AUTOKUMA__DOCKER__LABEL_PREFIX
+- Websocket connections were not being closed correctly so they would just accumulate over time
 
 ## [0.1.1] - 2024-01-07
 

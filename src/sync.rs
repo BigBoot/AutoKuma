@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     error::{Error, Result},
-    kuma::{Client, Monitor, MonitorType, Tag, TagDefinition},
+    kuma::{self, Client, Monitor, MonitorType, Tag, TagDefinition},
     util::{self, group_by_prefix, ResultLogger},
 };
 use bollard::{
@@ -385,7 +385,17 @@ impl Sync {
             tag.value = Some(id.clone());
             monitor.common_mut().tags.push(tag);
 
-            kuma.add_monitor(monitor).await?;
+            match kuma.add_monitor(monitor).await {
+                Ok(_) => Ok(()),
+                Err(kuma::Error::GroupNotFound(group)) => {
+                    warn!(
+                        "Cannot create monitor {} because group {} does not exist",
+                        id, group
+                    );
+                    Ok(())
+                }
+                Err(err) => Err(err),
+            }?;
         }
 
         for (id, current, new) in to_update {
@@ -422,7 +432,7 @@ impl Sync {
     pub async fn run(&self) {
         loop {
             if let Err(err) = self.do_sync().await {
-                warn!("Encountered error during sync:\n{}", err);
+                warn!("Encountered error during sync: {}", err);
             }
             tokio::time::sleep(Duration::from_secs(5)).await;
         }

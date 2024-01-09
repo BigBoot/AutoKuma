@@ -1,8 +1,6 @@
-use std::sync::Arc;
-
-use util::ResultLogger;
-
 use crate::util::ResultOrDie;
+use std::sync::Arc;
+use util::ResultLogger;
 
 mod config;
 mod error;
