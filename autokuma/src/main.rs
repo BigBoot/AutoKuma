@@ -1,4 +1,5 @@
 use ::config::{Config, Environment, File, FileFormat};
+use serde_json::json;
 use std::sync::Arc;
 use util::{ResultLogger, ResultOrDie};
 
@@ -57,6 +58,10 @@ async fn main() {
 
     let config: Arc<crate::config::Config> = Arc::new(
         Config::builder()
+            .add_source(File::from_str(
+                &serde_json::to_string(&json!({"kuma": {}, "docker": {}})).unwrap(),
+                FileFormat::Json,
+            ))
             .add_source(File::new("config", FileFormat::Toml).required(false))
             .add_source(
                 Environment::with_prefix("AUTOKUMA")
