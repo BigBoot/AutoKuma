@@ -1,13 +1,13 @@
 use crate::{
     config::Config,
-    error::{Error, Result},
-    kuma::{self, Client, Monitor, MonitorType, Tag, TagDefinition},
-    util::{self, group_by_prefix, ResultLogger},
+    error::{Error, KumaError, Result},
+    util::{group_by_prefix, ResultLogger},
 };
 use bollard::{
     container::ListContainersOptions, service::ContainerSummary, Docker, API_DEFAULT_VERSION,
 };
 use itertools::Itertools;
+use kuma_client::{Client, Monitor, MonitorType, Tag, TagDefinition};
 use log::{info, warn};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -23,7 +23,6 @@ pub struct Sync {
 impl Sync {
     pub fn new(config: Arc<Config>) -> Result<Self> {
         let defaults = config
-            .kuma
             .default_settings
             .lines()
             .map(|line| {
@@ -37,7 +36,7 @@ impl Sync {
 
         Ok(Self {
             config: config.clone(),
-            defaults: util::group_by_prefix(defaults, "."),
+            defaults: group_by_prefix(defaults, "."),
         })
     }
 
@@ -195,16 +194,16 @@ impl Sync {
 
     async fn get_autokuma_tag(&self, kuma: &Client) -> Result<TagDefinition> {
         match kuma
-            .tags()
+            .get_tags()
             .await?
             .into_iter()
-            .find(|tag| tag.name.as_deref() == Some(&self.config.kuma.tag_name))
+            .find(|tag| tag.name.as_deref() == Some(&self.config.tag_name))
         {
             Some(tag) => Ok(tag),
             None => Ok(kuma
                 .add_tag(TagDefinition {
-                    name: Some(self.config.kuma.tag_name.clone()),
-                    color: Some(self.config.kuma.tag_color.clone()),
+                    name: Some(self.config.tag_name.clone()),
+                    color: Some(self.config.tag_color.clone()),
                     ..Default::default()
                 })
                 .await?),
@@ -213,7 +212,7 @@ impl Sync {
 
     async fn get_managed_monitors(&self, kuma: &Client) -> Result<HashMap<String, Monitor>> {
         Ok(kuma
-            .monitors()
+            .get_monitors()
             .await?
             .into_iter()
             .filter_map(|(_, monitor)| {
@@ -221,7 +220,7 @@ impl Sync {
                     .common()
                     .tags
                     .iter()
-                    .filter(|tag| tag.name.as_deref() == Some(&self.config.kuma.tag_name))
+                    .filter(|tag| tag.name.as_deref() == Some(&self.config.tag_name))
                     .find_map(|tag| tag.value.as_ref())
                 {
                     Some(id) => Some((id.to_owned(), monitor)),
@@ -299,7 +298,7 @@ impl Sync {
     }
 
     async fn do_sync(&self) -> Result<()> {
-        let kuma = Client::connect(self.config.clone()).await?;
+        let kuma = Client::connect(self.config.kuma.clone()).await?;
 
         let autokuma_tag = self.get_autokuma_tag(&kuma).await?;
         let current_monitors = self.get_managed_monitors(&kuma).await?;
@@ -387,7 +386,7 @@ impl Sync {
 
             match kuma.add_monitor(monitor).await {
                 Ok(_) => Ok(()),
-                Err(kuma::Error::GroupNotFound(group)) => {
+                Err(KumaError::GroupNotFound(group)) => {
                     warn!(
                         "Cannot create monitor {} because group {} does not exist",
                         id, group

@@ -1,0 +1,26 @@
+[package]
+name = "autokuma"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+kuma_client = { path = "../kuma-client" }
+
+bollard = { workspace = true }
+config = { workspace = true }
+derivative = { workspace = true }
+futures-util = { workspace = true }
+itertools = { workspace = true }
+log = { workspace = true }
+pretty_env_logger = { workspace = true }
+rust_socketio = { workspace = true }
+serde = { workspace = true }
+serde_alias = { workspace = true }
+serde_json = { workspace = true }
+serde_merge = { workspace = true }
+serde_with = { workspace = true }
+serde-inline-default = { workspace = true }
+strum = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }

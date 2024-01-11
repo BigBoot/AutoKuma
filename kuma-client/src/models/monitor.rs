@@ -1,40 +1,16 @@
-use super::Result;
-use crate::util::{
-    DeserializeBoolLenient, DeserializeHashMapLenient, DeserializeNumberLenient,
-    DeserializeVecLenient,
+use crate::{
+    deserialize::{
+        DeserializeBoolLenient, DeserializeHashMapLenient, DeserializeNumberLenient,
+        DeserializeVecLenient,
+    },
+    models::tag::Tag,
+    Error, Result,
 };
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use serde_alias::serde_alias;
 use serde_inline_default::serde_inline_default;
 use serde_with::{serde_as, skip_serializing_none};
 use std::collections::{HashMap, HashSet};
-use strum::EnumString;
-
-use super::Error;
-
-#[derive(Debug, EnumString)]
-#[strum(serialize_all = "camelCase")]
-pub enum Event {
-    ApiKeyList,
-    AutoLogin,
-    AvgPing,
-    CertInfo,
-    Connect,
-    Disconnect,
-    DockerHostList,
-    Heartbeat,
-    HeartbeatList,
-    ImportantHeartbeatList,
-    Info,
-    InitServerTimezone,
-    MaintenanceList,
-    MonitorList,
-    NotificationList,
-    ProxyList,
-    StatusPageList,
-    Uptime,
-}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MonitorType {
@@ -130,62 +106,6 @@ pub enum HttpMethod {
     PUT,
 }
 
-#[skip_serializing_none]
-#[serde_alias(SnakeCase)]
-#[serde_as]
-#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize, Hash, Eq)]
-pub struct TagDefinition {
-    #[serde(rename = "id")]
-    #[serde_as(as = "Option<DeserializeNumberLenient>")]
-    pub tag_id: Option<i32>,
-
-    #[serde(rename = "name")]
-    pub name: Option<String>,
-
-    #[serde(rename = "color")]
-    pub color: Option<String>,
-}
-
-#[skip_serializing_none]
-#[serde_alias(SnakeCase)]
-#[serde_as]
-#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize, Hash, Eq)]
-pub struct Tag {
-    #[serde(rename = "tag_id")]
-    #[serde_as(as = "Option<DeserializeNumberLenient>")]
-    pub tag_id: Option<i32>,
-
-    #[serde(rename = "name")]
-    pub name: Option<String>,
-
-    #[serde(rename = "color")]
-    pub color: Option<String>,
-
-    #[serde(rename = "value")]
-    pub value: Option<String>,
-}
-
-impl From<TagDefinition> for Tag {
-    fn from(value: TagDefinition) -> Self {
-        Tag {
-            name: value.name,
-            color: value.color,
-            tag_id: value.tag_id,
-            value: None,
-        }
-    }
-}
-
-impl From<Tag> for TagDefinition {
-    fn from(value: Tag) -> Self {
-        TagDefinition {
-            tag_id: value.tag_id,
-            name: value.name,
-            color: value.color,
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "mechanism")]
 pub enum KafkaProducerSaslOptions {
@@ -241,7 +161,6 @@ pub enum KafkaProducerSaslOptions {
 
 #[serde_inline_default]
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[serde_as]
 #[derive(Clone, Debug, Derivative, Serialize, Deserialize)]
 #[derivative(PartialEq)]
@@ -311,7 +230,6 @@ fn compare_tags(a: &Vec<Tag>, b: &Vec<Tag>) -> bool {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorDatabase {
     #[serde(rename = "databaseConnectionString")]
@@ -320,7 +238,6 @@ pub struct MonitorDatabase {
 
 #[serde_inline_default]
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorDns {
     #[serde(rename = "hostname")]
@@ -339,7 +256,6 @@ pub struct MonitorDns {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorDocker {
@@ -352,7 +268,6 @@ pub struct MonitorDocker {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorGameDig {
@@ -372,7 +287,6 @@ pub struct MonitorGameDig {
 
 #[serde_inline_default]
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorGrpcKeyword {
@@ -409,7 +323,6 @@ pub struct MonitorGrpcKeyword {
 
 #[serde_inline_default]
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorHttp {
@@ -494,7 +407,6 @@ pub struct MonitorHttp {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorJsonQuery {
     #[serde(rename = "jsonPath")]
@@ -505,7 +417,6 @@ pub struct MonitorJsonQuery {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorKafkaProducer {
@@ -531,7 +442,6 @@ pub struct MonitorKafkaProducer {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorKeyword {
@@ -545,7 +455,6 @@ pub struct MonitorKeyword {
 
 #[serde_inline_default]
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorMqtt {
     #[serde(rename = "hostname")]
@@ -572,7 +481,6 @@ pub struct MonitorMqtt {
 
 #[serde_inline_default]
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorPing {
@@ -586,7 +494,6 @@ pub struct MonitorPing {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorPort {
     #[serde(rename = "hostname")]
@@ -597,7 +504,6 @@ pub struct MonitorPort {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorPush {
     #[serde(rename = "pushURL")]
@@ -605,7 +511,6 @@ pub struct MonitorPush {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorRadius {
     #[serde(rename = "hostname")]
@@ -646,7 +551,6 @@ pub struct MonitorRealBrowser {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorSteam {
     #[serde(rename = "hostname")]
@@ -657,7 +561,6 @@ pub struct MonitorSteam {
 }
 
 #[skip_serializing_none]
-#[serde_alias(SnakeCase)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorTailscale {
     #[serde(rename = "hostname")]
@@ -966,17 +869,6 @@ impl Monitor {
 
         Ok(())
     }
-}
-
-#[skip_serializing_none]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LoginResponse {
-    #[serde(rename = "ok")]
-    pub ok: bool,
-    #[serde(rename = "msg")]
-    pub msg: Option<String>,
-    #[serde(rename = "token")]
-    pub token: Option<String>,
 }
 
 pub type MonitorList = HashMap<String, Monitor>;

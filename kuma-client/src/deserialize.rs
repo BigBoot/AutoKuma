@@ -1,17 +1,10 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    hash::Hash,
-    marker::PhantomData,
-    str::FromStr,
-};
-
-use log::{debug, error, info, trace, warn};
 use serde::{
     de::{DeserializeOwned, IntoDeserializer},
     Deserialize, Deserializer, Serialize,
 };
 use serde_json::Value;
 use serde_with::{DeserializeAs, SerializeAs};
+use std::{collections::HashMap, hash::Hash, marker::PhantomData, str::FromStr};
 
 pub struct DeserializeNumberLenient;
 
@@ -175,123 +168,37 @@ where
     }
 }
 
-pub fn group_by_prefix<A, B, I>(v: I, delimiter: &str) -> BTreeMap<String, Vec<(String, String)>>
+pub struct DeserializeValueLenient;
+
+impl<'de> DeserializeAs<'de, Value> for DeserializeValueLenient {
+    fn deserialize_as<D>(deserializer: D) -> Result<Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer).map_err(serde::de::Error::custom)?;
+        let result = match value {
+            Value::String(s) => s.parse::<Value>().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "Unable to parse {} as {}",
+                    s,
+                    std::any::type_name::<Value>()
+                ))
+            }),
+            value => Ok(value),
+        };
+
+        result
+    }
+}
+
+impl<T> SerializeAs<T> for DeserializeValueLenient
 where
-    A: AsRef<str>,
-    B: AsRef<str>,
-    I: IntoIterator<Item = (A, B)>,
+    T: Serialize,
 {
-    v.into_iter()
-        .fold(BTreeMap::new(), |mut groups, (key, value)| {
-            if let Some((prefix, key)) = key.as_ref().split_once(delimiter) {
-                groups
-                    .entry(prefix.to_owned())
-                    .or_default()
-                    .push((key.to_owned(), value.as_ref().to_owned()));
-            }
-            groups
-        })
-}
-
-pub trait ResultOrDie<T> {
-    fn unwrap_or_die(self, exit_code: i32) -> T;
-}
-
-impl<T, E> ResultOrDie<T> for std::result::Result<T, E> {
-    fn unwrap_or_die(self, exit_code: i32) -> T {
-        match self {
-            Ok(t) => t,
-            Err(_) => std::process::exit(exit_code),
-        }
-    }
-}
-
-pub trait ResultLogger<F> {
-    fn log_trace(self, cb: F) -> Self;
-    fn log_debug(self, cb: F) -> Self;
-    fn log_info(self, cb: F) -> Self;
-    fn log_warn(self, cb: F) -> Self;
-    fn log_error(self, cb: F) -> Self;
-}
-
-impl<F, S, T, E> ResultLogger<F> for std::result::Result<T, E>
-where
-    S: AsRef<str>,
-    F: FnOnce(&E) -> S,
-{
-    fn log_trace(self, cb: F) -> Self {
-        return self.map_err(|e| {
-            trace!("{}", cb(&e).as_ref());
-            e
-        });
-    }
-
-    fn log_debug(self, cb: F) -> Self {
-        return self.map_err(|e| {
-            debug!("{}", cb(&e).as_ref());
-            e
-        });
-    }
-
-    fn log_info(self, cb: F) -> Self {
-        return self.map_err(|e| {
-            info!("{}", cb(&e).as_ref());
-            e
-        });
-    }
-
-    fn log_warn(self, cb: F) -> Self {
-        return self.map_err(|e| {
-            warn!("{}", cb(&e).as_ref());
-            e
-        });
-    }
-
-    fn log_error(self, cb: F) -> Self {
-        return self.map_err(|e| {
-            error!("{}", cb(&e).as_ref());
-            e
-        });
-    }
-}
-
-impl<F, S, T> ResultLogger<F> for Option<T>
-where
-    S: AsRef<str>,
-    F: FnOnce() -> S,
-{
-    fn log_trace(self, cb: F) -> Self {
-        if self.is_none() {
-            trace!("{}", cb().as_ref())
-        }
-        self
-    }
-
-    fn log_debug(self, cb: F) -> Self {
-        if self.is_none() {
-            debug!("{}", cb().as_ref())
-        }
-        self
-    }
-
-    fn log_info(self, cb: F) -> Self {
-        if self.is_none() {
-            info!("{}", cb().as_ref())
-        }
-        self
-    }
-
-    fn log_warn(self, cb: F) -> Self {
-        if self.is_none() {
-            warn!("{}", cb().as_ref())
-        }
-        self
-    }
-
-    fn log_error(self, cb: F) -> Self {
-        if self.is_none() {
-            error!("{}", cb().as_ref())
-        }
-        self
+    fn serialize_as<S>(source: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        source.serialize(serializer)
     }
 }

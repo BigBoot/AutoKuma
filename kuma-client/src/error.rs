@@ -37,6 +37,9 @@ pub enum Error {
 
     #[error("No group named {0} could be found")]
     GroupNotFound(String),
+
+    #[error("No {0} with id {1} could be found")]
+    IdNotFound(String, i32),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

@@ -52,21 +52,21 @@ services:
 
 AutoKuma can be configured using the following environment variables:
 
-| Variable                           | Description                                                                                                           |
-|------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| `AUTOKUMA__STATIC_MONITORS`        | The path to the folder in which AutoKuma will search for static Monitor definitions                                   |
-| `AUTOKUMA__KUMA__URL`              | The url AutoKuma should use to connect to Uptime Kuma                                                                 |
-| `AUTOKUMA__KUMA__USERNAME`         | The username for logging into Uptime Kuma (required unless auth is disabled)                                          |
-| `AUTOKUMA__KUMA__PASSWORD`         | The password for logging into Uptime Kuma (required unless auth is disabled)                                          |
-| `AUTOKUMA__KUMA__MFA_TOKEN`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                               |
-| `AUTOKUMA__KUMA__HEADERS`          | List of HTTP headers used when connecting to Uptime Kuma                                                              |
-| `AUTOKUMA__KUMA__TAG_NAME`         | The name of the AutoKuma tag, used to track managed containers                                                        |
-| `AUTOKUMA__KUMA__TAG_COLOR`        | The color of the AutoKuma tag                                                                                         |
-| `AUTOKUMA__KUMA__CONNECT_TIMEOUT`  | Timeout for the initial connection to Uptime Kuma                                                                     |
-| `AUTOKUMA__KUMA__CALL_TIMEOUT`     | Timeout for calls to Uptime Kuma                                                                                      |
-| `AUTOKUMA__KUMA__DEFAULT_SETTINGS` | Provide defaults for all created Monitors, can be overriden by container labels, see the example above for the syntax |
-| `AUTOKUMA__DOCKER__SOCKET`         | Path to the Docker socket                                                                                             |
-| `AUTOKUMA__DOCKER__LABEL_PREFIX`   | Prefix used when scanning for container labels                                                                        |
+| Variable                          | Description                                                                              |
+|-----------------------------------|------------------------------------------------------------------------------------------|
+| `AUTOKUMA__STATIC_MONITORS`       | The path to the folder in which AutoKuma will search for static Monitor definitions      |
+| `AUTOKUMA__TAG_NAME`              | The name of the AutoKuma tag, used to track managed containers                           |
+| `AUTOKUMA__TAG_COLOR`             | The color of the AutoKuma tag                                                            |
+| `AUTOKUMA__DEFAULT_SETTINGS`      | Default settings applied to all generated Monitors, see the example above for the syntax |
+| `AUTOKUMA__KUMA__URL`             | The URL AutoKuma should use to connect to Uptime Kuma                                    |
+| `AUTOKUMA__KUMA__USERNAME`        | The username for logging into Uptime Kuma (required unless auth is disabled)             |
+| `AUTOKUMA__KUMA__PASSWORD`        | The password for logging into Uptime Kuma (required unless auth is disabled)             |
+| `AUTOKUMA__KUMA__MFA_TOKEN`       | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                  |
+| `AUTOKUMA__KUMA__HEADERS`         | List of HTTP headers to send when connecting to Uptime Kuma                              |
+| `AUTOKUMA__KUMA__CONNECT_TIMEOUT` | The timeout for the initial connection to Uptime Kuma                                    |
+| `AUTOKUMA__KUMA__CALL_TIMEOUT`    | The timeout for executing calls to the Uptime Kuma server                                |
+| `AUTOKUMA__DOCKER__SOCKET`        | Path to the Docker socket                                                                |
+| `AUTOKUMA__DOCKER__LABEL_PREFIX`  | Prefix used when scanning for container labels                                           |
 
 
 

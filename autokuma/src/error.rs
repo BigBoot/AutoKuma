@@ -1,11 +1,10 @@
+pub use kuma_client::Error as KumaError;
 use thiserror::Error;
-
-use crate::kuma;
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    Kuma(#[from] kuma::Error),
+    Kuma(#[from] KumaError),
 
     #[error(transparent)]
     Docker(#[from] bollard::errors::Error),

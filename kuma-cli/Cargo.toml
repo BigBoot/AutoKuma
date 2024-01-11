@@ -1,0 +1,23 @@
+[package]
+name = "kuma-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "kuma"
+path = "src/main.rs"
+
+[dependencies]
+kuma_client = { path = "../kuma-client" }
+
+clap = { workspace = true }
+config = { workspace = true }
+const-str = { workspace = true }
+dirs = { workspace = true }
+log = { workspace = true }
+pretty_env_logger = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }

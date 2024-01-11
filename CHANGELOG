@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0] - 2024-01-09
+### Added
+- new CLI client for Uptime Kuma `kuma-cli`
 
+### Changed
+- split package into `kuma-client` and `autokuma`
+- renamed env var `AUTOKUMA__KUMA__TAG_NAME` to `AUTOKUMA__TAG_NAME` due to package splitting
+- renamed env var `AUTOKUMA__KUMA__TAG_COLOR` to `AUTOKUMA__TAG_COLOR` due to package splitting
+- renamed env var `AUTOKUMA__KUMA__DEFAULT_SETTINGS` to `AUTOKUMA__DEFAULT_SETTINGS` due to package splitting
+
+## [0.2.0] - 2024-01-09
 ### Added
 - Make Connection timeout configurable [`AUTOKUMA__KUMA__CONNECT_TIMEOUT`]
 - Make Call timeout configurable [`AUTOKUMA__KUMA__CALL_TIMEOUT`]
