@@ -15,7 +15,7 @@ pub struct DockerConfig {
     pub socket_path: String,
 
     /// Prefix used when scanning for container labels.
-    #[serde_inline_default("/kuma".to_owned())]
+    #[serde_inline_default("kuma".to_owned())]
     pub label_prefix: String,
 }
 
