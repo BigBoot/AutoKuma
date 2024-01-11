@@ -25,6 +25,7 @@ pub struct Config {
     #[serde_as(
         as = "PickFirst<(DeserializeVecLenient<String>, StringWithSeparator::<CommaSeparator, String>)>"
     )]
+    #[serde(default)]
     pub headers: Vec<String>,
 
     /// The timeout for the initial connection to Uptime Kuma.
