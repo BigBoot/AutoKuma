@@ -34,7 +34,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: autokuma-${{ matrix.os }}
-        path: target/release/*
+        path: |
+          target/release/autokuma
+          target/release/autokuma.exe
+          target/release/kuma
+          target/release/kuma.exe
 
   release:
     needs: [build]
