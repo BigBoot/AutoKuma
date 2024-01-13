@@ -44,7 +44,8 @@ jobs:
     - name: Build
       run: cargo build --release
 
-    - shell: bash
+    - name: Prepare artifacts
+      shell: bash
       run: |-
         mkdir dist
         for file in autokuma autokuma.exe kuma kuma.exe; do
