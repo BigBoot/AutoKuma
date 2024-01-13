@@ -9,6 +9,7 @@ derivative = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
+reqwest = { workspace = true }
 rust_socketio = { workspace = true }
 serde = { workspace = true }
 serde_alias = { workspace = true }
@@ -22,6 +23,7 @@ strum = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true }
 tokio = { workspace = true }
+url = { workspace = true }
 
 [build-dependencies]
 shadow-rs = { workspace = true }

@@ -134,27 +134,32 @@ enum Commands {
     /// Manage Monitors
     Monitor {
         #[command(subcommand)]
-        command: Option<MonitorCommands>,
+        command: Option<MonitorCommand>,
     },
     /// Manage Notifications
     Notification {
         #[command(subcommand)]
-        command: Option<NotificationCommands>,
+        command: Option<NotificationCommand>,
     },
     /// Manage Tags
     Tag {
         #[command(subcommand)]
-        command: Option<TagCommands>,
+        command: Option<TagCommand>,
     },
     /// Manage Maintenances
     Maintenance {
         #[command(subcommand)]
-        command: Option<MaintenanceCommands>,
+        command: Option<MaintenanceCommand>,
+    },
+    /// Manage Status Pages
+    StatusPage {
+        #[command(subcommand)]
+        command: Option<StatusPageCommand>,
     },
 }
 
 #[derive(Subcommand, Clone, Debug)]
-enum MonitorCommands {
+enum MonitorCommand {
     /// Add a new Monitor
     Add { file: PathBuf },
     /// Edit a Monitor
@@ -172,7 +177,7 @@ enum MonitorCommands {
 }
 
 #[derive(Subcommand, Clone, Debug)]
-enum TagCommands {
+enum TagCommand {
     /// Add a new Tag
     Add { file: PathBuf },
     /// Edit a Tag
@@ -186,7 +191,7 @@ enum TagCommands {
 }
 
 #[derive(Subcommand, Clone, Debug)]
-enum NotificationCommands {
+enum NotificationCommand {
     /// Add a new Notification
     Add { file: PathBuf },
     /// Edit a Notification
@@ -200,7 +205,7 @@ enum NotificationCommands {
 }
 
 #[derive(Subcommand, Clone, Debug)]
-enum MaintenanceCommands {
+enum MaintenanceCommand {
     /// Add a new Monitor
     Add { file: PathBuf },
     /// Edit a Monitor
@@ -215,6 +220,20 @@ enum MaintenanceCommands {
     Resume { id: i32 },
     /// Stop/Pause a Monitor
     Pause { id: i32 },
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum StatusPageCommand {
+    /// Add a new StatusPage
+    Add { file: PathBuf },
+    /// Edit a StatusPage
+    Edit { file: PathBuf },
+    /// Get a StatusPage
+    Get { slug: String },
+    /// Delete a StatusPage
+    Delete { slug: String },
+    /// Get all StatusPages
+    List {},
 }
 
 trait PrintResult {
@@ -291,45 +310,45 @@ async fn connect(config: &Config, cli: &Cli) -> kuma_client::Client {
         .unwrap_or_die(cli)
 }
 
-async fn monitor_commands(command: &Option<MonitorCommands>, config: &Config, cli: &Cli) {
+async fn monitor_commands(command: &Option<MonitorCommand>, config: &Config, cli: &Cli) {
     match command {
-        Some(MonitorCommands::Add { file }) => connect(config, cli)
+        Some(MonitorCommand::Add { file }) => connect(config, cli)
             .await
             .add_monitor(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::Edit { file }) => connect(config, cli)
+        Some(MonitorCommand::Edit { file }) => connect(config, cli)
             .await
             .edit_monitor(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::Get { id }) => connect(config, cli)
+        Some(MonitorCommand::Get { id }) => connect(config, cli)
             .await
             .get_monitor(*id)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::Delete { id }) => connect(config, cli)
+        Some(MonitorCommand::Delete { id }) => connect(config, cli)
             .await
             .delete_monitor(*id)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::List {}) => connect(config, cli)
+        Some(MonitorCommand::List {}) => connect(config, cli)
             .await
             .get_monitors()
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::Resume { id }) => connect(config, cli)
+        Some(MonitorCommand::Resume { id }) => connect(config, cli)
             .await
             .resume_monitor(*id)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::Pause { id }) => connect(config, cli)
+        Some(MonitorCommand::Pause { id }) => connect(config, cli)
             .await
             .pause_monitor(*id)
             .await
@@ -339,33 +358,33 @@ async fn monitor_commands(command: &Option<MonitorCommands>, config: &Config, cl
     }
 }
 
-async fn notification_commands(command: &Option<NotificationCommands>, config: &Config, cli: &Cli) {
+async fn notification_commands(command: &Option<NotificationCommand>, config: &Config, cli: &Cli) {
     match command {
-        Some(NotificationCommands::Add { file }) => connect(config, cli)
+        Some(NotificationCommand::Add { file }) => connect(config, cli)
             .await
             .add_notification(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(NotificationCommands::Edit { file }) => connect(config, cli)
+        Some(NotificationCommand::Edit { file }) => connect(config, cli)
             .await
             .edit_notification(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(NotificationCommands::Get { id }) => connect(config, cli)
+        Some(NotificationCommand::Get { id }) => connect(config, cli)
             .await
             .get_notification(*id)
             .await
             .print_result(cli),
 
-        Some(NotificationCommands::Delete { id }) => connect(config, cli)
+        Some(NotificationCommand::Delete { id }) => connect(config, cli)
             .await
             .delete_notification(*id)
             .await
             .print_result(cli),
 
-        Some(NotificationCommands::List {}) => connect(config, cli)
+        Some(NotificationCommand::List {}) => connect(config, cli)
             .await
             .get_notifications()
             .await
@@ -375,33 +394,33 @@ async fn notification_commands(command: &Option<NotificationCommands>, config: &
     }
 }
 
-async fn tag_commands(command: &Option<TagCommands>, config: &Config, cli: &Cli) {
+async fn tag_commands(command: &Option<TagCommand>, config: &Config, cli: &Cli) {
     match command {
-        Some(TagCommands::Add { file }) => connect(config, cli)
+        Some(TagCommand::Add { file }) => connect(config, cli)
             .await
             .add_tag(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(TagCommands::Edit { file }) => connect(config, cli)
+        Some(TagCommand::Edit { file }) => connect(config, cli)
             .await
             .edit_tag(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(TagCommands::Get { id }) => connect(config, cli)
+        Some(TagCommand::Get { id }) => connect(config, cli)
             .await
             .get_tag(*id)
             .await
             .print_result(cli),
 
-        Some(TagCommands::Delete { id }) => connect(config, cli)
+        Some(TagCommand::Delete { id }) => connect(config, cli)
             .await
             .delete_tag(*id)
             .await
             .print_result(cli),
 
-        Some(TagCommands::List {}) => connect(config, cli)
+        Some(TagCommand::List {}) => connect(config, cli)
             .await
             .get_tags()
             .await
@@ -411,47 +430,83 @@ async fn tag_commands(command: &Option<TagCommands>, config: &Config, cli: &Cli)
     }
 }
 
-async fn maintenance_commands(command: &Option<MaintenanceCommands>, config: &Config, cli: &Cli) {
+async fn maintenance_commands(command: &Option<MaintenanceCommand>, config: &Config, cli: &Cli) {
     match command {
-        Some(MaintenanceCommands::Add { file }) => connect(config, cli)
+        Some(MaintenanceCommand::Add { file }) => connect(config, cli)
             .await
             .add_maintenance(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(MaintenanceCommands::Edit { file }) => connect(config, cli)
+        Some(MaintenanceCommand::Edit { file }) => connect(config, cli)
             .await
             .edit_maintenance(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(MaintenanceCommands::Get { id }) => connect(config, cli)
+        Some(MaintenanceCommand::Get { id }) => connect(config, cli)
             .await
             .get_maintenance(*id)
             .await
             .print_result(cli),
 
-        Some(MaintenanceCommands::Delete { id }) => connect(config, cli)
+        Some(MaintenanceCommand::Delete { id }) => connect(config, cli)
             .await
             .delete_maintenance(*id)
             .await
             .print_result(cli),
 
-        Some(MaintenanceCommands::List {}) => connect(config, cli)
+        Some(MaintenanceCommand::List {}) => connect(config, cli)
             .await
             .get_maintenances()
             .await
             .print_result(cli),
 
-        Some(MaintenanceCommands::Resume { id }) => connect(config, cli)
+        Some(MaintenanceCommand::Resume { id }) => connect(config, cli)
             .await
             .resume_maintenance(*id)
             .await
             .print_result(cli),
 
-        Some(MaintenanceCommands::Pause { id }) => connect(config, cli)
+        Some(MaintenanceCommand::Pause { id }) => connect(config, cli)
             .await
             .pause_maintenance(*id)
+            .await
+            .print_result(cli),
+
+        None => {}
+    }
+}
+
+async fn status_page_commands(command: &Option<StatusPageCommand>, config: &Config, cli: &Cli) {
+    match command {
+        Some(StatusPageCommand::Add { file }) => connect(config, cli)
+            .await
+            .add_status_page(load_file(file, cli).await)
+            .await
+            .print_result(cli),
+
+        Some(StatusPageCommand::Edit { file }) => connect(config, cli)
+            .await
+            .edit_status_page(load_file(file, cli).await)
+            .await
+            .print_result(cli),
+
+        Some(StatusPageCommand::Get { slug }) => connect(config, cli)
+            .await
+            .get_status_page(slug)
+            .await
+            .print_result(cli),
+
+        Some(StatusPageCommand::Delete { slug }) => connect(config, cli)
+            .await
+            .delete_status_page(slug)
+            .await
+            .print_result(cli),
+
+        Some(StatusPageCommand::List {}) => connect(config, cli)
+            .await
+            .get_status_pages()
             .await
             .print_result(cli),
 
@@ -477,6 +532,9 @@ async fn main() {
         Some(Commands::Tag { command }) => tag_commands(command, &config, &cli).await,
         Some(Commands::Maintenance { command }) => {
             maintenance_commands(command, &config, &cli).await
+        }
+        Some(Commands::StatusPage { command }) => {
+            status_page_commands(command, &config, &cli).await
         }
         None => {}
     };

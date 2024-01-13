@@ -2,6 +2,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("Invalid url: {0}")]
+    InvalidUrl(String),
+
     #[error("Timeout while trying to connect to Uptime Kuma server")]
     ConnectionTimeout,
 
@@ -40,6 +43,12 @@ pub enum Error {
 
     #[error("No {0} with id {1} could be found")]
     IdNotFound(String, i32),
+
+    #[error("No {0} with slug {1} could be found")]
+    SlugNotFound(String, String),
+
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

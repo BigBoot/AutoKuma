@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_alias::serde_alias;
 use serde_inline_default::serde_inline_default;
 use serde_with::{formats::CommaSeparator, serde_as, PickFirst, StringWithSeparator};
+use url::Url;
 
 #[serde_alias(ScreamingSnakeCase)]
 #[serde_inline_default]
@@ -10,7 +11,7 @@ use serde_with::{formats::CommaSeparator, serde_as, PickFirst, StringWithSeparat
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     /// The URL for connecting to Uptime Kuma.
-    pub url: String,
+    pub url: Url,
 
     /// The username for logging into Uptime Kuma (required unless auth is disabled).                      .
     pub username: Option<String>,

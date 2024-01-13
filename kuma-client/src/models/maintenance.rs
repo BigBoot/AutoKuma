@@ -1,5 +1,3 @@
-use std::{collections::HashMap, fmt};
-
 use crate::deserialize::{
     DeserializeBoolLenient, DeserializeNumberLenient, SerializeDateRange, SerializeTimeRange,
 };
@@ -12,6 +10,7 @@ use serde_inline_default::serde_inline_default;
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::{serde_as, skip_serializing_none};
+use std::{collections::HashMap, fmt};
 use time::{PrimitiveDateTime, Time};
 
 include!(concat!(env!("OUT_DIR"), "/timezones.rs"));

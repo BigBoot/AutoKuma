@@ -1054,6 +1054,7 @@ dependencies = [
  "futures-util",
  "itertools",
  "log",
+ "reqwest",
  "rust_socketio",
  "serde",
  "serde-inline-default",
@@ -1067,6 +1068,7 @@ dependencies = [
  "thiserror",
  "time",
  "tokio",
+ "url",
 ]
 
 [[package]]
@@ -2362,6 +2364,7 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]

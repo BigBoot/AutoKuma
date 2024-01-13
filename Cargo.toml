@@ -19,6 +19,7 @@ humantime-serde = { version = "1.1.1" }
 itertools = { version = "0.12.0" }
 log = { version = "0.4.20" }
 pretty_env_logger = { version = "0.5.0" }
+reqwest = { version = "0.11.23", features = ["json"] }
 rust_socketio = { git = "https://github.com/1c3t3a/rust-socketio.git", rev = "9ccf67b", features = [
     "async",
 ] }
@@ -36,3 +37,4 @@ thiserror = { version = "1.0.56" }
 time = { version = "0.3.31", features = ["serde"] }
 tokio = { version = "1.35.1", features = ["full"] }
 toml = { version = "0.8.8" }
+url = { version = "*", features = ["serde"] }

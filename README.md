@@ -169,12 +169,12 @@ Kuma CLI is a Command-Line Interface (CLI) tool for managing and interacting wit
     - [x] `get`
     - [x] `pause`
     - [x] `resume`
-- [ ] Commands : `kuma status`
-    - [ ] `add`
-    - [ ] `delete`
-    - [ ] `edit`
-    - [ ] `ls`
-    - [ ] `get`
+- [x] Commands : `kuma status-page`
+    - [x] `add`
+    - [x] `delete`
+    - [x] `edit`
+    - [x] `ls`
+    - [x] `get`
 
 ## 🔧 How to Install
 
@@ -226,7 +226,7 @@ Options:
 
 All configuration options can also be specified as environment variables:
 ```
-KUMA__URL="http://localhost:3001/socket.io/"
+KUMA__URL="http://localhost:3001/"
 KUMA__USERNAME="<username>"
 KUMA__PASSWORD="<password>"
 ...
@@ -241,7 +241,7 @@ Additionally Kuma CLI will read configuration from a file named `kuma.{toml,yaml
 
 An example `.toml` config could look like the following:
 ```toml
-url = "http://localhost:3001/socket.io/"
+url = "http://localhost:3001/"
 username = "<username>"
 password = "<password>"
 ```

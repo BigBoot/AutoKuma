@@ -4,11 +4,12 @@ use super::{
 };
 use crate::{
     maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage},
-    Notification, NotificationList,
+    Notification, NotificationList, PublicGroupList, StatusPage, StatusPageList,
 };
 use futures_util::FutureExt;
 use itertools::Itertools;
 use log::{debug, trace, warn};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use rust_socketio::{
     asynchronous::{Client as SocketIO, ClientBuilder},
     Event as SocketIOEvent, Payload,
@@ -22,6 +23,7 @@ struct Ready {
     pub monitor_list: bool,
     pub notification_list: bool,
     pub maintenance_list: bool,
+    pub status_page_list: bool,
 }
 
 impl Ready {
@@ -30,6 +32,7 @@ impl Ready {
             monitor_list: false,
             notification_list: false,
             maintenance_list: false,
+            status_page_list: false,
         }
     }
 
@@ -38,7 +41,10 @@ impl Ready {
     }
 
     pub fn is_ready(&self) -> bool {
-        self.monitor_list && self.notification_list
+        self.monitor_list
+            && self.notification_list
+            && self.maintenance_list
+            && self.status_page_list
     }
 }
 
@@ -48,22 +54,45 @@ struct Worker {
     monitors: Arc<Mutex<MonitorList>>,
     notifications: Arc<Mutex<NotificationList>>,
     maintenances: Arc<Mutex<MaintenanceList>>,
+    status_pages: Arc<Mutex<StatusPageList>>,
     is_connected: Arc<Mutex<bool>>,
     is_ready: Arc<Mutex<Ready>>,
     is_logged_in: Arc<Mutex<bool>>,
+    reqwest: Arc<Mutex<reqwest::Client>>,
 }
 
 impl Worker {
     fn new(config: Config) -> Arc<Self> {
         Arc::new(Worker {
-            config: Arc::new(config),
+            config: Arc::new(config.clone()),
             socket_io: Arc::new(Mutex::new(None)),
             monitors: Default::default(),
             notifications: Default::default(),
             maintenances: Default::default(),
+            status_pages: Default::default(),
             is_connected: Arc::new(Mutex::new(false)),
             is_ready: Arc::new(Mutex::new(Ready::new())),
             is_logged_in: Arc::new(Mutex::new(false)),
+            reqwest: Arc::new(Mutex::new(
+                reqwest::Client::builder()
+                    .default_headers(HeaderMap::from_iter(
+                        config
+                            .headers
+                            .iter()
+                            .filter_map(|header| header.split_once("="))
+                            .filter_map(|(key, value)| {
+                                match (
+                                    HeaderName::from_bytes(key.as_bytes()),
+                                    HeaderValue::from_bytes(value.as_bytes()),
+                                ) {
+                                    (Ok(key), Ok(value)) => Some((key, value)),
+                                    _ => None,
+                                }
+                            }),
+                    ))
+                    .build()
+                    .unwrap(),
+            )),
         })
     }
 
@@ -90,6 +119,13 @@ impl Worker {
     ) -> Result<()> {
         *self.maintenances.lock().await = maintenance_list;
         self.is_ready.lock().await.maintenance_list = true;
+
+        Ok(())
+    }
+
+    async fn on_status_page_list(self: &Arc<Self>, status_page_list: StatusPageList) -> Result<()> {
+        *self.status_pages.lock().await = status_page_list;
+        self.is_ready.lock().await.status_page_list = true;
 
         Ok(())
     }
@@ -126,6 +162,10 @@ impl Worker {
             }
             Event::MaintenanceList => {
                 self.on_maintenance_list(serde_json::from_value(payload).unwrap())
+                    .await?
+            }
+            Event::StatusPageList => {
+                self.on_status_page_list(serde_json::from_value(payload).unwrap())
                     .await?
             }
             Event::Info => self.on_info().await?,
@@ -786,13 +826,119 @@ impl Worker {
         Ok(())
     }
 
+    async fn get_public_group_list(self: &Arc<Self>, slug: &str) -> Result<PublicGroupList> {
+        let response: Value = self
+            .reqwest
+            .lock()
+            .await
+            .get(
+                self.config
+                    .url
+                    .join(&format!("/api/status-page/{}", slug))
+                    .map_err(|e| Error::InvalidUrl(e.to_string()))?,
+            )
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        let monitor_list = response
+            .clone()
+            .pointer("/publicGroupList")
+            .ok_or_else(|| {
+                Error::InvalidResponse(vec![response.clone()], "/publicGroupList".to_owned())
+            })?
+            .clone();
+
+        Ok(serde_json::from_value(monitor_list)
+            .log_warn(|e| e.to_string())
+            .map_err(|_| Error::UnsupportedResponse)?)
+    }
+
+    pub async fn delete_status_page(self: &Arc<Self>, slug: &str) -> Result<()> {
+        let _: bool = self
+            .call("deleteStatusPage", vec![json!(slug)], "/ok", true)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn add_status_page(self: &Arc<Self>, status_page: &mut StatusPage) -> Result<()> {
+        let ok: bool = self
+            .call(
+                "addStatusPage",
+                vec![
+                    serde_json::to_value(status_page.title.clone()).unwrap(),
+                    serde_json::to_value(status_page.slug.clone()).unwrap(),
+                ],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        if !ok {
+            return Err(Error::ServerError("Unable to add status page".to_owned()));
+        }
+
+        self.edit_status_page(status_page).await?;
+
+        Ok(())
+    }
+
+    pub async fn get_status_page(self: &Arc<Self>, slug: &str) -> Result<StatusPage> {
+        let mut status_page: StatusPage = self
+            .call(
+                "getStatusPage",
+                vec![serde_json::to_value(slug).unwrap()],
+                "/config",
+                true,
+            )
+            .await
+            .map_err(|e| match e {
+                Error::ServerError(msg) if msg.contains("Cannot read properties of null") => {
+                    Error::SlugNotFound("StatusPage".to_owned(), slug.to_owned())
+                }
+                _ => e,
+            })?;
+
+        status_page.public_group_list = Some(
+            self.get_public_group_list(&status_page.slug.clone().unwrap_or_default())
+                .await?,
+        );
+
+        Ok(status_page)
+    }
+
+    pub async fn edit_status_page(self: &Arc<Self>, status_page: &mut StatusPage) -> Result<()> {
+        let _: bool = self
+            .call(
+                "saveStatusPage",
+                vec![
+                    serde_json::to_value(status_page.slug.clone()).unwrap(),
+                    serde_json::to_value(status_page.clone()).unwrap(),
+                    serde_json::to_value(status_page.icon.clone()).unwrap(),
+                    serde_json::to_value(status_page.public_group_list.clone()).unwrap(),
+                ],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn connect(self: &Arc<Self>) -> Result<()> {
         self.is_ready.lock().await.reset();
         *self.is_logged_in.lock().await = false;
         *self.socket_io.lock().await = None;
 
-        let mut builder = ClientBuilder::new(self.config.url.clone())
-            .transport_type(rust_socketio::TransportType::Websocket);
+        let mut builder = ClientBuilder::new(
+            self.config
+                .url
+                .join("/socket.io/")
+                .map_err(|e| Error::InvalidUrl(e.to_string()))?,
+        )
+        .transport_type(rust_socketio::TransportType::Websocket);
 
         for (key, value) in self
             .config
@@ -1026,6 +1172,31 @@ impl Client {
 
     pub async fn resume_maintenance(&self, maintenance_id: i32) -> Result<()> {
         self.worker.resume_maintenance(maintenance_id).await
+    }
+
+    pub async fn get_status_pages(&self) -> Result<StatusPageList> {
+        match self.worker.is_ready().await {
+            true => Ok(self.worker.status_pages.lock().await.clone()),
+            false => Err(Error::NotReady),
+        }
+    }
+
+    pub async fn get_status_page(&self, slug: &str) -> Result<StatusPage> {
+        self.worker.get_status_page(slug).await
+    }
+
+    pub async fn add_status_page(&self, mut status_page: StatusPage) -> Result<StatusPage> {
+        self.worker.add_status_page(&mut status_page).await?;
+        Ok(status_page)
+    }
+
+    pub async fn edit_status_page(&self, mut status_page: StatusPage) -> Result<StatusPage> {
+        self.worker.edit_status_page(&mut status_page).await?;
+        Ok(status_page)
+    }
+
+    pub async fn delete_status_page(&self, slug: &str) -> Result<()> {
+        self.worker.delete_status_page(slug).await
     }
 
     pub async fn disconnect(&self) -> Result<()> {
