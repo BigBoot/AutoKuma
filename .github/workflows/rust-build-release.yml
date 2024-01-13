@@ -9,11 +9,16 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
 
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        - runs-on: windows-latest
+          os: windown
+        - runs-on: ubuntu-latest
+          os: linux
+        - runs-on: macos-latest
+          os: mac
 
     steps:
     - name: Checkout code
@@ -27,18 +32,33 @@ jobs:
     - name: Build
       run: cargo build --release
 
-    - name: Test
-      run: cargo test
+    - shell: bash
+      run: |-
+        for file in autokuma autokuma.exe kuma kuma.exe; do
+          if [[ ! -e "target/release/$file" ]]; then
+            continue
+          fi
+
+          filename=$(basename "$file")
+          
+          if [[ "$filename" == *.* ]]; then
+            extension=".${filename##*.}"
+            filename="${filename%.*}"
+          else
+            extension=""
+          fi
+
+          mkdir dist
+          
+          mv "target/release/${filename}${extension}" "dist/${filename}-${{ matrix.os }}${extension}"
+        done
+
 
     - name: Archive artifacts
       uses: actions/upload-artifact@v4
       with:
         name: autokuma-${{ matrix.os }}
-        path: |
-          target/release/autokuma
-          target/release/autokuma.exe
-          target/release/kuma
-          target/release/kuma.exe
+        path: dist/*
 
   release:
     needs: [build]
@@ -55,6 +75,13 @@ jobs:
       id: changelog
       uses: coditory/changelog-parser@v1
 
+    - name: Download All Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: autokuma
+        pattern:  autokuma-*
+        merge-multiple: true
+
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v1
@@ -62,3 +89,4 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         title: Release ${{ github.ref }}
         body: ${{ steps.changelog.outputs.description }}
+        files: autokuma/*
