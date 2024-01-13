@@ -13,12 +13,13 @@ jobs:
 
     strategy:
       matrix:
-        - runs-on: windows-latest
-          os: windown
-        - runs-on: ubuntu-latest
-          os: linux
-        - runs-on: macos-latest
-          os: mac
+        include:
+          - runs-on: windows-latest
+            os: windows
+          - runs-on: ubuntu-latest
+            os: linux
+          - runs-on: macos-latest
+            os: mac
 
     steps:
     - name: Checkout code
