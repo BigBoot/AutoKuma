@@ -26,7 +26,7 @@ AutoKuma is a utility that automates the creation of Uptime Kuma monitors based 
 
 ## 🔧 How to Install
 
-The AutoKuma Docker container is available on [GitHub Container Registry (GHCR)](https://github.com/BigBoot/AutoKuma/pkgs/container/autokuma). To install, simply pull the container using:
+Binaries for windows linux and mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest), additionally AutoKuma is available as a Docker container on [GitHub Container Registry (GHCR)](https://github.com/BigBoot/AutoKuma/pkgs/container/autokuma). To install, simply pull the container using:
 
 ```bash
 docker pull ghcr.io/bigboot/autokuma:latest
@@ -178,7 +178,7 @@ Kuma CLI is a Command-Line Interface (CLI) tool for managing and interacting wit
 
 ## 🔧 How to Install
 
-There are currently no prebuilt binaries available, however Kuma CLI can be installed using `cargo`
+Binaries for windows linux and mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest), additionally Kuma CLI can be installed using `cargo`:
 
 ```bash
 cargo install --git https://github.com/BigBoot/AutoKuma.git kuma-cli

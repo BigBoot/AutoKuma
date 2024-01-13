@@ -23,9 +23,9 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
-
-    - run: git fetch --prune --unshallow --tags
+      uses: actions/checkout@v4
+      with: 
+        fetch-tags: true
 
     - name: Cache
       uses: actions/cache@v3
@@ -78,9 +78,9 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
-
-    - run: git fetch --prune --unshallow --tags
+      uses: actions/checkout@v4
+      with: 
+        fetch-tags: true
 
     - name: Parse Changelog
       id: changelog

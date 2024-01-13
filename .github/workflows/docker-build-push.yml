@@ -12,9 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+      - uses: actions/checkout@v4
 
       - run: git fetch --prune --unshallow --tag
 
