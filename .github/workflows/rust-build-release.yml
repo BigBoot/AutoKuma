@@ -27,6 +27,17 @@ jobs:
 
     - run: git fetch --prune --unshallow --tags
 
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ matrix.runs-on }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
 
