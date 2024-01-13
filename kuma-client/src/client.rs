@@ -2,7 +2,10 @@ use super::{
     util::ResultLogger, Config, Error, Event, LoginResponse, Monitor, MonitorList, MonitorType,
     Result, Tag, TagDefinition,
 };
-use crate::{Notification, NotificationList};
+use crate::{
+    maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage},
+    Notification, NotificationList,
+};
 use futures_util::FutureExt;
 use itertools::Itertools;
 use log::{debug, trace, warn};
@@ -18,6 +21,7 @@ use tokio::{runtime::Handle, sync::Mutex};
 struct Ready {
     pub monitor_list: bool,
     pub notification_list: bool,
+    pub maintenance_list: bool,
 }
 
 impl Ready {
@@ -25,6 +29,7 @@ impl Ready {
         Self {
             monitor_list: false,
             notification_list: false,
+            maintenance_list: false,
         }
     }
 
@@ -42,6 +47,7 @@ struct Worker {
     socket_io: Arc<Mutex<Option<SocketIO>>>,
     monitors: Arc<Mutex<MonitorList>>,
     notifications: Arc<Mutex<NotificationList>>,
+    maintenances: Arc<Mutex<MaintenanceList>>,
     is_connected: Arc<Mutex<bool>>,
     is_ready: Arc<Mutex<Ready>>,
     is_logged_in: Arc<Mutex<bool>>,
@@ -54,6 +60,7 @@ impl Worker {
             socket_io: Arc::new(Mutex::new(None)),
             monitors: Default::default(),
             notifications: Default::default(),
+            maintenances: Default::default(),
             is_connected: Arc::new(Mutex::new(false)),
             is_ready: Arc::new(Mutex::new(Ready::new())),
             is_logged_in: Arc::new(Mutex::new(false)),
@@ -73,6 +80,16 @@ impl Worker {
     ) -> Result<()> {
         *self.notifications.lock().await = notification_list;
         self.is_ready.lock().await.notification_list = true;
+
+        Ok(())
+    }
+
+    async fn on_maintenance_list(
+        self: &Arc<Self>,
+        maintenance_list: MaintenanceList,
+    ) -> Result<()> {
+        *self.maintenances.lock().await = maintenance_list;
+        self.is_ready.lock().await.maintenance_list = true;
 
         Ok(())
     }
@@ -105,6 +122,10 @@ impl Worker {
             }
             Event::NotificationList => {
                 self.on_notification_list(serde_json::from_value(payload).unwrap())
+                    .await?
+            }
+            Event::MaintenanceList => {
+                self.on_maintenance_list(serde_json::from_value(payload).unwrap())
                     .await?
             }
             Event::Info => self.on_info().await?,
@@ -568,6 +589,203 @@ impl Worker {
         Ok(())
     }
 
+    pub async fn pause_monitor(self: &Arc<Self>, monitor_id: i32) -> Result<()> {
+        let _: bool = self
+            .call(
+                "pauseMonitor",
+                vec![serde_json::to_value(monitor_id).unwrap()],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn resume_monitor(self: &Arc<Self>, monitor_id: i32) -> Result<()> {
+        let _: bool = self
+            .call(
+                "resumeMonitor",
+                vec![serde_json::to_value(monitor_id).unwrap()],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn get_maintenance_monitors(
+        self: &Arc<Self>,
+        maintenance_id: i32,
+    ) -> Result<Vec<MaintenanceMonitor>> {
+        self.call(
+            "getMonitorMaintenance",
+            vec![serde_json::to_value(maintenance_id).unwrap()],
+            "/monitors",
+            true,
+        )
+        .await
+    }
+
+    async fn set_maintenance_monitors(
+        self: &Arc<Self>,
+        maintenance_id: i32,
+        monitors: &Vec<MaintenanceMonitor>,
+    ) -> Result<()> {
+        let _: bool = self
+            .call(
+                "addMonitorMaintenance",
+                vec![
+                    serde_json::to_value(maintenance_id).unwrap(),
+                    serde_json::to_value(monitors).unwrap(),
+                ],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn get_maintenance_status_pages(
+        self: &Arc<Self>,
+        maintenance_id: i32,
+    ) -> Result<Vec<MaintenanceStatusPage>> {
+        self.call(
+            "getMaintenanceStatusPage",
+            vec![serde_json::to_value(maintenance_id).unwrap()],
+            "/statusPages",
+            true,
+        )
+        .await
+    }
+
+    async fn set_maintenance_status_pages(
+        self: &Arc<Self>,
+        maintenance_id: i32,
+        status_pages: &Vec<MaintenanceStatusPage>,
+    ) -> Result<()> {
+        let _: bool = self
+            .call(
+                "addMaintenanceStatusPage",
+                vec![
+                    serde_json::to_value(maintenance_id).unwrap(),
+                    serde_json::to_value(status_pages).unwrap(),
+                ],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_maintenance(self: &Arc<Self>, maintenance_id: i32) -> Result<()> {
+        let _: bool = self
+            .call(
+                "deleteMaintenance",
+                vec![json!(maintenance_id)],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn add_maintenance(self: &Arc<Self>, maintenance: &mut Maintenance) -> Result<()> {
+        let id = self
+            .call(
+                "addMaintenance",
+                vec![serde_json::to_value(maintenance.clone()).unwrap()],
+                "/maintenanceID",
+                true,
+            )
+            .await?;
+
+        maintenance.common_mut().id = Some(id);
+        if let Some(monitors) = &maintenance.common().monitors {
+            self.set_maintenance_monitors(id, monitors).await?;
+        }
+        if let Some(status_pages) = &maintenance.common().status_pages {
+            self.set_maintenance_status_pages(id, status_pages).await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_maintenance(self: &Arc<Self>, maintenance_id: i32) -> Result<Maintenance> {
+        let mut maintenance: Maintenance = self
+            .call(
+                "getMaintenance",
+                vec![serde_json::to_value(maintenance_id.clone()).unwrap()],
+                "/maintenance",
+                true,
+            )
+            .await
+            .map_err(|e| match e {
+                Error::ServerError(msg) if msg.contains("Cannot read properties of null") => {
+                    Error::IdNotFound("Maintenance".to_owned(), maintenance_id)
+                }
+                _ => e,
+            })?;
+
+        maintenance.common_mut().monitors =
+            Some(self.get_maintenance_monitors(maintenance_id).await?);
+        maintenance.common_mut().status_pages =
+            Some(self.get_maintenance_status_pages(maintenance_id).await?);
+
+        Ok(maintenance)
+    }
+
+    pub async fn edit_maintenance(self: &Arc<Self>, maintenance: &mut Maintenance) -> Result<()> {
+        let id = self
+            .call(
+                "addMaintenance",
+                vec![serde_json::to_value(maintenance.clone()).unwrap()],
+                "/maintenanceID",
+                true,
+            )
+            .await?;
+
+        maintenance.common_mut().id = Some(id);
+        if let Some(monitors) = &maintenance.common().monitors {
+            self.set_maintenance_monitors(id, monitors).await?;
+        }
+        if let Some(status_pages) = &maintenance.common().status_pages {
+            self.set_maintenance_status_pages(id, status_pages).await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn pause_maintenance(self: &Arc<Self>, maintenance_id: i32) -> Result<()> {
+        let _: bool = self
+            .call(
+                "pauseMaintenance",
+                vec![serde_json::to_value(maintenance_id).unwrap()],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn resume_maintenance(self: &Arc<Self>, maintenance_id: i32) -> Result<()> {
+        let _: bool = self
+            .call(
+                "resumeMaintenance",
+                vec![serde_json::to_value(maintenance_id).unwrap()],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn connect(self: &Arc<Self>) -> Result<()> {
         self.is_ready.lock().await.reset();
         *self.is_logged_in.lock().await = false;
@@ -713,6 +931,14 @@ impl Client {
         self.worker.delete_monitor(monitor_id).await
     }
 
+    pub async fn pause_monitor(&self, monitor_id: i32) -> Result<()> {
+        self.worker.pause_monitor(monitor_id).await
+    }
+
+    pub async fn resume_monitor(&self, monitor_id: i32) -> Result<()> {
+        self.worker.resume_monitor(monitor_id).await
+    }
+
     pub async fn get_tags(&self) -> Result<Vec<TagDefinition>> {
         self.worker.get_tags().await
     }
@@ -767,6 +993,39 @@ impl Client {
 
     pub async fn delete_notification(&self, notification_id: i32) -> Result<()> {
         self.worker.delete_notification(notification_id).await
+    }
+
+    pub async fn get_maintenances(&self) -> Result<MaintenanceList> {
+        match self.worker.is_ready().await {
+            true => Ok(self.worker.maintenances.lock().await.clone()),
+            false => Err(Error::NotReady),
+        }
+    }
+
+    pub async fn get_maintenance(&self, maintenance_id: i32) -> Result<Maintenance> {
+        self.worker.get_maintenance(maintenance_id).await
+    }
+
+    pub async fn add_maintenance(&self, mut maintenance: Maintenance) -> Result<Maintenance> {
+        self.worker.add_maintenance(&mut maintenance).await?;
+        Ok(maintenance)
+    }
+
+    pub async fn edit_maintenance(&self, mut maintenance: Maintenance) -> Result<Maintenance> {
+        self.worker.edit_maintenance(&mut maintenance).await?;
+        Ok(maintenance)
+    }
+
+    pub async fn delete_maintenance(&self, maintenance_id: i32) -> Result<()> {
+        self.worker.delete_maintenance(maintenance_id).await
+    }
+
+    pub async fn pause_maintenance(&self, maintenance_id: i32) -> Result<()> {
+        self.worker.pause_maintenance(maintenance_id).await
+    }
+
+    pub async fn resume_maintenance(&self, maintenance_id: i32) -> Result<()> {
+        self.worker.resume_maintenance(maintenance_id).await
     }
 
     pub async fn disconnect(&self) -> Result<()> {

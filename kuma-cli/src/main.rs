@@ -146,6 +146,11 @@ enum Commands {
         #[command(subcommand)]
         command: Option<TagCommands>,
     },
+    /// Manage Maintenances
+    Maintenance {
+        #[command(subcommand)]
+        command: Option<MaintenanceCommands>,
+    },
 }
 
 #[derive(Subcommand, Clone, Debug)]
@@ -158,8 +163,12 @@ enum MonitorCommands {
     Get { id: i32 },
     /// Delete a Monitor
     Delete { id: i32 },
-    /// Get all Monitor
+    /// Get all Monitors
     List {},
+    /// Start/Resume a Monitor
+    Resume { id: i32 },
+    /// Stop/Pause a Monitor
+    Pause { id: i32 },
 }
 
 #[derive(Subcommand, Clone, Debug)]
@@ -188,6 +197,24 @@ enum NotificationCommands {
     Delete { id: i32 },
     /// Get all Notifications
     List {},
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum MaintenanceCommands {
+    /// Add a new Monitor
+    Add { file: PathBuf },
+    /// Edit a Monitor
+    Edit { file: PathBuf },
+    /// Get a Monitor
+    Get { id: i32 },
+    /// Delete a Monitor
+    Delete { id: i32 },
+    /// Get all Monitors
+    List {},
+    /// Start/Resume a Monitor
+    Resume { id: i32 },
+    /// Stop/Pause a Monitor
+    Pause { id: i32 },
 }
 
 trait PrintResult {
@@ -258,40 +285,53 @@ where
     .unwrap_or_die(cli)
 }
 
+async fn connect(config: &Config, cli: &Cli) -> kuma_client::Client {
+    kuma_client::Client::connect(config.clone())
+        .await
+        .unwrap_or_die(cli)
+}
+
 async fn monitor_commands(command: &Option<MonitorCommands>, config: &Config, cli: &Cli) {
     match command {
-        Some(MonitorCommands::Add { file }) => kuma_client::Client::connect(config.clone())
+        Some(MonitorCommands::Add { file }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .add_monitor(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::Edit { file }) => kuma_client::Client::connect(config.clone())
+        Some(MonitorCommands::Edit { file }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .edit_monitor(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::Get { id }) => kuma_client::Client::connect(config.clone())
+        Some(MonitorCommands::Get { id }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .get_monitor(*id)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::Delete { id }) => kuma_client::Client::connect(config.clone())
+        Some(MonitorCommands::Delete { id }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .delete_monitor(*id)
             .await
             .print_result(cli),
 
-        Some(MonitorCommands::List {}) => kuma_client::Client::connect(config.clone())
+        Some(MonitorCommands::List {}) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .get_monitors()
+            .await
+            .print_result(cli),
+
+        Some(MonitorCommands::Resume { id }) => connect(config, cli)
+            .await
+            .resume_monitor(*id)
+            .await
+            .print_result(cli),
+
+        Some(MonitorCommands::Pause { id }) => connect(config, cli)
+            .await
+            .pause_monitor(*id)
             .await
             .print_result(cli),
 
@@ -301,37 +341,32 @@ async fn monitor_commands(command: &Option<MonitorCommands>, config: &Config, cl
 
 async fn notification_commands(command: &Option<NotificationCommands>, config: &Config, cli: &Cli) {
     match command {
-        Some(NotificationCommands::Add { file }) => kuma_client::Client::connect(config.clone())
+        Some(NotificationCommands::Add { file }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .add_notification(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(NotificationCommands::Edit { file }) => kuma_client::Client::connect(config.clone())
+        Some(NotificationCommands::Edit { file }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .edit_notification(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(NotificationCommands::Get { id }) => kuma_client::Client::connect(config.clone())
+        Some(NotificationCommands::Get { id }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .get_notification(*id)
             .await
             .print_result(cli),
 
-        Some(NotificationCommands::Delete { id }) => kuma_client::Client::connect(config.clone())
+        Some(NotificationCommands::Delete { id }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .delete_notification(*id)
             .await
             .print_result(cli),
 
-        Some(NotificationCommands::List {}) => kuma_client::Client::connect(config.clone())
+        Some(NotificationCommands::List {}) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .get_notifications()
             .await
             .print_result(cli),
@@ -342,38 +377,81 @@ async fn notification_commands(command: &Option<NotificationCommands>, config: &
 
 async fn tag_commands(command: &Option<TagCommands>, config: &Config, cli: &Cli) {
     match command {
-        Some(TagCommands::Add { file }) => kuma_client::Client::connect(config.clone())
+        Some(TagCommands::Add { file }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .add_tag(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(TagCommands::Edit { file }) => kuma_client::Client::connect(config.clone())
+        Some(TagCommands::Edit { file }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .edit_tag(load_file(file, cli).await)
             .await
             .print_result(cli),
 
-        Some(TagCommands::Get { id }) => kuma_client::Client::connect(config.clone())
+        Some(TagCommands::Get { id }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .get_tag(*id)
             .await
             .print_result(cli),
 
-        Some(TagCommands::Delete { id }) => kuma_client::Client::connect(config.clone())
+        Some(TagCommands::Delete { id }) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .delete_tag(*id)
             .await
             .print_result(cli),
 
-        Some(TagCommands::List {}) => kuma_client::Client::connect(config.clone())
+        Some(TagCommands::List {}) => connect(config, cli)
             .await
-            .unwrap_or_die(cli)
             .get_tags()
+            .await
+            .print_result(cli),
+
+        None => {}
+    }
+}
+
+async fn maintenance_commands(command: &Option<MaintenanceCommands>, config: &Config, cli: &Cli) {
+    match command {
+        Some(MaintenanceCommands::Add { file }) => connect(config, cli)
+            .await
+            .add_maintenance(load_file(file, cli).await)
+            .await
+            .print_result(cli),
+
+        Some(MaintenanceCommands::Edit { file }) => connect(config, cli)
+            .await
+            .edit_maintenance(load_file(file, cli).await)
+            .await
+            .print_result(cli),
+
+        Some(MaintenanceCommands::Get { id }) => connect(config, cli)
+            .await
+            .get_maintenance(*id)
+            .await
+            .print_result(cli),
+
+        Some(MaintenanceCommands::Delete { id }) => connect(config, cli)
+            .await
+            .delete_maintenance(*id)
+            .await
+            .print_result(cli),
+
+        Some(MaintenanceCommands::List {}) => connect(config, cli)
+            .await
+            .get_maintenances()
+            .await
+            .print_result(cli),
+
+        Some(MaintenanceCommands::Resume { id }) => connect(config, cli)
+            .await
+            .resume_maintenance(*id)
+            .await
+            .print_result(cli),
+
+        Some(MaintenanceCommands::Pause { id }) => connect(config, cli)
+            .await
+            .pause_maintenance(*id)
             .await
             .print_result(cli),
 
@@ -397,6 +475,9 @@ async fn main() {
             notification_commands(command, &config, &cli).await
         }
         Some(Commands::Tag { command }) => tag_commands(command, &config, &cli).await,
+        Some(Commands::Maintenance { command }) => {
+            maintenance_commands(command, &config, &cli).await
+        }
         None => {}
     };
 }

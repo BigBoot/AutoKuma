@@ -1,10 +1,13 @@
+use crate::maintenance::Range;
 use serde::{
     de::{DeserializeOwned, IntoDeserializer},
+    ser::SerializeSeq,
     Deserialize, Deserializer, Serialize,
 };
 use serde_json::Value;
 use serde_with::{DeserializeAs, SerializeAs};
 use std::{collections::HashMap, hash::Hash, marker::PhantomData, str::FromStr};
+use time::{format_description::well_known::Iso8601, PrimitiveDateTime, Time};
 
 pub struct DeserializeNumberLenient;
 
@@ -70,6 +73,12 @@ impl<'de> DeserializeAs<'de, bool> for DeserializeBoolLenient {
                     std::any::type_name::<bool>()
                 ))
             }),
+            Value::Number(n) => match (n.as_f64(), n.as_i64(), n.as_u64()) {
+                (Some(n), _, _) => Ok(n != 0.0),
+                (_, Some(n), _) => Ok(n != 0),
+                (_, _, Some(n)) => Ok(n != 0),
+                _ => unreachable!(),
+            },
             _ => Err(serde::de::Error::custom(
                 "Unexpected type for deserialization",
             )),
@@ -200,5 +209,128 @@ where
         S: serde::Serializer,
     {
         source.serialize(serializer)
+    }
+}
+
+pub struct SerializeDateTime;
+
+impl<'de> DeserializeAs<'de, PrimitiveDateTime> for DeserializeBoolLenient {
+    fn deserialize_as<D>(deserializer: D) -> Result<PrimitiveDateTime, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        PrimitiveDateTime::parse(&String::deserialize(deserializer)?, &Iso8601::DATE_TIME)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+impl SerializeAs<PrimitiveDateTime> for SerializeDateTime {
+    fn serialize_as<S>(source: &PrimitiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        source
+            .format(&Iso8601::DATE_TIME)
+            .map_err(serde::ser::Error::custom)?
+            .serialize(serializer)
+    }
+}
+pub struct SerializeDateRange;
+
+impl<'de> DeserializeAs<'de, Range<PrimitiveDateTime>> for SerializeDateRange {
+    fn deserialize_as<D>(deserializer: D) -> Result<Range<PrimitiveDateTime>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = Vec::<String>::deserialize(deserializer)
+            .map_err(serde::de::Error::custom)?
+            .into_iter()
+            .map(|s| PrimitiveDateTime::parse(&s, &Iso8601::DATE_TIME))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(serde::de::Error::custom)?;
+
+        if value.len() != 2 {
+            return Err(serde::de::Error::custom(format!(
+                "Expected array of length 2 but got array of length {}",
+                value.len()
+            )));
+        };
+
+        let mut iter = value.into_iter();
+        Ok(Range {
+            start: iter.next().unwrap(),
+            end: iter.next().unwrap(),
+        })
+    }
+}
+
+impl SerializeAs<Range<PrimitiveDateTime>> for SerializeDateRange {
+    fn serialize_as<S>(source: &Range<PrimitiveDateTime>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        vec![
+            &source
+                .start
+                .format(&Iso8601::DATE_TIME)
+                .map_err(serde::ser::Error::custom)?,
+            &source
+                .end
+                .format(&Iso8601::DATE_TIME)
+                .map_err(serde::ser::Error::custom)?,
+        ]
+        .serialize(serializer)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TimePoint {
+    pub hours: u8,
+    pub minutes: u8,
+    pub seconds: u8,
+}
+
+pub struct SerializeTimeRange;
+
+impl<'de> DeserializeAs<'de, Range<Time>> for SerializeTimeRange {
+    fn deserialize_as<D>(deserializer: D) -> Result<Range<Time>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = Vec::<TimePoint>::deserialize(deserializer)?
+            .into_iter()
+            .map(|time| Time::from_hms(time.hours, time.minutes, time.seconds))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(serde::de::Error::custom)?;
+
+        if value.len() != 2 {
+            return Err(serde::de::Error::custom(format!(
+                "Expected array of length 2 but got array of length {}",
+                value.len()
+            )));
+        };
+
+        let mut iter = value.into_iter();
+        Ok(Range {
+            start: iter.next().unwrap(),
+            end: iter.next().unwrap(),
+        })
+    }
+}
+
+impl SerializeAs<Range<Time>> for SerializeTimeRange {
+    fn serialize_as<S>(source: &Range<Time>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(2))?;
+        for t in [&source.start, &source.end] {
+            seq.serialize_element(&TimePoint {
+                hours: t.hour(),
+                minutes: t.minute(),
+                seconds: t.second(),
+            })?;
+        }
+        seq.end()
     }
 }

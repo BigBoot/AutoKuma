@@ -1,4 +1,5 @@
 pub mod event;
+pub mod maintenance;
 pub mod monitor;
 pub mod notification;
 pub mod response;
