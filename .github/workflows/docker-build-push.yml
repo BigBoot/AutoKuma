@@ -16,8 +16,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - run: git fetch --prune --unshallow --tag
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
