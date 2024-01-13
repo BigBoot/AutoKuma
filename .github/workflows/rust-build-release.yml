@@ -35,6 +35,7 @@ jobs:
 
     - shell: bash
       run: |-
+        mkdir dist
         for file in autokuma autokuma.exe kuma kuma.exe; do
           if [[ ! -e "target/release/$file" ]]; then
             continue
@@ -48,8 +49,6 @@ jobs:
           else
             extension=""
           fi
-
-          mkdir dist
           
           mv "target/release/${filename}${extension}" "dist/${filename}-${{ matrix.os }}${extension}"
         done
