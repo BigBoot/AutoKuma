@@ -1,3 +1,5 @@
+//! Models related to Uptime Kuma maintenances
+
 use crate::deserialize::{
     DeserializeBoolLenient, DeserializeNumberLenient, SerializeDateRange, SerializeTimeRange,
 };

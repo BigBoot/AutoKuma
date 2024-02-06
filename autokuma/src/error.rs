@@ -1,4 +1,4 @@
-pub use kuma_client::Error as KumaError;
+pub use kuma_client::error::Error as KumaError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

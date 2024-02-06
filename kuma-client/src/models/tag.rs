@@ -1,3 +1,5 @@
+//! Models related to Uptime Kuma tags
+
 use crate::deserialize::DeserializeNumberLenient;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};

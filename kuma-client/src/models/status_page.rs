@@ -1,6 +1,8 @@
+//! Models related to Uptime Kuma status pages
+
 use crate::{
     deserialize::{DeserializeBoolLenient, DeserializeNumberLenient},
-    MonitorType,
+    monitor::MonitorType,
 };
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;

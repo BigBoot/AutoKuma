@@ -1,5 +1,5 @@
 [workspace]
-members = ["autokuma", "kuma-cli", "kuma-client"]
+members = ["autokuma", "example", "kuma-cli", "kuma-client"]
 resolver = "2"
 
 [workspace.package]
@@ -9,7 +9,7 @@ edition = "2021"
 [workspace.dependencies]
 bollard = { version = "0.15.0" }
 clap = { version = "4.4.14", features = ["derive"] }
-config = { version = "0.13.4" }
+config = { version = "0.14.0" }
 const-str = { version = "0.5.6", features = ["proc"] }
 cute_custom_default = { version = "2.1.0" }
 derivative = { version = "2.2.0" }
@@ -29,10 +29,10 @@ serde_json = { version = "1.0.111" }
 serde_merge = { version = "0.1.3" }
 serde_repr = { version = "0.1.18" }
 serde_with = { version = "3.4.0", features = ["time_0_3"] }
-serde-inline-default = { version = "0.1.1" }
+serde-inline-default = { version = "0.2.0" }
 serde_yaml = { version = "0.9.30" }
 shadow-rs = { version = "*" }
-strum = { version = "0.25.0", features = ["derive"] }
+strum = { version = "0.26.1", features = ["derive"] }
 thiserror = { version = "1.0.56" }
 time = { version = "0.3.31", features = ["serde"] }
 tokio = { version = "1.35.1", features = ["full"] }

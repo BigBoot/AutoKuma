@@ -7,7 +7,11 @@ use bollard::{
     container::ListContainersOptions, service::ContainerSummary, Docker, API_DEFAULT_VERSION,
 };
 use itertools::Itertools;
-use kuma_client::{Client, Monitor, MonitorType, Tag, TagDefinition};
+use kuma_client::{
+    monitor::{Monitor, MonitorType},
+    tag::{Tag, TagDefinition},
+    Client,
+};
 use log::{info, warn};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -218,7 +222,7 @@ impl Sync {
             .filter_map(|(_, monitor)| {
                 match monitor
                     .common()
-                    .tags
+                    .tags()
                     .iter()
                     .filter(|tag| tag.name.as_deref() == Some(&self.config.tag_name))
                     .find_map(|tag| tag.value.as_ref())
@@ -269,14 +273,14 @@ impl Sync {
 
         let current_tags = current
             .common()
-            .tags
+            .tags()
             .iter()
             .filter_map(|tag| tag.tag_id.as_ref().map(|id| (*id, tag)))
             .collect::<HashMap<_, _>>();
 
         let merged_tags: Vec<Tag> = new
             .common_mut()
-            .tags
+            .tags_mut()
             .drain(..)
             .chain(addition_tags.unwrap_or_default())
             .map(|new_tag| {
@@ -292,7 +296,7 @@ impl Sync {
             })
             .collect_vec();
 
-        new.common_mut().tags = merged_tags;
+        *new.common_mut().tags_mut() = merged_tags;
 
         serde_merge::omerge(current, new).unwrap()
     }
@@ -349,7 +353,7 @@ impl Sync {
             .filter_map(|(id, monitor)| {
                 monitor
                     .common()
-                    .id
+                    .id()
                     .as_ref()
                     .map(|parent_id| (parent_id, id))
             })
@@ -382,7 +386,7 @@ impl Sync {
             let mut tag = Tag::from(autokuma_tag.clone());
 
             tag.value = Some(id.clone());
-            monitor.common_mut().tags.push(tag);
+            monitor.common_mut().tags_mut().push(tag);
 
             match kuma.add_monitor(monitor).await {
                 Ok(_) => Ok(()),
@@ -404,12 +408,10 @@ impl Sync {
             let merge: Monitor = self.merge_monitors(current, new, Some(vec![tag]));
 
             if current != &merge
-                || merge.common().parent_name.is_some() != current.common().parent.is_some()
-                || merge
-                    .common()
-                    .parent_name
-                    .as_ref()
-                    .is_some_and(|name| Some(name) != current.common().parent.map(|id| groups[&id]))
+                || merge.common().parent_name().is_some() != current.common().parent().is_some()
+                || merge.common().parent_name().as_ref().is_some_and(|name| {
+                    Some(name) != current.common().parent().map(|id| groups[&id])
+                })
             {
                 info!("Updating monitor: {}", id);
                 kuma.edit_monitor(merge).await?;
@@ -418,8 +420,8 @@ impl Sync {
 
         for (id, monitor) in to_delete {
             info!("Deleting monitor: {}", id);
-            if let Some(id) = monitor.common().id {
-                kuma.delete_monitor(id).await?;
+            if let Some(id) = monitor.common().id() {
+                kuma.delete_monitor(*id).await?;
             }
         }
 
@@ -433,7 +435,7 @@ impl Sync {
             if let Err(err) = self.do_sync().await {
                 warn!("Encountered error during sync: {}", err);
             }
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            tokio::time::sleep(Duration::from_secs_f64(self.config.sync_interval)).await;
         }
     }
 }

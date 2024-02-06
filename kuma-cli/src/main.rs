@@ -10,7 +10,7 @@ use serde_json::json;
 use std::path::PathBuf;
 use tokio::task;
 
-type Result<T> = kuma_client::Result<T>;
+type Result<T> = kuma_client::error::Result<T>;
 
 const VERSION: &str = const_str::format!(
     "{}{}",

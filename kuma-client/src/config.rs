@@ -5,6 +5,7 @@ use serde_inline_default::serde_inline_default;
 use serde_with::{formats::CommaSeparator, serde_as, PickFirst, StringWithSeparator};
 use url::Url;
 
+/// Configuration for the [Client](crate::Client).
 #[serde_alias(ScreamingSnakeCase)]
 #[serde_inline_default]
 #[serde_as]
@@ -36,4 +37,18 @@ pub struct Config {
     /// The timeout for executing calls to the Uptime Kuma server.
     #[serde_inline_default(30.0)]
     pub call_timeout: f64,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            url: Url::parse("http://localhost:3001").unwrap(),
+            username: None,
+            password: None,
+            mfa_token: None,
+            headers: Vec::new(),
+            connect_timeout: 30.0,
+            call_timeout: 30.0,
+        }
+    }
 }

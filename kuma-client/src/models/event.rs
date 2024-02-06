@@ -2,7 +2,7 @@ use strum::EnumString;
 
 #[derive(Debug, EnumString)]
 #[strum(serialize_all = "camelCase")]
-pub enum Event {
+pub(crate) enum Event {
     ApiKeyList,
     AutoLogin,
     AvgPing,

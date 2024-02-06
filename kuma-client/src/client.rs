@@ -1,10 +1,14 @@
-use super::{
-    util::ResultLogger, Config, Error, Event, LoginResponse, Monitor, MonitorList, MonitorType,
-    Result, Tag, TagDefinition,
-};
 use crate::{
+    error::{Error, Result},
+    event::Event,
     maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage},
-    Notification, NotificationList, PublicGroupList, StatusPage, StatusPageList,
+    monitor::{Monitor, MonitorList, MonitorType},
+    notification::{Notification, NotificationList},
+    response::LoginResponse,
+    status_page::{PublicGroupList, StatusPage, StatusPageList},
+    tag::{Tag, TagDefinition},
+    util::ResultLogger,
+    Config,
 };
 use futures_util::FutureExt;
 use itertools::Itertools;
@@ -459,9 +463,7 @@ impl Worker {
     }
 
     async fn resolve_group(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
-        if let Some(group_name) = monitor.common().parent_name.clone() {
-            monitor.common_mut().parent_name = None;
-
+        if let Some(group_name) = monitor.common().parent_name().clone() {
             if let Some(Some(group_id)) = self
                 .monitors
                 .lock()
@@ -469,7 +471,7 @@ impl Worker {
                 .iter()
                 .find(|x| {
                     x.1.monitor_type() == MonitorType::Group
-                        && x.1.common().tags.iter().any(|tag| {
+                        && x.1.common().tags().iter().any(|tag| {
                             tag.name.as_ref().is_some_and(|tag| tag == "AutoKuma")
                                 && tag
                                     .value
@@ -477,14 +479,14 @@ impl Worker {
                                     .is_some_and(|tag_value| tag_value == &group_name)
                         })
                 })
-                .map(|x| x.1.common().id)
+                .map(|x| *x.1.common().id())
             {
-                monitor.common_mut().parent = Some(group_id);
+                *monitor.common_mut().parent_mut() = Some(group_id);
             } else {
                 return Err(Error::GroupNotFound(group_name));
             }
         } else {
-            monitor.common_mut().parent = None;
+            *monitor.common_mut().parent_mut() = None;
         }
         return Ok(());
     }
@@ -498,14 +500,14 @@ impl Worker {
         if let Some(monitor) = self.monitors.lock().await.get(&monitor_id.to_string()) {
             let current_tags = monitor
                 .common()
-                .tags
+                .tags()
                 .iter()
                 .filter_map(|tag| tag.tag_id.and_then(|id| Some((id, tag))))
                 .collect::<HashMap<_, _>>();
 
             let duplicates = monitor
                 .common()
-                .tags
+                .tags()
                 .iter()
                 .duplicates_by(|tag| tag.tag_id)
                 .filter_map(|tag| tag.tag_id.as_ref().map(|id| (id, tag)))
@@ -565,8 +567,8 @@ impl Worker {
     pub async fn add_monitor(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
         self.resolve_group(monitor).await?;
 
-        let tags = mem::take(&mut monitor.common_mut().tags);
-        let notifications = mem::take(&mut monitor.common_mut().notification_id_list);
+        let tags = mem::take(monitor.common_mut().tags_mut());
+        let notifications = mem::take(monitor.common_mut().notification_id_list_mut());
 
         let id: i32 = self
             .clone()
@@ -578,9 +580,9 @@ impl Worker {
             )
             .await?;
 
-        monitor.common_mut().id = Some(id);
-        monitor.common_mut().notification_id_list = notifications;
-        monitor.common_mut().tags = tags;
+        *monitor.common_mut().id_mut() = Some(id);
+        *monitor.common_mut().notification_id_list_mut() = notifications;
+        *monitor.common_mut().tags_mut() = tags;
 
         self.edit_monitor(monitor).await?;
 
@@ -611,7 +613,7 @@ impl Worker {
     pub async fn edit_monitor(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
         self.resolve_group(monitor).await?;
 
-        let tags = mem::take(&mut monitor.common_mut().tags);
+        let tags = mem::take(monitor.common_mut().tags_mut());
 
         let id: i32 = self
             .call(
@@ -624,7 +626,7 @@ impl Worker {
 
         self.update_monitor_tags(id, &tags).await?;
 
-        monitor.common_mut().tags = tags;
+        *monitor.common_mut().tags_mut() = tags;
 
         Ok(())
     }
@@ -1002,6 +1004,7 @@ impl Worker {
 
         debug!("Waiting for connection");
 
+        debug!("Connection opened!");
         *self.socket_io.lock().await = client;
 
         for i in 0..10 {
@@ -1029,6 +1032,7 @@ impl Worker {
                 _ = socket_io.disconnect().await;
             }
             drop(socket_io);
+            *self_ref.socket_io.lock().await = None;
             debug!("Connection closed!");
         });
 
@@ -1040,11 +1044,13 @@ impl Worker {
     }
 }
 
+/// A client for interacting with Uptime Kuma.
 pub struct Client {
     worker: Arc<Worker>,
 }
 
 impl Client {
+    /// Establishes a connection to Uptime Kuma with the provided configuration.
     pub async fn connect(config: Config) -> Result<Client> {
         let worker = Worker::new(config);
         worker.connect().await?;
@@ -1052,6 +1058,7 @@ impl Client {
         Ok(Self { worker })
     }
 
+    /// Retrieves a list of monitors from Uptime Kuma.
     pub async fn get_monitors(&self) -> Result<MonitorList> {
         match self.worker.is_ready().await {
             true => Ok(self.worker.monitors.lock().await.clone()),
@@ -1059,36 +1066,44 @@ impl Client {
         }
     }
 
+    /// Retrieves information about a specific monitor identified by its ID.
     pub async fn get_monitor(&self, monitor_id: i32) -> Result<Monitor> {
         self.worker.get_monitor(monitor_id).await
     }
 
+    /// Adds a new monitor to Uptime Kuma.
     pub async fn add_monitor(&self, mut monitor: Monitor) -> Result<Monitor> {
         self.worker.add_monitor(&mut monitor).await?;
         Ok(monitor)
     }
 
+    /// Edits an existing monitor in Uptime Kuma.
     pub async fn edit_monitor(&self, mut monitor: Monitor) -> Result<Monitor> {
         self.worker.edit_monitor(&mut monitor).await?;
         Ok(monitor)
     }
 
+    /// Deletes a monitor from Uptime Kuma based on its ID.
     pub async fn delete_monitor(&self, monitor_id: i32) -> Result<()> {
         self.worker.delete_monitor(monitor_id).await
     }
 
+    /// Pauses a monitor in Uptime Kuma based on its ID.
     pub async fn pause_monitor(&self, monitor_id: i32) -> Result<()> {
         self.worker.pause_monitor(monitor_id).await
     }
 
+    /// Resumes a paused monitor in Uptime Kuma based on its ID.
     pub async fn resume_monitor(&self, monitor_id: i32) -> Result<()> {
         self.worker.resume_monitor(monitor_id).await
     }
 
+    /// Retrieves a list of tags from Uptime Kuma.
     pub async fn get_tags(&self) -> Result<Vec<TagDefinition>> {
         self.worker.get_tags().await
     }
 
+    /// Retrieves information about a specific tag identified by its ID.
     pub async fn get_tag(&self, tag_id: i32) -> Result<TagDefinition> {
         self.worker.get_tags().await.and_then(|tags| {
             tags.into_iter()
@@ -1097,20 +1112,24 @@ impl Client {
         })
     }
 
+    /// Adds a new tag to Uptime Kuma.
     pub async fn add_tag(&self, mut tag: TagDefinition) -> Result<TagDefinition> {
         self.worker.add_tag(&mut tag).await?;
         Ok(tag)
     }
 
+    /// Edits an existing tag in Uptime Kuma.
     pub async fn edit_tag(&self, mut tag: TagDefinition) -> Result<TagDefinition> {
         self.worker.edit_tag(&mut tag).await?;
         Ok(tag)
     }
 
+    /// Deletes a tag from Uptime Kuma based on its ID.
     pub async fn delete_tag(&self, tag_id: i32) -> Result<()> {
         self.worker.delete_tag(tag_id).await
     }
 
+    /// Retrieves a list of notifications from Uptime Kuma.
     pub async fn get_notifications(&self) -> Result<NotificationList> {
         match self.worker.is_ready().await {
             true => Ok(self.worker.notifications.lock().await.clone()),
@@ -1118,6 +1137,7 @@ impl Client {
         }
     }
 
+    /// Retrieves information about a specific notification identified by its ID.
     pub async fn get_notification(&self, notification_id: i32) -> Result<Notification> {
         self.get_notifications().await.and_then(|notifications| {
             notifications
@@ -1127,20 +1147,24 @@ impl Client {
         })
     }
 
+    /// Adds a new notification to Uptime Kuma.
     pub async fn add_notification(&self, mut notification: Notification) -> Result<Notification> {
         self.worker.add_notification(&mut notification).await?;
         Ok(notification)
     }
 
+    /// Edits an existing notification in Uptime Kuma.
     pub async fn edit_notification(&self, mut notification: Notification) -> Result<Notification> {
         self.worker.edit_notification(&mut notification).await?;
         Ok(notification)
     }
 
+    /// Deletes a notification from Uptime Kuma based on its ID.
     pub async fn delete_notification(&self, notification_id: i32) -> Result<()> {
         self.worker.delete_notification(notification_id).await
     }
 
+    /// Retrieves a list of maintenances from Uptime Kuma.
     pub async fn get_maintenances(&self) -> Result<MaintenanceList> {
         match self.worker.is_ready().await {
             true => Ok(self.worker.maintenances.lock().await.clone()),
@@ -1148,32 +1172,39 @@ impl Client {
         }
     }
 
+    /// Retrieves information about a specific maintenance identified by its ID.
     pub async fn get_maintenance(&self, maintenance_id: i32) -> Result<Maintenance> {
         self.worker.get_maintenance(maintenance_id).await
     }
 
+    /// Adds a new maintenance to Uptime Kuma.
     pub async fn add_maintenance(&self, mut maintenance: Maintenance) -> Result<Maintenance> {
         self.worker.add_maintenance(&mut maintenance).await?;
         Ok(maintenance)
     }
 
+    /// Edits an existing maintenance in Uptime Kuma.
     pub async fn edit_maintenance(&self, mut maintenance: Maintenance) -> Result<Maintenance> {
         self.worker.edit_maintenance(&mut maintenance).await?;
         Ok(maintenance)
     }
 
+    /// Deletes a maintenance from Uptime Kuma based on its ID.
     pub async fn delete_maintenance(&self, maintenance_id: i32) -> Result<()> {
         self.worker.delete_maintenance(maintenance_id).await
     }
 
+    /// Pauses a maintenance in Uptime Kuma based on its ID.
     pub async fn pause_maintenance(&self, maintenance_id: i32) -> Result<()> {
         self.worker.pause_maintenance(maintenance_id).await
     }
 
+    /// Resumes a paused maintenance in Uptime Kuma based on its ID.
     pub async fn resume_maintenance(&self, maintenance_id: i32) -> Result<()> {
         self.worker.resume_maintenance(maintenance_id).await
     }
 
+    /// Retrieves a list of status pages from Uptime Kuma.
     pub async fn get_status_pages(&self) -> Result<StatusPageList> {
         match self.worker.is_ready().await {
             true => Ok(self.worker.status_pages.lock().await.clone()),
@@ -1181,24 +1212,29 @@ impl Client {
         }
     }
 
+    /// Retrieves information about a specific status page identified by its slug.
     pub async fn get_status_page(&self, slug: &str) -> Result<StatusPage> {
         self.worker.get_status_page(slug).await
     }
 
+    /// Adds a new status page to Uptime Kuma.
     pub async fn add_status_page(&self, mut status_page: StatusPage) -> Result<StatusPage> {
         self.worker.add_status_page(&mut status_page).await?;
         Ok(status_page)
     }
 
+    /// Edits an existing status page in Uptime Kuma.
     pub async fn edit_status_page(&self, mut status_page: StatusPage) -> Result<StatusPage> {
         self.worker.edit_status_page(&mut status_page).await?;
         Ok(status_page)
     }
 
+    /// Deletes a status page from Uptime Kuma based on its slug.
     pub async fn delete_status_page(&self, slug: &str) -> Result<()> {
         self.worker.delete_status_page(slug).await
     }
 
+    /// Disconnects the client from Uptime Kuma.
     pub async fn disconnect(&self) -> Result<()> {
         self.worker.disconnect().await
     }

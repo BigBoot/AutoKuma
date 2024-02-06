@@ -9,7 +9,7 @@ use serde_with::{DeserializeAs, SerializeAs};
 use std::{collections::HashMap, hash::Hash, marker::PhantomData, str::FromStr};
 use time::{format_description::well_known::Iso8601, PrimitiveDateTime, Time};
 
-pub struct DeserializeNumberLenient;
+pub(crate) struct DeserializeNumberLenient;
 
 impl<'de, T> DeserializeAs<'de, T> for DeserializeNumberLenient
 where
@@ -56,7 +56,7 @@ where
     }
 }
 
-pub struct DeserializeBoolLenient;
+pub(crate) struct DeserializeBoolLenient;
 
 impl<'de> DeserializeAs<'de, bool> for DeserializeBoolLenient {
     fn deserialize_as<D>(deserializer: D) -> Result<bool, D::Error>
@@ -100,7 +100,7 @@ where
     }
 }
 
-pub struct DeserializeVecLenient<T>(PhantomData<T>);
+pub(crate) struct DeserializeVecLenient<T>(PhantomData<T>);
 
 impl<'de, T> DeserializeAs<'de, Vec<T>> for DeserializeVecLenient<T>
 where
@@ -138,7 +138,7 @@ where
     }
 }
 
-pub struct DeserializeHashMapLenient<K, V>(PhantomData<K>, PhantomData<V>);
+pub(crate) struct DeserializeHashMapLenient<K, V>(PhantomData<K>, PhantomData<V>);
 
 impl<'de, K, V> DeserializeAs<'de, HashMap<K, V>> for DeserializeHashMapLenient<K, V>
 where
@@ -177,7 +177,7 @@ where
     }
 }
 
-pub struct DeserializeValueLenient;
+pub(crate) struct DeserializeValueLenient;
 
 impl<'de> DeserializeAs<'de, Value> for DeserializeValueLenient {
     fn deserialize_as<D>(deserializer: D) -> Result<Value, D::Error>
@@ -212,7 +212,7 @@ where
     }
 }
 
-pub struct SerializeDateTime;
+pub(crate) struct SerializeDateTime;
 
 impl<'de> DeserializeAs<'de, PrimitiveDateTime> for DeserializeBoolLenient {
     fn deserialize_as<D>(deserializer: D) -> Result<PrimitiveDateTime, D::Error>
@@ -235,7 +235,7 @@ impl SerializeAs<PrimitiveDateTime> for SerializeDateTime {
             .serialize(serializer)
     }
 }
-pub struct SerializeDateRange;
+pub(crate) struct SerializeDateRange;
 
 impl<'de> DeserializeAs<'de, Range<PrimitiveDateTime>> for SerializeDateRange {
     fn deserialize_as<D>(deserializer: D) -> Result<Range<PrimitiveDateTime>, D::Error>
@@ -284,13 +284,13 @@ impl SerializeAs<Range<PrimitiveDateTime>> for SerializeDateRange {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimePoint {
-    pub hours: u8,
-    pub minutes: u8,
-    pub seconds: u8,
+pub(crate) struct TimePoint {
+    pub(crate) hours: u8,
+    pub(crate) minutes: u8,
+    pub(crate) seconds: u8,
 }
 
-pub struct SerializeTimeRange;
+pub(crate) struct SerializeTimeRange;
 
 impl<'de> DeserializeAs<'de, Range<Time>> for SerializeTimeRange {
     fn deserialize_as<D>(deserializer: D) -> Result<Range<Time>, D::Error>

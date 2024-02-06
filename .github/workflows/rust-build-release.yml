@@ -90,7 +90,7 @@ jobs:
     - name: Download All Artifacts
       uses: actions/download-artifact@v4
       with:
-        path: autokuma
+        path: dist
         pattern:  autokuma-*
         merge-multiple: true
 
@@ -99,6 +99,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        title: Release ${{ github.ref }}
+        name: Release ${{ github.ref }}
         body: ${{ steps.changelog.outputs.description }}
-        files: autokuma/*
+        files: dist/*

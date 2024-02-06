@@ -1,0 +1,11 @@
+[package]
+name = "example"
+version.workspace = true
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+kuma_client = { path = "../kuma-client" }
+tokio = { version = "1.35.1", features = ["full"] }
+serde_json = { version = "1.0.111" }
