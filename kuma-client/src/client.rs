@@ -20,7 +20,13 @@ use rust_socketio::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
-use std::{collections::HashMap, mem, str::FromStr, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    mem,
+    str::FromStr,
+    sync::{Arc, Weak},
+    time::Duration,
+};
 use tokio::{runtime::Handle, sync::Mutex};
 
 struct Ready {
@@ -952,47 +958,49 @@ impl Worker {
         }
 
         let handle = Handle::current();
-        let self_ref = self.to_owned();
+        let self_ref = Arc::downgrade(self);
         let client = builder
             .on_any(move |event, payload, _| {
                 let handle = handle.clone();
-                let self_ref: Arc<Worker> = self_ref.clone();
+                let self_ref: Weak<Worker> = self_ref.clone();
                 trace!("Client::on_any({:?}, {:?})", &event, &payload);
                 async move {
-                    match (event, payload) {
-                        (SocketIOEvent::Message, Payload::Text(params)) => {
-                            if let Ok(e) = Event::from_str(
-                                &params[0]
-                                    .as_str()
-                                    .log_warn(|| "Error while deserializing Event...")
-                                    .unwrap_or(""),
-                            ) {
-                                handle.clone().spawn(async move {
-                                    _ = self_ref.clone().on_event(e, json!(null)).await.log_warn(
-                                        |e| {
+                    if let Some(arc) = self_ref.upgrade() {
+                        match (event, payload) {
+                            (SocketIOEvent::Message, Payload::Text(params)) => {
+                                if let Ok(e) = Event::from_str(
+                                    &params[0]
+                                        .as_str()
+                                        .log_warn(|| "Error while deserializing Event...")
+                                        .unwrap_or(""),
+                                ) {
+                                    handle.clone().spawn(async move {
+                                        _ = arc.on_event(e, json!(null)).await.log_warn(|e| {
                                             format!(
                                                 "Error while sending message event: {}",
                                                 e.to_string()
                                             )
-                                        },
-                                    );
-                                });
-                            }
-                        }
-                        (event, Payload::Text(params)) => {
-                            if let Ok(e) = Event::from_str(&String::from(event)) {
-                                handle.clone().spawn(async move {
-                                    _ = self_ref
-                                        .clone()
-                                        .on_event(e, params.into_iter().next().unwrap())
-                                        .await
-                                        .log_warn(|e| {
-                                            format!("Error while sending event: {}", e.to_string())
                                         });
-                                });
+                                    });
+                                }
                             }
+                            (event, Payload::Text(params)) => {
+                                if let Ok(e) = Event::from_str(&String::from(event)) {
+                                    handle.clone().spawn(async move {
+                                        _ = arc
+                                            .on_event(e, params.into_iter().next().unwrap())
+                                            .await
+                                            .log_warn(|e| {
+                                                format!(
+                                                    "Error while sending event: {}",
+                                                    e.to_string()
+                                                )
+                                            });
+                                    });
+                                }
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
                 .boxed()
