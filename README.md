@@ -178,7 +178,7 @@ Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting wit
 
 ## 🔧 How to Install
 
-Binaries for Windows Linux and Mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest) and additionally Kuma CLI can be installed using `cargo`:
+Binaries for Windows, Linux and Mac OS are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest) and additionally Kuma CLI can be installed using `cargo`:
 
 ```bash
 cargo install --git https://github.com/BigBoot/AutoKuma.git kuma-cli
