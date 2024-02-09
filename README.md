@@ -129,16 +129,16 @@ There are also some text replacements available which will be replaced by detail
 
 
 ### Static Monitors
-In addition to reading Monitors from Docker labels, AutoKuma can create Monitors from files, this can be usefull if you have want AutoKuma to manage monitors which aren't directly related to a container. 
+In addition to read Monitors from Docker labels, AutoKuma can create Monitors from files. This can be usefull if you have want AutoKuma to manage monitors which aren't directly related to a container. 
 
-To create static Monitors just a a .json or .toml file in the directory specified by `AUTOKUMA__STATIC_MONITORS`, take a look at [the examples here](monitors).
+To create static Monitors just add a .json or .toml file in the directory specified by `AUTOKUMA__STATIC_MONITORS`, take a look at [the examples here](monitors).
 
 In case of static Monitors the id is determined by the filename (without the extension).
 
 
 # Kuma CLI
 
-Kuma CLI is a Command-Line Interface (CLI) tool for managing and interacting with [Uptime Kuma](https://uptime.kuma.pet/). With Kuma CLI, you can easily configure, monitor, and manage your applications from the command line. 
+Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting with [Uptime Kuma](https://uptime.kuma.pet/). With Kuma CLI you can easily configure, monitor and manage your applications from the command line. 
 
 ## Features
 - [x] Commands: `kuma monitor`
@@ -178,7 +178,7 @@ Kuma CLI is a Command-Line Interface (CLI) tool for managing and interacting wit
 
 ## 🔧 How to Install
 
-Binaries for windows linux and mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest), additionally Kuma CLI can be installed using `cargo`:
+Binaries for Windows Linux and Mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest) and additionally Kuma CLI can be installed using `cargo`:
 
 ```bash
 cargo install --git https://github.com/BigBoot/AutoKuma.git kuma-cli
