@@ -287,7 +287,7 @@ impl SerializeAs<Range<PrimitiveDateTime>> for SerializeDateRange {
 pub(crate) struct TimePoint {
     pub(crate) hours: u8,
     pub(crate) minutes: u8,
-    pub(crate) seconds: u8,
+    pub(crate) seconds: Option<u8>,
 }
 
 pub(crate) struct SerializeTimeRange;
@@ -299,7 +299,7 @@ impl<'de> DeserializeAs<'de, Range<Time>> for SerializeTimeRange {
     {
         let value = Vec::<TimePoint>::deserialize(deserializer)?
             .into_iter()
-            .map(|time| Time::from_hms(time.hours, time.minutes, time.seconds))
+            .map(|time| Time::from_hms(time.hours, time.minutes, time.seconds.unwrap_or_default()))
             .collect::<Result<Vec<_>, _>>()
             .map_err(serde::de::Error::custom)?;
 
@@ -328,7 +328,7 @@ impl SerializeAs<Range<Time>> for SerializeTimeRange {
             seq.serialize_element(&TimePoint {
                 hours: t.hour(),
                 minutes: t.minute(),
-                seconds: t.second(),
+                seconds: Some(t.second()),
             })?;
         }
         seq.end()
