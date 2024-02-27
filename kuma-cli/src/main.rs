@@ -206,19 +206,19 @@ enum NotificationCommand {
 
 #[derive(Subcommand, Clone, Debug)]
 enum MaintenanceCommand {
-    /// Add a new Monitor
+    /// Add a new Maintenance
     Add { file: PathBuf },
-    /// Edit a Monitor
+    /// Edit a Maintenance
     Edit { file: PathBuf },
-    /// Get a Monitor
+    /// Get a Maintenance
     Get { id: i32 },
-    /// Delete a Monitor
+    /// Delete a Maintenance
     Delete { id: i32 },
-    /// Get all Monitors
+    /// Get all Maintenances
     List {},
-    /// Start/Resume a Monitor
+    /// Start/Resume a Maintenance
     Resume { id: i32 },
-    /// Stop/Pause a Monitor
+    /// Stop/Pause a Maintenance
     Pause { id: i32 },
 }
 

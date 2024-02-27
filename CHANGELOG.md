@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - Memory leak in kuma-client [#1](https://github.com/BigBoot/AutoKuma/issues/1)
+- Fix documentation for maintenance cli subcommand [#4](https://github.com/BigBoot/AutoKuma/issues/4)
 
 ## [0.3.0] - 2024-01-13
 ### Added
