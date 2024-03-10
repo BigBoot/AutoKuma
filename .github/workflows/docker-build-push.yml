@@ -11,6 +11,14 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        include:
+          - name: "ghcr.io/bigboot/autokuma"
+            dockerfile: Dockerfile
+          - name: "ghcr.io/bigboot/kuma"
+            dockerfile: Dockerfile.cli
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,7 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/BigBoot/AutoKuma
+          images: ${{ matrix.name }}
           tags: |
             type=schedule
             type=ref,event=branch
@@ -45,7 +53,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile
+          file: ${{ matrix.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
