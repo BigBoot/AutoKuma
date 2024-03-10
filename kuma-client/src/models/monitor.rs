@@ -439,7 +439,8 @@ monitor_type! {
         pub dns_resolve_server: Option<String>,
 
         #[serde(rename = "port")]
-        pub port: Option<String>,
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub port: Option<u16>,
 
         #[serde(rename = "dns_resolve_type")]
         #[serde_inline_default(Some(DnsResolverType::A))]
@@ -467,7 +468,8 @@ monitor_type! {
         pub hostname: Option<String>,
 
         #[serde(rename = "port")]
-        pub port: Option<String>,
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub port: Option<u16>,
 
         #[serde(rename = "gamedigGivenPortOnly")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
@@ -696,7 +698,8 @@ monitor_type! {
         pub hostname: Option<String>,
 
         #[serde(rename = "port")]
-        pub port: Option<String>,
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub port: Option<u16>,
 
         #[serde(rename = "mqttUsername")]
         pub mqtt_username: Option<String>,
@@ -733,7 +736,8 @@ monitor_type! {
         pub hostname: Option<String>,
 
         #[serde(rename = "port")]
-        pub port: Option<String>,
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub port: Option<u16>,
     }
 }
 
@@ -750,7 +754,8 @@ monitor_type! {
         pub hostname: Option<String>,
 
         #[serde(rename = "port")]
-        pub port: Option<String>,
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub port: Option<u16>,
 
         #[serde(rename = "radiusUsername")]
         pub radius_username: Option<String>,
@@ -789,7 +794,8 @@ monitor_type! {
         pub hostname: Option<String>,
 
         #[serde(rename = "port")]
-        pub port: Option<String>,
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub port: Option<u16>,
     }
 }
 
