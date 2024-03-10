@@ -3,6 +3,7 @@ use kuma_client::{
     build::{
         BRANCH, BUILD_TIME, GIT_CLEAN, LAST_TAG, RUST_CHANNEL, RUST_VERSION, SHORT_COMMIT, TAG,
     },
+    monitor::Monitor,
     Config,
 };
 use serde::Serialize;
@@ -314,13 +315,13 @@ async fn monitor_commands(command: &Option<MonitorCommand>, config: &Config, cli
     match command {
         Some(MonitorCommand::Add { file }) => connect(config, cli)
             .await
-            .add_monitor(load_file(file, cli).await)
+            .add_monitor(load_file::<Monitor>(file, cli).await)
             .await
             .print_result(cli),
 
         Some(MonitorCommand::Edit { file }) => connect(config, cli)
             .await
-            .edit_monitor(load_file(file, cli).await)
+            .edit_monitor(load_file::<Monitor>(file, cli).await)
             .await
             .print_result(cli),
 

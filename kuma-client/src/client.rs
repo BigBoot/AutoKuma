@@ -491,8 +491,6 @@ impl Worker {
             } else {
                 return Err(Error::GroupNotFound(group_name));
             }
-        } else {
-            *monitor.common_mut().parent_mut() = None;
         }
         return Ok(());
     }
@@ -575,6 +573,7 @@ impl Worker {
 
         let tags = mem::take(monitor.common_mut().tags_mut());
         let notifications = mem::take(monitor.common_mut().notification_id_list_mut());
+        let parent_name = mem::take(monitor.common_mut().parent_name_mut());
 
         let id: i32 = self
             .clone()
@@ -589,6 +588,7 @@ impl Worker {
         *monitor.common_mut().id_mut() = Some(id);
         *monitor.common_mut().notification_id_list_mut() = notifications;
         *monitor.common_mut().tags_mut() = tags;
+        *monitor.common_mut().parent_name_mut() = parent_name;
 
         self.edit_monitor(monitor).await?;
 
@@ -1042,7 +1042,12 @@ impl Worker {
             drop(socket_io);
             *self_ref.socket_io.lock().await = None;
             debug!("Connection closed!");
-        });
+        })
+        .await
+        .map_err(|e| {
+            Error::CommunicationError(format!("Error while disconnecting: {}", e.to_string()))
+        })
+        .log_error(|e| e.to_string())?;
 
         Ok(())
     }
@@ -1080,13 +1085,15 @@ impl Client {
     }
 
     /// Adds a new monitor to Uptime Kuma.
-    pub async fn add_monitor(&self, mut monitor: Monitor) -> Result<Monitor> {
+    pub async fn add_monitor<T: Into<Monitor>>(&self, monitor: T) -> Result<Monitor> {
+        let mut monitor = monitor.into();
         self.worker.add_monitor(&mut monitor).await?;
         Ok(monitor)
     }
 
     /// Edits an existing monitor in Uptime Kuma.
-    pub async fn edit_monitor(&self, mut monitor: Monitor) -> Result<Monitor> {
+    pub async fn edit_monitor<T: Into<Monitor>>(&self, monitor: T) -> Result<Monitor> {
+        let mut monitor = monitor.into();
         self.worker.edit_monitor(&mut monitor).await?;
         Ok(monitor)
     }
