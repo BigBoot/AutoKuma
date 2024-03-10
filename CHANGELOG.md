@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
+### Fixed
+- exclude parent_name when sending monitor data to server, see [#8](https://github.com/BigBoot/AutoKuma/issues/8)
+- Make parsing of ports more lenient, see [#9](https://github.com/BigBoot/AutoKuma/issues/9)
+  
+### Added
+- add docker image for kuma-cli, see [#5](https://github.com/BigBoot/AutoKuma/issues/5)
+- 
 ## [0.3.1] - 2024-02-27
 ### Fixed
 - Memory leak in kuma-client [#1](https://github.com/BigBoot/AutoKuma/issues/1)
