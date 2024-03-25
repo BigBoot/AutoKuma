@@ -4,7 +4,7 @@ use crate::{
     util::{group_by_prefix, ResultLogger},
 };
 use bollard::{
-    container::ListContainersOptions, service::ContainerSummary, Docker, API_DEFAULT_VERSION,
+    container::ListContainersOptions, service::ContainerSummary, Docker
 };
 use itertools::Itertools;
 use kuma_client::{
@@ -14,9 +14,7 @@ use kuma_client::{
 };
 use log::{info, warn};
 use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-    time::Duration,
+    collections::{BTreeMap, HashMap}, env, sync::Arc, time::Duration
 };
 
 pub struct Sync {
@@ -77,7 +75,8 @@ impl Sync {
                 all: true,
                 ..Default::default()
             }))
-            .await?
+            .await
+            .log_warn(std::module_path!(), |_| format!("Using DOCKER_HOST={}", env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())))?
             .into_iter()
             .filter(|c| {
                 c.labels.as_ref().map_or_else(
@@ -117,7 +116,7 @@ impl Sync {
             .map_err(|e| Error::LabelParseError(e.to_string()))?;
 
         let monitor = serde_json::from_value::<Monitor>(toml)
-            .log_warn(|e| format!("Error while parsing {}: {}!", id, e.to_string()))
+            .log_warn(std::module_path!(), |e| format!("Error while parsing {}: {}!", id, e.to_string()))
             .map_err(|e| Error::LabelParseError(e.to_string()))?;
 
         monitor.validate(id)?;
@@ -310,11 +309,12 @@ impl Sync {
         let mut new_monitors: HashMap<String, Monitor> = HashMap::new();
 
         if self.config.docker.enabled {
-            let docker = Docker::connect_with_socket(
-                &self.config.docker.socket_path,
-                120,
-                API_DEFAULT_VERSION,
-            )?;
+            if let Some(docker_socket) = &self.config.docker.socket_path {
+                env::set_var("DOCKER_HOST", format!("unix://{}", docker_socket));
+            }
+            
+            let docker = Docker::connect_with_defaults()
+                .log_warn(std::module_path!(), |_| format!("Using DOCKER_HOST={}", env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())))?;
 
             let containers = self.get_kuma_containers(&docker).await?;
             new_monitors.extend(self.get_monitors_from_containers(&containers)?);
@@ -326,7 +326,7 @@ impl Sync {
         {
             let mut dir = tokio::fs::read_dir(&self.config.static_monitors)
                 .await
-                .log_warn(|e| e.to_string());
+                .log_warn(std::module_path!(), |e| e.to_string());
 
             if let Ok(dir) = &mut dir {
                 loop {

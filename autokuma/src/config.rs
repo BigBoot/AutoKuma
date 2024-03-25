@@ -11,8 +11,8 @@ pub struct DockerConfig {
     pub enabled: bool,
 
     /// Path to the Docker socket.
-    #[serde_inline_default("/var/run/docker.sock".to_owned())]
-    pub socket_path: String,
+    #[serde_inline_default(None)]
+    pub socket_path: Option<String>,
 
     /// Prefix used when scanning for container labels.
     #[serde_inline_default("kuma".to_owned())]

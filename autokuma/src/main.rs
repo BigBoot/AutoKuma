@@ -69,14 +69,14 @@ async fn main() {
                     .prefix_separator("__"),
             )
             .build()
-            .log_error(|e| format!("Unable to load config: {}", e))
+            .log_error(std::module_path!(), |e| format!("Unable to load config: {}", e))
             .and_then(|config| config.try_deserialize())
-            .log_error(|e| format!("Invalid config: {}", e))
+            .log_error(std::module_path!(), |e| format!("Invalid config: {}", e))
             .unwrap_or_die(1),
     );
 
     let sync = sync::Sync::new(config)
-        .log_error(|e| format!("Invalid config: {}", e))
+        .log_error(std::module_path!(), |e| format!("Invalid config: {}", e))
         .unwrap_or_die(1);
 
     sync.run().await;

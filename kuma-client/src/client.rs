@@ -314,7 +314,7 @@ impl Worker {
                 Err(Error::LoginError("Unexpect login response".to_owned()))
             }
         }
-        .log_warn(|e| e.to_string())
+        .log_warn(std::module_path!(), |e| e.to_string())
     }
 
     async fn get_tags(self: &Arc<Self>) -> Result<Vec<TagDefinition>> {
@@ -859,7 +859,7 @@ impl Worker {
             .clone();
 
         Ok(serde_json::from_value(monitor_list)
-            .log_warn(|e| e.to_string())
+            .log_warn(std::module_path!(), |e| e.to_string())
             .map_err(|_| Error::UnsupportedResponse)?)
     }
 
@@ -971,11 +971,11 @@ impl Worker {
                                 if let Ok(e) = Event::from_str(
                                     &params[0]
                                         .as_str()
-                                        .log_warn(|| "Error while deserializing Event...")
+                                        .log_warn(std::module_path!(), || "Error while deserializing Event...")
                                         .unwrap_or(""),
                                 ) {
                                     handle.clone().spawn(async move {
-                                        _ = arc.on_event(e, json!(null)).await.log_warn(|e| {
+                                        _ = arc.on_event(e, json!(null)).await.log_warn(std::module_path!(), |e| {
                                             format!(
                                                 "Error while sending message event: {}",
                                                 e.to_string()
@@ -990,7 +990,7 @@ impl Worker {
                                         _ = arc
                                             .on_event(e, params.into_iter().next().unwrap())
                                             .await
-                                            .log_warn(|e| {
+                                            .log_warn(std::module_path!(), |e| {
                                                 format!(
                                                     "Error while sending event: {}",
                                                     e.to_string()
@@ -1007,7 +1007,7 @@ impl Worker {
             })
             .connect()
             .await
-            .log_error(|_| "Error during connect")
+            .log_error(std::module_path!(), |_| "Error during connect")
             .ok();
 
         debug!("Waiting for connection");
@@ -1047,7 +1047,7 @@ impl Worker {
         .map_err(|e| {
             Error::CommunicationError(format!("Error while disconnecting: {}", e.to_string()))
         })
-        .log_error(|e| e.to_string())?;
+        .log_error(std::module_path!(), |e| e.to_string())?;
 
         Ok(())
     }
