@@ -53,7 +53,7 @@ services:
       # AUTOKUMA__KUMA__TAG_COLOR: "#42C0FB"
       # AUTOKUMA__KUMA__CALL_TIMEOUT: 5s
       # AUTOKUMA__KUMA__CONNECT_TIMEOUT: 5s
-      # AUTOKUMA__KUMA__DEFAULT_SETTINGS: >- 
+      # AUTOKUMA__KUMA__DEFAULT_SETTINGS: |- 
       #    docker.docker_container: {{container_name}}
       #    http.max_redirects: 10
       #    *.max_retries: 3
