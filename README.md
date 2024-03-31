@@ -49,11 +49,11 @@ services:
       # AUTOKUMA__KUMA__PASSWORD: <password>
       # AUTOKUMA__KUMA__MFA_TOKEN: <token>
       # AUTOKUMA__KUMA__HEADERS: "<header1_key>=<header1_value>,<header2_key>=<header2_value>,..."
-      # AUTOKUMA__KUMA__TAG_NAME: AutoKuma
-      # AUTOKUMA__KUMA__TAG_COLOR: "#42C0FB"
       # AUTOKUMA__KUMA__CALL_TIMEOUT: 5s
       # AUTOKUMA__KUMA__CONNECT_TIMEOUT: 5s
-      # AUTOKUMA__KUMA__DEFAULT_SETTINGS: |- 
+      # AUTOKUMA__TAG_NAME: AutoKuma
+      # AUTOKUMA__TAG_COLOR: "#42C0FB"
+      # AUTOKUMA__DEFAULT_SETTINGS: |- 
       #    docker.docker_container: {{container_name}}
       #    http.max_redirects: 10
       #    *.max_retries: 3
