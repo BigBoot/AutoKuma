@@ -132,7 +132,7 @@ impl Sync {
         group_by_prefix(
             labels.iter().map(|(key, value)| {
                 (
-                    key.trim_start_matches(&format!("{}.", self.config.docker.label_prefix)),
+                    Self::fill_templates(key.trim_start_matches(&format!("{}.", self.config.docker.label_prefix)), template_values),
                     value,
                 )
             }),
@@ -178,7 +178,7 @@ impl Sync {
                         &container
                             .names
                             .as_ref()
-                            .and_then(|names| names.first().cloned()),
+                            .and_then(|names| names.first().map(|s| s.trim_start_matches("/").to_owned())),
                     ),
                 ]
                 .into_iter()

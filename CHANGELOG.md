@@ -6,19 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Ability to replace template values in tag names (as long as the tags start with the defined prefix), see [#14](https://github.com/BigBoot/AutoKuma/issues/14)
+
 ### Fixed
 - Fixed parsing of `max_retries` and `max_redirects`, see [#12](https://github.com/BigBoot/AutoKuma/issues/12)
+
+### Changed
+- Remove leading slash from container names in template values, see [#14](https://github.com/BigBoot/AutoKuma/issues/14)
 
 ## [0.3.2] - 2024-03-28
 ### Added
 - Fall back to `DOCKER_HOST` env variable when no socket_path is specified in AutoKuma docker config
+- add docker image for kuma-cli, see [#5](https://github.com/BigBoot/AutoKuma/issues/5)
 
 ### Fixed
 - exclude parent_name when sending monitor data to server, see [#8](https://github.com/BigBoot/AutoKuma/issues/8)
 - Make parsing of ports more lenient, see [#9](https://github.com/BigBoot/AutoKuma/issues/9)
-  
-### Added
-- add docker image for kuma-cli, see [#5](https://github.com/BigBoot/AutoKuma/issues/5)
+
   
 ## [0.3.1] - 2024-02-27
 ### Fixed
