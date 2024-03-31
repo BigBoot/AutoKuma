@@ -70,6 +70,7 @@ macro_rules! monitor_type {
             pub active: Option<bool>,
 
             #[serde(rename = "maxretries")]
+            #[serde(alias = "max_retries")]
             #[serde_as(as = "Option<DeserializeNumberLenient>")]
             pub max_retries: Option<i32>,
 
@@ -100,6 +101,7 @@ macro_rules! monitor_type {
             pub tags: Vec<Tag>,
 
             #[serde(rename = "notificationIDList")]
+            #[serde(alias = "notification_id_list")]
             #[serde_as(as = "Option<DeserializeHashMapLenient<String, bool>>")]
             pub notification_id_list: Option<HashMap<String, bool>>,
 
@@ -489,6 +491,7 @@ monitor_type! {
         pub grpc_url: Option<String>,
 
         #[serde(rename = "maxredirects")]
+        #[serde(alias = "max_redirects")]
         #[serde_inline_default(Some(10))]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub max_redirects: Option<i32>,
@@ -537,6 +540,7 @@ monitor_type! {
         pub ignore_tls: Option<bool>,
 
         #[serde(rename = "maxredirects")]
+        #[serde(alias = "max_redirects")]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub max_redirects: Option<i32>,
 
@@ -590,6 +594,7 @@ monitor_type! {
         pub ignore_tls: Option<bool>,
 
         #[serde(rename = "maxredirects")]
+        #[serde(alias = "max_redirects")]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub max_redirects: Option<i32>,
 
@@ -668,6 +673,7 @@ monitor_type! {
         pub ignore_tls: Option<bool>,
 
         #[serde(rename = "maxredirects")]
+        #[serde(alias = "max_redirects")]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub max_redirects: Option<i32>,
 
