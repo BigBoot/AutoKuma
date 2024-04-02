@@ -9,7 +9,7 @@ repository.workspace = true
 readme = "../README.md"
 
 [dependencies]
-kuma-client = { path = "../kuma-client", version = "0.0.3" }
+kuma-client = { path = "../kuma-client", version = "0.0.0" }
 
 bollard = { workspace = true }
 config = { workspace = true }

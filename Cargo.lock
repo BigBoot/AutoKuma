@@ -136,7 +136,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "autokuma"
-version = "0.0.3"
+version = "0.0.0"
 dependencies = [
  "bollard",
  "config",
@@ -1210,7 +1210,7 @@ dependencies = [
 
 [[package]]
 name = "kuma-cli"
-version = "0.0.3"
+version = "0.0.0"
 dependencies = [
  "clap",
  "config",
@@ -1228,7 +1228,7 @@ dependencies = [
 
 [[package]]
 name = "kuma-client"
-version = "0.0.3"
+version = "0.0.0"
 dependencies = [
  "config",
  "derivative",
