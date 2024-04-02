@@ -19,10 +19,8 @@ humantime-serde = { version = "1.1.1" }
 itertools = { version = "0.12.0" }
 log = { version = "0.4.20" }
 pretty_env_logger = { version = "0.5.0" }
-reqwest = { version = "0.11.23", features = ["json"] }
-rust_socketio = { git = "https://github.com/1c3t3a/rust-socketio.git", rev = "9ccf67b", features = [
-    "async",
-] }
+reqwest = { version = "0.12.2", features = ["json"] }
+rust_socketio = { version = "0.5.0", features = ["async"] }
 serde = { version = "1.0.194", features = ["derive"] }
 serde_alias = { version = "0.0.2" }
 serde_json = { version = "1.0.111" }
