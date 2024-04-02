@@ -1,5 +1,6 @@
 /target
 config.toml
+autokuma.toml
 kuma.toml
 docker.sock
 .vscode
