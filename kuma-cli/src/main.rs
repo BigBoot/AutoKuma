@@ -1,4 +1,5 @@
 use clap::{arg, command, CommandFactory, Parser, Subcommand, ValueEnum};
+use flexi_logger::Logger;
 use kuma_client::{
     build::{
         BRANCH, BUILD_TIME, GIT_CLEAN, LAST_TAG, RUST_CHANNEL, RUST_VERSION, SHORT_COMMIT, TAG,
@@ -92,7 +93,7 @@ struct Cli {
 
 impl From<Cli> for Config {
     fn from(value: Cli) -> Self {
-        config::Config::builder()
+        config::Config::builder() 
             .add_source(config::File::with_name(&dirs::config_local_dir().map(|dir| dir.join("kuma").join("config").to_string_lossy().to_string()).unwrap_or_default()).required(false))
             .add_source(config::File::with_name("kuma").required(false))
             .add_source(
@@ -517,10 +518,10 @@ async fn status_page_commands(command: &Option<StatusPageCommand>, config: &Conf
 
 #[tokio::main()]
 async fn main() {
-    pretty_env_logger::formatted_timed_builder()
-        .filter(None, log::LevelFilter::Info)
-        .parse_default_env()
-        .init();
+    let logger = Logger::try_with_env_or_str("info")
+        .unwrap()
+        .start()
+        .unwrap();
 
     let cli = Cli::parse();
     let config = Config::from(cli.clone());
@@ -539,4 +540,6 @@ async fn main() {
         }
         None => {}
     };
+
+    logger.shutdown();
 }

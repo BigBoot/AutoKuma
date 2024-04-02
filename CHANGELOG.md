@@ -8,12 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Ability to replace template values in tag names (as long as the tags start with the defined prefix), see [#14](https://github.com/BigBoot/AutoKuma/issues/14)
+- Ability to load user-wide AutoKuma config
+- `log_dir` config for storing logs as files
 
 ### Fixed
 - Fixed parsing of `max_retries` and `max_redirects`, see [#12](https://github.com/BigBoot/AutoKuma/issues/12)
 
 ### Changed
 - Remove leading slash from container names in template values, see [#14](https://github.com/BigBoot/AutoKuma/issues/14)
+- Added fallback for `static_monitors`
 
 ## [0.3.2] - 2024-03-28
 ### Added

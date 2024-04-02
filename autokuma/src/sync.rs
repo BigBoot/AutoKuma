@@ -320,11 +320,20 @@ impl Sync {
             new_monitors.extend(self.get_monitors_from_containers(&containers)?);
         }
 
-        if tokio::fs::metadata(&self.config.static_monitors)
+        let static_monitor_path = self.config.static_monitors
+            .clone()
+            .unwrap_or_else(|| dirs::config_local_dir().map(|dir| dir
+                .join("autokuma")
+                .join("static-monitors")
+                .to_string_lossy()
+                .to_string()
+            ).unwrap_or_default()).to_owned();
+
+        if tokio::fs::metadata(&static_monitor_path)
             .await
             .is_ok_and(|md| md.is_dir())
         {
-            let mut dir = tokio::fs::read_dir(&self.config.static_monitors)
+            let mut dir = tokio::fs::read_dir(&static_monitor_path)
                 .await
                 .log_warn(std::module_path!(), |e| e.to_string());
 

@@ -14,10 +14,11 @@ kuma-client = { path = "../kuma-client", version = "0.0.3" }
 bollard = { workspace = true }
 config = { workspace = true }
 derivative = { workspace = true }
+dirs = { workspace = true }
+flexi_logger = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
-pretty_env_logger = { workspace = true }
 rust_socketio = { workspace = true }
 serde = { workspace = true }
 serde_alias = { workspace = true }

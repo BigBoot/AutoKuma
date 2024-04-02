@@ -32,8 +32,8 @@ pub struct Config {
     pub sync_interval: f64,
 
     /// The path to the folder in which AutoKuma will search for static Monitor definitions.
-    #[serde_inline_default("/monitors".to_owned())]
-    pub static_monitors: String,
+    #[serde_inline_default(None)]
+    pub static_monitors: Option<String>,
 
     /// The name of the AutoKuma tag, used to track managed containers
     #[serde_inline_default("AutoKuma".to_owned())]
@@ -46,4 +46,8 @@ pub struct Config {
     /// Default settings applied to all generated Monitors.
     #[serde_inline_default("".to_owned())]
     pub default_settings: String,
+
+    /// A directory where log files should be stored
+    #[serde_inline_default(None)]
+    pub log_dir: Option<String>,
 }

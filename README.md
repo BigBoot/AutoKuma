@@ -66,24 +66,40 @@ services:
 
 ## Configuration
 
-AutoKuma can be configured using the following environment variables:
+AutoKuma can be configured using the following environment variables/config keys:
 
-| Variable                          | Description                                                                              |
-|-----------------------------------|------------------------------------------------------------------------------------------|
-| `AUTOKUMA__STATIC_MONITORS`       | The path to the folder in which AutoKuma will search for static Monitor definitions      |
-| `AUTOKUMA__TAG_NAME`              | The name of the AutoKuma tag, used to track managed containers                           |
-| `AUTOKUMA__TAG_COLOR`             | The color of the AutoKuma tag                                                            |
-| `AUTOKUMA__DEFAULT_SETTINGS`      | Default settings applied to all generated Monitors, see the example above for the syntax |
-| `AUTOKUMA__KUMA__URL`             | The URL AutoKuma should use to connect to Uptime Kuma                                    |
-| `AUTOKUMA__KUMA__USERNAME`        | The username for logging into Uptime Kuma (required unless auth is disabled)             |
-| `AUTOKUMA__KUMA__PASSWORD`        | The password for logging into Uptime Kuma (required unless auth is disabled)             |
-| `AUTOKUMA__KUMA__MFA_TOKEN`       | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                  |
-| `AUTOKUMA__KUMA__HEADERS`         | List of HTTP headers to send when connecting to Uptime Kuma                              |
-| `AUTOKUMA__KUMA__CONNECT_TIMEOUT` | The timeout for the initial connection to Uptime Kuma                                    |
-| `AUTOKUMA__KUMA__CALL_TIMEOUT`    | The timeout for executing calls to the Uptime Kuma server                                |
-| `AUTOKUMA__DOCKER__SOCKET`        | Path to the Docker socket                                                                |
-| `AUTOKUMA__DOCKER__LABEL_PREFIX`  | Prefix used when scanning for container labels                                           |
+| Env Variable                      | Config Key             | Description                                                                              |
+|-----------------------------------|------------------------|------------------------------------------------------------------------------------------|
+| `AUTOKUMA__STATIC_MONITORS`       | `static_monitors`      | The path to the folder in which AutoKuma will search for static Monitor definitions      |
+| `AUTOKUMA__TAG_NAME`              | `tag_name`             | The name of the AutoKuma tag, used to track managed containers                           |
+| `AUTOKUMA__TAG_COLOR`             | `tag_color`            | The color of the AutoKuma tag                                                            |
+| `AUTOKUMA__DEFAULT_SETTINGS`      | `default_settings`     | Default settings applied to all generated Monitors, see the example above for the syntax |
+| `AUTOKUMA__LOG_DIR`               | `log_dir`              | Path to a directory where log files will be stored                                       |
+| `AUTOKUMA__KUMA__URL`             | `kuma.url`             | The URL AutoKuma should use to connect to Uptime Kuma                                    |
+| `AUTOKUMA__KUMA__USERNAME`        | `kuma.username`        | The username for logging into Uptime Kuma (required unless auth is disabled)             |
+| `AUTOKUMA__KUMA__PASSWORD`        | `kuma.password`        | The password for logging into Uptime Kuma (required unless auth is disabled)             |
+| `AUTOKUMA__KUMA__MFA_TOKEN`       | `kuma.mfa_token`       | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                  |
+| `AUTOKUMA__KUMA__HEADERS`         | `kuma.headers`         | List of HTTP headers to send when connecting to Uptime Kuma                              |
+| `AUTOKUMA__KUMA__CONNECT_TIMEOUT` | `kuma.connect_timeout` | The timeout for the initial connection to Uptime Kuma                                    |
+| `AUTOKUMA__KUMA__CALL_TIMEOUT`    | `kuma.call_timeout`    | The timeout for executing calls to the Uptime Kuma server                                |
+| `AUTOKUMA__DOCKER__SOCKET`        | `docker.socket`        | Path to the Docker socket                                                                |
+| `AUTOKUMA__DOCKER__LABEL_PREFIX`  | `docker.label_prefix`  | Prefix used when scanning for container labels                                           |
 
+AutoKuma will read configuration from a file named `autokuma.{toml,yaml,json}` in the current directory and in the following locations:
+
+| Platform | Value                                                                | Example                                                       |
+|----------|----------------------------------------------------------------------|---------------------------------------------------------------|
+| Linux    | `$XDG_CONFIG_HOME`/autokuma/config.{toml,yaml,json}                  | /home/alice/.config/autokuma/config.toml                      |
+| macOS    | `$HOME`/Library/Application Support/autokuma/config.{toml,yaml,json} | /Users/Alice/Library/Application Support/autokuma/config.toml |
+| Windows  | `%LocalAppData%`\autokuma\config.{toml,yaml,json}                    | C:\Users\Alice\AppData\Local\autokuma\config.toml             |
+
+An example `.toml` config could look like the following:
+```toml
+[kuma]
+url = "http://localhost:3001/"
+username = "<username>"
+password = "<password>"
+```
 
 
 ## Usage
@@ -125,13 +141,21 @@ There are also some text replacements available which will be replaced by detail
 | `{{container_id}}`   | The container id              | 92366941fb1f211c573c56d261f3b3e5302f354941f2aa295ae56d5781e97221        |
 | `{{image_id}}`       | Sha256 of the container image | sha256:c2e38600b252f147de1df1a5ca7964f9c8e8bace97111e56471a4a431639287a |
 | `{{image}}`          | Name of the container image   | ghcr.io/immich-app/immich-server:release                                |
-| `{{container_name}}` | Name of the container         | /immich-immich-1                                                        |
+| `{{container_name}}` | Name of the container         | immich-immich-1                                                         |
 
 
 ### Static Monitors
 In addition to reading Monitors from Docker labels, AutoKuma can create Monitors from files. This can be usefull if you have want AutoKuma to manage monitors which aren't directly related to a container.
 
 To create static Monitors just add a .json or .toml file in the directory specified by `AUTOKUMA__STATIC_MONITORS`, take a look at [the examples here](monitors).
+
+The default directory for static monitors is:
+
+| Platform | Value                                                         | Example                                                            |
+|----------|---------------------------------------------------------------|--------------------------------------------------------------------|
+| Linux    | `$XDG_CONFIG_HOME`/autokuma/static-monitors/                  | /home/alice/.config/autokuma/static-monitors/                      |
+| macOS    | `$HOME`/Library/Application Support/autokuma/static-monitors/ | /Users/Alice/Library/Application Support/autokuma/static-monitors/ |
+| Windows  | `%LocalAppData%`\autokuma\static-monitors\                    | C:\Users\Alice\AppData\Local\autokuma\static-monitors\             |
 
 In case of static Monitors the id is determined by the filename (without the extension).
 
