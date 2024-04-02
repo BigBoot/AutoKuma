@@ -3,8 +3,11 @@ members = ["autokuma", "kuma-cli", "kuma-client"]
 resolver = "2"
 
 [workspace.package]
-version = "0.0.0"
+version = "0.0.3"
 edition = "2021"
+authors = ["Marco Kirchner <mail@bigboot.dev>"]
+license = "MIT"
+repository = "https://github.com/BigBoot/AutoKuma"
 
 [workspace.dependencies]
 bollard = { version = "0.16.0" }
@@ -29,10 +32,10 @@ serde_repr = { version = "0.1.18" }
 serde_with = { version = "3.4.0", features = ["time_0_3"] }
 serde-inline-default = { version = "0.2.0" }
 serde_yaml = { version = "0.9.30" }
-shadow-rs = { version = "*" }
+shadow-rs = { version = "0.27.1" }
 strum = { version = "0.26.1", features = ["derive"] }
 thiserror = { version = "1.0.56" }
 time = { version = "0.3.31", features = ["serde"] }
 tokio = { version = "1.35.1", features = ["full"] }
 toml = { version = "0.8.8" }
-url = { version = "*", features = ["serde"] }
+url = { version = "2.5.0", features = ["serde"] }

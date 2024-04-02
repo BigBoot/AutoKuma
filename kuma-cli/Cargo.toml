@@ -1,14 +1,19 @@
 [package]
 name = "kuma-cli"
+description = "CLI tool for managing and interacting with Uptime Kuma"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../README.md"
 
 [[bin]]
 name = "kuma"
 path = "src/main.rs"
 
 [dependencies]
-kuma_client = { path = "../kuma-client" }
+kuma-client = { path = "../kuma-client", version = "0.0.3" }
 
 clap = { workspace = true }
 config = { workspace = true }

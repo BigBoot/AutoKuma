@@ -1,10 +1,15 @@
 [package]
 name = "autokuma"
+description = "Automates the creation of Uptime Kuma monitors based on Docker container labels"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../README.md"
 
 [dependencies]
-kuma_client = { path = "../kuma-client" }
+kuma-client = { path = "../kuma-client", version = "0.0.3" }
 
 bollard = { workspace = true }
 config = { workspace = true }

@@ -1,7 +1,12 @@
 [package]
-name = "kuma_client"
+name = "kuma-client"
+description = "Rust wrapper for the Uptime Kuma Socket.IO API"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../README.md"
 
 [dependencies]
 config = { workspace = true }
