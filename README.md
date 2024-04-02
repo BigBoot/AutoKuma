@@ -20,7 +20,7 @@
 </div>
 
 
-# AutoKuma
+# AutoKuma <a href="https://crates.io/crates/autokuma"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/autokuma?logo=rust&color=blue"></a>
 
 AutoKuma is a utility that automates the creation of Uptime Kuma monitors based on Docker container labels. With AutoKuma, you can eliminate the need for manual monitor creation in the Uptime Kuma UI.
 
@@ -136,7 +136,7 @@ To create static Monitors just add a .json or .toml file in the directory specif
 In case of static Monitors the id is determined by the filename (without the extension).
 
 
-# Kuma CLI
+# Kuma CLI <a href="https://crates.io/crates/kuma-cli"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-cli?logo=rust&color=blue"></a>
 
 Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting with [Uptime Kuma](https://uptime.kuma.pet/). With Kuma CLI you can easily configure, monitor and manage your applications from the command line.
 
@@ -246,9 +246,9 @@ username = "<username>"
 password = "<password>"
 ```
 
-# Kuma Client
+# Kuma Client <a href="https://crates.io/crates/kuma-client"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-client?logo=rust&color=blue"></a>
 
-TODO
+[Documentation](https://docs.rs/kuma-client/latest/kuma_client/)
 
 # Contributing
 
