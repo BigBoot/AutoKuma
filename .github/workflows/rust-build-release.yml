@@ -119,10 +119,10 @@ jobs:
       with: 
         fetch-depth: 0
 
-    - name: Install cargo-release
+    - name: Install tools
       uses: taiki-e/install-action@v2
       with:
-        tool: cargo-release
+        tool: cargo-release,markdown-extract
 
     - name: Publish to crates.io
       shell: bash

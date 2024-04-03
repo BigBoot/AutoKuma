@@ -1,3 +1,4 @@
 push = false
 tag = false
 allow-branch = ["*"]
+pre-release-hook = ['bash', '../.pre-release-hook']

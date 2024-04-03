@@ -1,5 +1,6 @@
 #![doc(html_logo_url = "https://cdn.jsdelivr.net/gh/BigBoot/AutoKuma@master/icon.svg")]
 #![doc(html_favicon_url = "https://cdn.jsdelivr.net/gh/BigBoot/AutoKuma@master/icon.svg")]
+#![doc = include_str!("../README.md")]
 
 #[doc(hidden)]
 pub mod build {

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+cp ../logo.svg ./
+
+export CONTENT=$(markdown-extract "${CRATE_NAME//-/ }" ../README.md | sed 's/\\/\\\\&/g' | sed 's/&/\\&/g')
+export HEADER=$(markdown-extract HEADER ../README.md | sed 's/\\/\\\\&/g' | sed 's/&/\\&/g' | \
+    sed 's|href="#autokuma"|href="https://crates.io/crates/autokuma"|g' | \
+    sed 's|href="#kuma-cli"|href="https://crates.io/crates/kuma-cli"|g' | \
+    sed 's|href="#kuma-client"|href="https://crates.io/crates/kuma-client"|g' \
+)
+
+read -r -d '' EXAMPLES << EOM
+\`\`\`rust
+$(cat ../kuma-client/examples/get_monitors.rs)
+\`\`\`
+\`\`\`rust
+$(cat ../kuma-client/examples/create_monitor.rs)
+\`\`\`
+EOM
+export EXAMPLES
+
+awk '{gsub("<!-- CONTENT -->", ENVIRON["CONTENT"])}1' _README.md | \
+    awk '{gsub("<!-- HEADER -->", ENVIRON["HEADER"])}1'| \
+    awk '{gsub("<!-- EXAMPLES -->", ENVIRON["EXAMPLES"])}1' > README.md

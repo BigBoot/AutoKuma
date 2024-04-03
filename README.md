@@ -272,7 +272,9 @@ password = "<password>"
 
 # Kuma Client <a href="https://crates.io/crates/kuma-client"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-client?logo=rust&color=blue"></a>
 
-[Documentation](https://docs.rs/kuma-client/latest/kuma_client/)
+`kuma-client` is a Rust crate that provides a client library for interacting with the Uptime Kuma SocketIO API.
+
+Please take a look at [the examples](kuma-client/examples/) and the [documentation](https://docs.rs/kuma-client/latest/kuma_client/) for further details.
 
 # Contributing
 

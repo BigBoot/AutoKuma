@@ -6,7 +6,9 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-readme = "../README.md"
+readme = "README.md"
+categories = ["api-bindings"]
+keywords = ["uptime-kuma", "api", "automation", "monitoring", "socketio"]
 
 [[bin]]
 name = "kuma"
