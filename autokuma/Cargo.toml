@@ -11,7 +11,9 @@ categories = ["command-line-utilities"]
 keywords = ["uptime-kuma", "docker", "automation", "monitoring"]
 
 [dependencies]
-kuma-client = { path = "../kuma-client", version = "0.0.0" }
+kuma-client = { path = "../kuma-client", version = "0.0.0", features = [
+    "private-api",
+] }
 
 bollard = { workspace = true }
 config = { workspace = true }

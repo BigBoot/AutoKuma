@@ -60,6 +60,7 @@ impl Ready {
 
 struct Worker {
     config: Arc<Config>,
+    tag_name: Option<String>,
     socket_io: Arc<Mutex<Option<SocketIO>>>,
     monitors: Arc<Mutex<MonitorList>>,
     notifications: Arc<Mutex<NotificationList>>,
@@ -72,9 +73,10 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(config: Config) -> Arc<Self> {
+    fn new(config: Config, tag_name: Option<String>) -> Arc<Self> {
         Arc::new(Worker {
             config: Arc::new(config.clone()),
+            tag_name: tag_name.to_owned(),
             socket_io: Arc::new(Mutex::new(None)),
             monitors: Default::default(),
             notifications: Default::default(),
@@ -469,7 +471,7 @@ impl Worker {
     }
 
     async fn resolve_group(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
-        if let Some(group_name) = monitor.common().parent_name().clone() {
+        if let (Some(group_name), Some(tag_name)) = (monitor.common().parent_name().clone(), &self.tag_name) {
             if let Some(Some(group_id)) = self
                 .monitors
                 .lock()
@@ -478,7 +480,7 @@ impl Worker {
                 .find(|x| {
                     x.1.monitor_type() == MonitorType::Group
                         && x.1.common().tags().iter().any(|tag| {
-                            tag.name.as_ref().is_some_and(|tag| tag == "AutoKuma")
+                            tag.name.as_ref().is_some_and(|tag| tag == tag_name)
                                 && tag
                                     .value
                                     .as_ref()
@@ -1139,13 +1141,23 @@ impl Worker {
 pub struct Client {
     worker: Arc<Worker>,
 }
+
 impl Client {
     pub async fn connect(config: Config) -> Result<Client> {
-        let worker = Worker::new(config);
+        let worker = Worker::new(config, None);
         worker.connect().await?;
 
         Ok(Self { worker })
     }
+
+    #[cfg(feature = "private-api")]
+    pub async fn connect_with_tag_name(config: Config, tag_name: String) -> Result<Client> {
+        let worker = Worker::new(config, Some(tag_name));
+        worker.connect().await?;
+
+        Ok(Self { worker })
+    }
+
 
     /// Retrieves a list of monitors from Uptime Kuma.
     pub async fn get_monitors(&self) -> Result<MonitorList> {

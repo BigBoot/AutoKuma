@@ -301,7 +301,7 @@ impl Sync {
     }
 
     async fn do_sync(&self) -> Result<()> {
-        let kuma = Client::connect(self.config.kuma.clone()).await?;
+        let kuma = Client::connect_with_tag_name(self.config.kuma.clone(), self.config.tag_name.clone()).await?;
 
         let autokuma_tag = self.get_autokuma_tag(&kuma).await?;
         let current_monitors = self.get_managed_monitors(&kuma).await?;

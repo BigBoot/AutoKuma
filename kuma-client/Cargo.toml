@@ -10,6 +10,9 @@ readme = "README.md"
 categories = ["api-bindings"]
 keywords = ["uptime-kuma", "api", "monitoring"]
 
+[features]
+private-api = []
+
 [dependencies]
 config = { workspace = true }
 derivative = { workspace = true }
