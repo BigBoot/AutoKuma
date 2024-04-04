@@ -365,9 +365,11 @@ pub enum HttpAuth {
         basic_auth_pass: Option<String>,
 
         #[serde(rename = "authDomain")]
+        #[serde(alias = "auth_domain")]
         auth_domain: Option<String>,
 
         #[serde(rename = "authWorkstation")]
+        #[serde(alias = "auth_workstation")]
         auth_workstation: Option<String>,
     },
 
@@ -396,6 +398,7 @@ monitor_type! {
 monitor_type! {
     MonitorSqlServer SqlServer {
         #[serde(rename = "databaseConnectionString")]
+        #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
     }
 }
@@ -403,6 +406,7 @@ monitor_type! {
 monitor_type! {
     MonitorPostgres Postgres {
         #[serde(rename = "databaseConnectionString")]
+        #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
     }
 }
@@ -410,6 +414,7 @@ monitor_type! {
 monitor_type! {
     MonitorMongoDB Mongodb {
         #[serde(rename = "databaseConnectionString")]
+        #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
     }
 }
@@ -417,9 +422,11 @@ monitor_type! {
 monitor_type! {
     MonitorMysql Mysql {
         #[serde(rename = "databaseConnectionString")]
+        #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
 
         #[serde(rename = "radiusPassword")]
+        #[serde(alias = "radius_password")]
         pub password: Option<String>,
     }
 }
@@ -427,6 +434,7 @@ monitor_type! {
 monitor_type! {
     MonitorRedis Redis {
         #[serde(rename = "databaseConnectionString")]
+        #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
     }
 }
@@ -474,6 +482,7 @@ monitor_type! {
         pub port: Option<u16>,
 
         #[serde(rename = "gamedigGivenPortOnly")]
+        #[serde(alias = "gamedig_given_port_only")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub gamedig_given_port_only: Option<bool>,
     }
@@ -488,6 +497,7 @@ monitor_type! {
         pub invert_keyword: Option<bool>,
 
         #[serde(rename = "grpcUrl")]
+        #[serde(alias = "grpc_url")]
         pub grpc_url: Option<String>,
 
         #[serde(rename = "maxredirects")]
@@ -497,22 +507,28 @@ monitor_type! {
         pub max_redirects: Option<i32>,
 
         #[serde(rename = "grpcEnableTls")]
+        #[serde(alias = "grpc_enable_tls")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub grpc_enable_tls: Option<bool>,
 
         #[serde(rename = "grpcServiceName")]
+        #[serde(alias = "grpc_service_name")]
         pub grpc_service_name: Option<String>,
 
         #[serde(rename = "grpcMethod")]
+        #[serde(alias = "grpc_method")]
         pub grpc_method: Option<String>,
 
         #[serde(rename = "grpcProtobuf")]
+        #[serde(alias = "grpc_protobuf")]
         pub grpc_protobuf: Option<String>,
 
         #[serde(rename = "grpcBody")]
+        #[serde(alias = "grpc_body")]
         pub grpc_body: Option<String>,
 
         #[serde(rename = "grpcMetadata")]
+        #[serde(alias = "grpc_metadata")]
         pub grpc_metadata: Option<String>,
     }
 }
@@ -528,14 +544,17 @@ monitor_type! {
         pub timeout: Option<i32>,
 
         #[serde(rename = "resendInterval")]
+        #[serde(alias = "resend_interval")]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub resend_interval: Option<i32>,
 
         #[serde(rename = "expiryNotification")]
+        #[serde(alias = "expiry_notification")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub expiry_notification: Option<bool>,
 
         #[serde(rename = "ignoreTls")]
+        #[serde(alias = "ignore_tls")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub ignore_tls: Option<bool>,
 
@@ -545,6 +564,7 @@ monitor_type! {
         pub max_redirects: Option<i32>,
 
         #[serde(rename = "proxyId")]
+        #[serde(alias = "proxy_id")]
         pub proxy_id: Option<String>,
 
         #[serde(rename = "method")]
@@ -552,6 +572,7 @@ monitor_type! {
         pub method: Option<HttpMethod>,
 
         #[serde(rename = "httpBodyEncoding")]
+        #[serde(alias = "http_body_encoding")]
         pub http_body_encoding: Option<String>,
 
         #[serde(rename = "body")]
@@ -568,9 +589,11 @@ monitor_type! {
 monitor_type! {
     MonitorJsonQuery JsonQuery {
         #[serde(rename = "jsonPath")]
+        #[serde(alias = "json_path")]
         pub json_path: Option<String>,
 
         #[serde(rename = "expectedValue")]
+        #[serde(alias = "expected_value")]
         pub expected_value: Option<String>,
 
         #[serde(rename = "url")]
@@ -582,14 +605,17 @@ monitor_type! {
         pub timeout: Option<i32>,
 
         #[serde(rename = "resendInterval")]
+        #[serde(alias = "resend_interval")]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub resend_interval: Option<i32>,
 
         #[serde(rename = "expiryNotification")]
+        #[serde(alias = "expiry_notification")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub expiry_notification: Option<bool>,
 
         #[serde(rename = "ignoreTls")]
+        #[serde(alias = "ignore_tls")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub ignore_tls: Option<bool>,
 
@@ -599,6 +625,7 @@ monitor_type! {
         pub max_redirects: Option<i32>,
 
         #[serde(rename = "proxyId")]
+        #[serde(alias = "proxy_id")]
         pub proxy_id: Option<String>,
 
         #[serde(rename = "method")]
@@ -606,6 +633,7 @@ monitor_type! {
         pub method: Option<HttpMethod>,
 
         #[serde(rename = "httpBodyEncoding")]
+        #[serde(alias = "http_body_encoding")]
         pub http_body_encoding: Option<String>,
 
         #[serde(rename = "body")]
@@ -622,23 +650,29 @@ monitor_type! {
 monitor_type! {
     MonitorKafkaProducer KafkaProducer {
         #[serde(rename = "kafkaProducerBrokers")]
+        #[serde(alias = "kafka_producer_brokers")]
         pub kafka_producer_brokers: Vec<String>,
 
         #[serde(rename = "kafkaProducerTopic")]
+        #[serde(alias = "kafka_producer_topic")]
         pub kafka_producer_topic: Option<String>,
 
         #[serde(rename = "kafkaProducerMessage")]
+        #[serde(alias = "kafka_producer_message")]
         pub kafka_producer_message: Option<String>,
 
         #[serde(rename = "kafkaProducerSsl")]
+        #[serde(alias = "kafka_producer_ssl")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub kafka_producer_ssl: Option<bool>,
 
         #[serde(rename = "kafkaProducerAllowAutoTopicCreation")]
+        #[serde(alias = "kafka_producer_allow_auto_topic_creation")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub kafka_producer_allow_auto_topic_creation: Option<bool>,
 
         #[serde(rename = "kafkaProducerSaslOptions")]
+        #[serde(alias = "kafka_producer_sasl_options")]
         pub kafka_producer_sasl_options: Option<KafkaProducerSaslOptions>,
     }
 }
@@ -649,6 +683,7 @@ monitor_type! {
         pub keyword: Option<String>,
 
         #[serde(rename = "invertKeyword")]
+        #[serde(alias = "invert_keyword")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub invert_keyword: Option<bool>,
 
@@ -661,14 +696,17 @@ monitor_type! {
         pub timeout: Option<i32>,
 
         #[serde(rename = "resendInterval")]
+        #[serde(alias = "resend_interval")]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub resend_interval: Option<i32>,
 
         #[serde(rename = "expiryNotification")]
+        #[serde(alias = "expiry_notification")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub expiry_notification: Option<bool>,
 
         #[serde(rename = "ignoreTls")]
+        #[serde(alias = "ignore_tls")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub ignore_tls: Option<bool>,
 
@@ -678,6 +716,7 @@ monitor_type! {
         pub max_redirects: Option<i32>,
 
         #[serde(rename = "proxyId")]
+        #[serde(alias = "proxy_id")]
         pub proxy_id: Option<String>,
 
         #[serde(rename = "method")]
@@ -685,6 +724,7 @@ monitor_type! {
         pub method: Option<HttpMethod>,
 
         #[serde(rename = "httpBodyEncoding")]
+        #[serde(alias = "http_body_encoding")]
         pub http_body_encoding: Option<String>,
 
         #[serde(rename = "body")]
@@ -708,18 +748,23 @@ monitor_type! {
         pub port: Option<u16>,
 
         #[serde(rename = "mqttUsername")]
+        #[serde(alias = "mqtt_username")]
         pub mqtt_username: Option<String>,
 
         #[serde(rename = "mqttPassword")]
+        #[serde(alias = "mqtt_password")]
         pub mqtt_password: Option<String>,
 
         #[serde(rename = "mqttTopic")]
+        #[serde(alias = "mqtt_topic")]
         pub mqtt_topic: Option<String>,
 
         #[serde(rename = "mqttCheckType")]
+        #[serde(alias = "mqtt_check_type")]
         pub mqtt_check_type: Option<String>,
 
         #[serde(rename = "mqttSuccessMessage")]
+        #[serde(alias = "mqtt_success_message")]
         pub mqtt_success_message: Option<String>,
     }
 }
@@ -730,6 +775,7 @@ monitor_type! {
         pub hostname: Option<String>,
 
         #[serde(rename = "packetSize")]
+        #[serde(alias = "packet_size")]
         #[serde_inline_default(Some(56))]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub packet_size: Option<i32>,
@@ -750,6 +796,7 @@ monitor_type! {
 monitor_type! {
     MonitorPush Push {
         #[serde(rename = "pushURL")]
+        #[serde(alias = "push_url")]
         pub push_url: Option<String>,
     }
 }
@@ -764,28 +811,34 @@ monitor_type! {
         pub port: Option<u16>,
 
         #[serde(rename = "radiusUsername")]
+        #[serde(alias = "radius_username")]
         pub radius_username: Option<String>,
 
         #[serde(rename = "radiusPassword")]
+        #[serde(alias = "radius_password")]
         pub radius_password: Option<String>,
 
         #[serde(rename = "radiusSecret")]
+        #[serde(alias = "radius_secret")]
         pub radius_secret: Option<String>,
 
         #[serde(rename = "radiusCalledStationId")]
+        #[serde(alias = "radius_called_station_id")]
         pub radius_called_station_id: Option<String>,
 
         #[serde(rename = "radiusCallingStationId")]
+        #[serde(alias = "radius_calling_station_id")]
         pub radius_calling_station_id: Option<String>,
     }
 }
 
 monitor_type! {
     MonitorRealBrowser RealBrowser {
-        #[serde(rename = "rurl")]
+        #[serde(rename = "url")]
         pub url: Option<String>,
 
         #[serde(rename = "remoteBrowsersToggle")]
+        #[serde(alias = "remote_browsers_toggle")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub remote_browsers_toggle: Option<bool>,
 
