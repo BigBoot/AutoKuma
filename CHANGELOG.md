@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - lenient vector parsing for `accepted_statuscodes`, see [#23](https://github.com/BigBoot/AutoKuma/issues/23)
+- support for `push_token`, see [#21](https://github.com/BigBoot/AutoKuma/issues/21)
 
 ## [0.4.1] - 2024-04-2
 ### Fixed

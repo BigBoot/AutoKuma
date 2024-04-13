@@ -1235,6 +1235,7 @@ dependencies = [
  "futures-util",
  "itertools",
  "log",
+ "regex",
  "reqwest 0.12.2",
  "rust_socketio",
  "serde",

@@ -9,6 +9,7 @@ use crate::{
     models::tag::Tag,
 };
 use derivative::Derivative;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 use serde_json::json;
@@ -797,9 +798,9 @@ monitor_type! {
 
 monitor_type! {
     MonitorPush Push {
-        #[serde(rename = "pushURL")]
-        #[serde(alias = "push_url")]
-        pub push_url: Option<String>,
+        #[serde(rename = "pushToken")]
+        #[serde(alias = "push_token")]
+        pub push_token: Option<String>,
     }
 }
 
@@ -1090,6 +1091,15 @@ impl Monitor {
 
         if self.common().name().is_none() {
             errors.push("Missing property 'name'".to_owned());
+        }
+
+        if let &Monitor::Push { value } = &self {
+            if let Some(push_token) = &value.push_token {
+                let regex = Regex::new("^[A-Za-z0-9]{32}$").unwrap();
+                if !regex.is_match(&push_token) {
+                    errors.push("Invalid push_token, push token should be 32 characters and contain only letters and numbers".to_owned());
+                }
+            }
         }
 
         if !errors.is_empty() {

@@ -19,6 +19,7 @@ derivative = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
+regex = { workspace = true }
 reqwest = { workspace = true }
 rust_socketio = { workspace = true }
 serde = { workspace = true }
