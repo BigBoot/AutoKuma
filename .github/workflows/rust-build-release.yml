@@ -124,6 +124,14 @@ jobs:
       with:
         tool: cargo-release,markdown-extract
 
+    - name: setup git
+      shell: bash
+      run: |-   
+        git config user.email "runner@github.com"
+        git config user.name "Github Runner"
+
     - name: Publish to crates.io
       shell: bash
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       run: cargo release --workspace --execute --no-confirm "${GITHUB_REF_NAME#v}"
