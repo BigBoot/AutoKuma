@@ -49,14 +49,19 @@ services:
       # AUTOKUMA__KUMA__PASSWORD: <password>
       # AUTOKUMA__KUMA__MFA_TOKEN: <token>
       # AUTOKUMA__KUMA__HEADERS: "<header1_key>=<header1_value>,<header2_key>=<header2_value>,..."
-      # AUTOKUMA__KUMA__CALL_TIMEOUT: 5s
-      # AUTOKUMA__KUMA__CONNECT_TIMEOUT: 5s
+      # AUTOKUMA__KUMA__CALL_TIMEOUT: 5
+      # AUTOKUMA__KUMA__CONNECT_TIMEOUT: 5
       # AUTOKUMA__TAG_NAME: AutoKuma
       # AUTOKUMA__TAG_COLOR: "#42C0FB"
       # AUTOKUMA__DEFAULT_SETTINGS: |- 
       #    docker.docker_container: {{container_name}}
       #    http.max_redirects: 10
       #    *.max_retries: 3
+      # AUTOKUMA__SNIPPETS__WEB: |- 
+      #    {{container_name}}_http.http.name: {{container_name}} HTTP
+      #    {{container_name}}_http.http.url: https://{{@0}}:{{@1}}
+      #    {{container_name}}_docker.docker.name: {{container_name}} Docker
+      #    {{container_name}}_docker.docker.docker_container: {{container_name}}
       # AUTOKUMA__DOCKER__SOCKET: /var/run/docker.sock
       # AUTOKUMA__DOCKER__LABEL_PREFIX: kuma
       
@@ -75,6 +80,7 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__TAG_COLOR`             | `tag_color`            | The color of the AutoKuma tag                                                            |
 | `AUTOKUMA__DEFAULT_SETTINGS`      | `default_settings`     | Default settings applied to all generated Monitors, see the example above for the syntax |
 | `AUTOKUMA__LOG_DIR`               | `log_dir`              | Path to a directory where log files will be stored                                       |
+| `AUTOKUMA__SNIPPETS__<SNIPPET>`   | `snippets.<snippet>`   | Define a snippet named `<snippet>`, see [Snippets](#snippets) for details                |
 | `AUTOKUMA__KUMA__URL`             | `kuma.url`             | The URL AutoKuma should use to connect to Uptime Kuma                                    |
 | `AUTOKUMA__KUMA__USERNAME`        | `kuma.username`        | The username for logging into Uptime Kuma (required unless auth is disabled)             |
 | `AUTOKUMA__KUMA__PASSWORD`        | `kuma.password`        | The password for logging into Uptime Kuma (required unless auth is disabled)             |
@@ -143,6 +149,46 @@ There are also some text replacements available which will be replaced by detail
 | `{{image}}`          | Name of the container image   | ghcr.io/immich-app/immich-server:release                                |
 | `{{container_name}}` | Name of the container         | immich-immich-1                                                         |
 
+### Snippets
+**_WARNING:_** Snippets are currently experimental and might change in the future.
+
+AutoKuma provides the ability to define reusable snippets. Snippets need to be defined in the configuration, for example, using environment variables:
+
+```yaml
+AUTOKUMA__SNIPPETS__WEB: |-
+    {{container_name}}_http.http.name: {{container_name}} HTTP
+    {{container_name}}_http.http.url: https://{{@0}}:{{@1}}
+    {{container_name}}_docker.docker.name: {{container_name}} Docker
+    {{container_name}}_docker.docker.docker_container: {{container_name}}
+```
+
+or in an equivalent TOML config file:
+
+```toml
+[snippets]
+web = '''
+    {{container_name}}_http.http.name: {{container_name}}
+    {{container_name}}_http.http.url: https://{{@0}}:{{@1}}
+    {{container_name}}_docker.docker.name: {{container_name}}_docker
+    {{container_name}}_docker.docker.docker_name: {{container_name}}
+'''
+```
+
+These define a snippet called `web`. 
+
+A snippet can have a variable number of arguments, which are available as replacements using `{{@0}}`, `{{@1}}`, `{{@2}}`, etc., as seen above.
+
+To use a snippet on a container, assign a label in the format:
+
+```plaintext
+<prefix>.__<snippet>: <arguments>
+```
+
+For example, the above snippet could be included using the following label:
+
+```plaintext
+kuma.__web: "example.com", 443
+```
 
 ### Static Monitors
 In addition to reading Monitors from Docker labels, AutoKuma can create Monitors from files. This can be usefull if you have want AutoKuma to manage monitors which aren't directly related to a container.

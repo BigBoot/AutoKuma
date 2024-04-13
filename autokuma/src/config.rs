@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_alias::serde_alias;
 use serde_inline_default::serde_inline_default;
@@ -46,6 +48,10 @@ pub struct Config {
     /// Default settings applied to all generated Monitors.
     #[serde_inline_default("".to_owned())]
     pub default_settings: String,
+
+    /// Default settings applied to all generated Monitors.
+    #[serde_inline_default(HashMap::new())]
+    pub snippets: HashMap<String, String>,
 
     /// A directory where log files should be stored
     #[serde_inline_default(None)]
