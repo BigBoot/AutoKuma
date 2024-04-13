@@ -106,6 +106,7 @@ macro_rules! monitor_type {
             pub notification_id_list: Option<HashMap<String, bool>>,
 
             #[serde(rename = "accepted_statuscodes")]
+            #[serde_as(as = "DeserializeVecLenient<String>")]
             #[serde_inline_default(vec!["200-299".to_owned()])]
             pub accepted_statuscodes: Vec<String>,
 
@@ -651,6 +652,7 @@ monitor_type! {
     MonitorKafkaProducer KafkaProducer {
         #[serde(rename = "kafkaProducerBrokers")]
         #[serde(alias = "kafka_producer_brokers")]
+        #[serde_as(as = "DeserializeVecLenient<String>")]
         pub kafka_producer_brokers: Vec<String>,
 
         #[serde(rename = "kafkaProducerTopic")]

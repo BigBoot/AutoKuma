@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use correct tag name when resolving groups, see [#17](https://github.com/BigBoot/AutoKuma/issues/17)
 - Fix missing snake_case aliases, see [#19](https://github.com/BigBoot/AutoKuma/issues/19)
 
+### Added
+- lenient vector parsing for `accepted_statuscodes`, see [#23](https://github.com/BigBoot/AutoKuma/issues/23)
+
 ## [0.4.1] - 2024-04-2
 ### Fixed
 - Release pipeline
