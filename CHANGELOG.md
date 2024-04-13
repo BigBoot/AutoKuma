@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.5.0] - 2024-04-13
 ### Fixed
 - Use correct tag name when resolving groups, see [#17](https://github.com/BigBoot/AutoKuma/issues/17)
 - Fix missing snake_case aliases, see [#19](https://github.com/BigBoot/AutoKuma/issues/19)
@@ -15,11 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - support for `push_token`, see [#21](https://github.com/BigBoot/AutoKuma/issues/21)
 - Snippets for reduced boilerplate
 
-## [0.4.1] - 2024-04-2
+## [0.4.1] - 2024-04-02
 ### Fixed
 - Release pipeline
 
-## [0.4.0] - 2024-04-2
+## [0.4.0] - 2024-04-02
 ### Added
 - Ability to replace template values in tag names (as long as the tags start with the defined prefix), see [#14](https://github.com/BigBoot/AutoKuma/issues/14)
 - Ability to load user-wide AutoKuma config
