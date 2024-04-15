@@ -15,6 +15,7 @@ private-api = []
 
 [dependencies]
 config = { workspace = true }
+const-str = { workspace = true }
 derivative = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }

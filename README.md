@@ -143,13 +143,14 @@ kuma.mymonitor.http.parent_name: "mygroup"
 kuma.mymonitor.http.url: "https://example.com"
 ```
 
-There are also some text replacements available which will be replaced by details about the corresponding docker container:
-| Template             | Description                   | Example Value                                                           |
-|----------------------|-------------------------------|-------------------------------------------------------------------------|
-| `{{container_id}}`   | The container id              | 92366941fb1f211c573c56d261f3b3e5302f354941f2aa295ae56d5781e97221        |
-| `{{image_id}}`       | Sha256 of the container image | sha256:c2e38600b252f147de1df1a5ca7964f9c8e8bace97111e56471a4a431639287a |
-| `{{image}}`          | Name of the container image   | ghcr.io/immich-app/immich-server:release                                |
-| `{{container_name}}` | Name of the container         | immich-immich-1                                                         |
+AutoKuma allows the usage of [Tera](https://keats.github.io/tera/) templates in labels and [Snippets](#snippets), the following variables are available:
+| Template         | Description                             | Example Value                                                                                                                                 |
+|------------------|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `container_id`   | The container id                        | 92366941fb1f211c573c56d261f3b3e5302f354941f2aa295ae56d5781e97221                                                                              |
+| `image_id`       | Sha256 of the container image           | sha256:c2e38600b252f147de1df1a5ca7964f9c8e8bace97111e56471a4a431639287a                                                                       |
+| `image`          | Name of the container image             | ghcr.io/immich-app/immich-server:release                                                                                                      |
+| `container_name` | Name of the container                   | immich-immich-1                                                                                                                               |
+| `container`      | Nested structure with container details | See the [Docker Engine Documentation](https://docs.docker.com/engine/api/v1.45/#tag/Container/operation/ContainerList) for the available data |
 
 ### Snippets
 **_WARNING:_** Snippets are currently experimental and might change in the future.
@@ -158,10 +159,10 @@ AutoKuma provides the ability to define reusable snippets. Snippets need to be d
 
 ```yaml
 AUTOKUMA__SNIPPETS__WEB: |-
-    {{container_name}}_http.http.name: {{container_name}} HTTP
-    {{container_name}}_http.http.url: https://{{@0}}:{{@1}}
-    {{container_name}}_docker.docker.name: {{container_name}} Docker
-    {{container_name}}_docker.docker.docker_container: {{container_name}}
+    {{ container_name }}_http.http.name: {{ container_name }} HTTP
+    {{ container_name }}_http.http.url: https://{{ args[0] }}:{{ args[1] }}
+    {{ container_name }}_docker.docker.name: {{ container_name }} Docker
+    {{ container_name }}_docker.docker.docker_container: {{ container_name }}
 ```
 
 or in an equivalent TOML config file:
@@ -169,16 +170,16 @@ or in an equivalent TOML config file:
 ```toml
 [snippets]
 web = '''
-    {{container_name}}_http.http.name: {{container_name}}
-    {{container_name}}_http.http.url: https://{{@0}}:{{@1}}
-    {{container_name}}_docker.docker.name: {{container_name}}_docker
-    {{container_name}}_docker.docker.docker_name: {{container_name}}
+    {{ container_name }}_http.http.name: {{ container_name }}
+    {{ container_name }}_http.http.url: https://{{ args[0] }}:{{ args[1] }}
+    {{ container_name }}_docker.docker.name: {{ container_name }}_docker
+    {{ container_name }}_docker.docker.docker_name: {{ container_name }}
 '''
 ```
 
 These define a snippet called `web`. 
 
-A snippet can have a variable number of arguments, which are available as replacements using `{{@0}}`, `{{@1}}`, `{{@2}}`, etc., as seen above.
+A snippet can have a variable number of arguments, which are available as replacements using `{{ args[0] }}`, `{{ args[1] }}`, `{{ args[2] }}`, etc., as seen above.
 
 To use a snippet on a container, assign a label in the format:
 
@@ -191,6 +192,49 @@ For example, the above snippet could be included using the following label:
 ```plaintext
 kuma.__web: "example.com", 443
 ```
+
+Snippets also use [Tera](https://keats.github.io/tera/), which allows for some quite advanced templates, here's a extended variation of the above example:
+```jinja
+{# Assign the first snippet arg to args to make access easier #}
+{% set args = args[0] %}
+
+{# Generate an autokuma id by slugifying the "name" arg #}
+{% set id = args.name | slugify %}
+
+{# if we have a "keyword" generate a "keyword" monitor, otherwise generate a "http" monitor #}
+{% if args.keyword %}
+    {% set type = "keyword" %}
+{% else %}
+    {% set type = "http" %}
+{% endif %}
+
+
+{# below are the actual lines which end up defining the monitor #}
+{{ id }}-group.group.name: {{ args.name }}
+{{ id }}-http.{{ type }}.name: {{ args.name }} (HTTP)
+{{ id }}-http.{{ type }}.parent_name: {{ id }}-group
+{{ id }}-http.{{ type }}.url: {{ args.url }}
+{% if args.keyword %}
+    {{ id }}-http.{{ type }}.keyword: {{ args.keyword }}
+{% endif %}
+{% if args.status_code %}
+    {{ id }}-http.{{ type }}.status_code: {{ args.status_code }}
+{% endif %}
+{{ id }}-http-container.docker.name: {{ args.name }} (Container)
+{{ id }}-http-container.docker.parent_name: {{ id }}-group
+```
+
+And the usage of it would be like the following:
+Just a basic http monitor:  
+```yaml
+kuma.__web: '{ "name": "Example HTTP", "url": "https://example.com" }'
+```
+
+Keyword monitor with custom status_codes:
+```yaml
+kuma.__web: '{ "name": "Example HTTP", "url": "https://example.com", "keyword": "Example Domain", "status_codes": ["200"] }'
+```
+
 
 ### Static Monitors
 In addition to reading Monitors from Docker labels, AutoKuma can create Monitors from files. This can be usefull if you have want AutoKuma to manage monitors which aren't directly related to a container.

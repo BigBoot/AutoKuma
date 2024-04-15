@@ -5,6 +5,33 @@
 #[doc(hidden)]
 pub mod build {
     include!(concat!(env!("OUT_DIR"), "/shadow.rs"));
+
+    pub const SHORT_VERSION: &str = const_str::format!(
+        "{}{}",
+        LAST_TAG,
+        if const_str::equal!(TAG, "") {
+            const_str::format!(
+                "-{}{}",
+                SHORT_COMMIT,
+                if !GIT_CLEAN { "-dirty" } else { "" }
+            )
+        } else {
+            ""
+        }
+    );
+    pub const LONG_VERSION: &str = const_str::format!(
+        r#"{}
+branch: {}
+commit_hash: {} 
+build_time: {}
+build_env: {}, {}"#,
+        SHORT_VERSION,
+        BRANCH,
+        SHORT_COMMIT,
+        BUILD_TIME,
+        RUST_VERSION,
+        RUST_CHANNEL
+    );
 }
 
 pub(crate) mod deserialize;

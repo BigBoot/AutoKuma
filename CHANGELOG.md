@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- **!! WARNING POTENTIAL BREAKING CHANGE !!**: switch from custom templating to [Tera](https://keats.github.io/tera/docs/#introduction)  
+  This change *might* break your current configuration if one of the following applies:
+  - Your labels contain `{{`, `}}`, `{%`, `%}`, `{#` or `#}`:  
+    Wrap your labels in `{% raw %}{% endraw %}` to ensure Tera does not try to parse them, e.g.:  
+      `kuma.mygroup.group.name: "This is a {{ Group }}"` -> `kuma.mygroup.group.name: "{% raw %}This is a {{ Group }}{% endraw %}"`
+  - You are using [Snippets](https://github.com/BigBoot/AutoKuma#snippets) with arguments:  
+    The syntax for snippet arguments changed from `{{@0}}`, `{{@1}}`, `{{@2}}` etc. to `{{args[0]}}`, `{{args[1]}}`, `{{args[2]}}` etc.
 
 ## [0.5.0] - 2024-04-13
 ### Fixed

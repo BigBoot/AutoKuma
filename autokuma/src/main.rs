@@ -3,6 +3,7 @@ use flexi_logger::{Cleanup, Criterion, Duplicate, FileSpec, Logger, LoggerHandle
 use serde_json::json;
 use std::sync::Arc;
 use util::{ResultLogger, ResultOrDie};
+use kuma_client::build::SHORT_VERSION;
 
 mod config;
 mod error;
@@ -45,7 +46,7 @@ const BANNER: &str = r"
              /  \    _   _ | |_   ___  | ' /  _   _  _ __ ___    __ _ 
             / /\ \  | | | || __| / _ \ |  <  | | | || '_ ` _ \  / _` |
            / ____ \ | |_| || |_ | (_) || . \ | |_| || | | | | || (_| |
-          /_/    \_\ \__,_| \__| \___/ |_|\_\ \__,_||_| |_| |_| \__,_|                                                    
+          /_/    \_\ \__,_| \__| \___/ |_|\_\ \__,_||_| |_| |_| \__,_|  
 ";
 
 fn create_logger(config: &Arc<crate::config::Config>) -> LoggerHandle {
@@ -88,7 +89,7 @@ async fn main() {
   
     let logger = create_logger(&config);
 
-    println!("{}", BANNER);
+    println!("{}{:>70}", BANNER, SHORT_VERSION);
 
     let sync = sync::Sync::new(config)
         .log_error(std::module_path!(), |e| format!("Invalid config: {}", e))

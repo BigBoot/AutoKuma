@@ -2,7 +2,7 @@ use clap::{arg, command, CommandFactory, Parser, Subcommand, ValueEnum};
 use flexi_logger::Logger;
 use kuma_client::{
     build::{
-        BRANCH, BUILD_TIME, GIT_CLEAN, LAST_TAG, RUST_CHANNEL, RUST_VERSION, SHORT_COMMIT, TAG,
+        SHORT_VERSION, LONG_VERSION,
     },
     monitor::Monitor,
     Config,
@@ -14,33 +14,6 @@ use tokio::task;
 
 type Result<T> = kuma_client::error::Result<T>;
 
-const VERSION: &str = const_str::format!(
-    "{}{}",
-    LAST_TAG,
-    if const_str::equal!(TAG, "") {
-        const_str::format!(
-            "-{}{}",
-            SHORT_COMMIT,
-            if !GIT_CLEAN { "-dirty" } else { "" }
-        )
-    } else {
-        ""
-    }
-);
-const LONG_VERSION: &str = const_str::format!(
-    r#"{}
-branch: {}
-commit_hash: {} 
-build_time: {}
-build_env: {}, {}"#,
-    VERSION,
-    BRANCH,
-    SHORT_COMMIT,
-    BUILD_TIME,
-    RUST_VERSION,
-    RUST_CHANNEL
-);
-
 #[derive(ValueEnum, Clone, Debug)]
 enum OutputFormat {
     Json,
@@ -49,7 +22,7 @@ enum OutputFormat {
 }
 
 #[derive(Parser, Clone, Debug)]
-#[command(author, version = VERSION, long_version = LONG_VERSION, about, long_about = None)]
+#[command(author, version = SHORT_VERSION, long_version = LONG_VERSION, about, long_about = None)]
 struct Cli {
     /// The URL AutoKuma should use to connect to Uptime Kuma.
     #[arg(long, global = true)]

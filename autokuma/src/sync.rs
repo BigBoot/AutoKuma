@@ -13,8 +13,9 @@ use kuma_client::{
     Client,
 };
 use log::{info, warn};
+use tera::Tera;
 use std::{
-    collections::{BTreeMap, HashMap}, env, sync::Arc, time::Duration
+    collections::{BTreeMap, HashMap}, env, error::Error as _, sync::Arc, time::Duration
 };
 
 pub struct Sync {
@@ -44,13 +45,14 @@ impl Sync {
 
     fn fill_templates(
         config: impl Into<String>,
-        template_values: &Vec<(String, String)>,
-    ) -> String {
-        template_values
-            .iter()
-            .fold(config.into(), |config, (key, value)| {
-                config.replace(&format!("{{{{{}}}}}", key), &value)
-            })
+        template_values: &tera::Context,
+    ) -> Result<String> {
+        let config = config.into();
+        let mut tera = Tera::default();
+
+        tera.add_raw_template(&config, &config)
+            .and_then(|_| tera.render(&config, template_values))
+            .map_err(|e| Error::LabelParseError(format!("{}\nContext: {:?}", e.source().unwrap(), &template_values.get("container"))))
     }
 
     fn get_defaults(&self, monitor_type: impl AsRef<str>) -> Vec<(String, String)> {
@@ -96,7 +98,7 @@ impl Sync {
         id: &str,
         monitor_type: &str,
         settings: Vec<(String, String)>,
-        template_values: &Vec<(String, String)>,
+        template_values: &tera::Context,
     ) -> Result<Monitor> {
         let defaults = self.get_defaults(monitor_type);
 
@@ -110,7 +112,7 @@ impl Sync {
                 .map(|(key, value)| format!("{} = {}", key, toml::Value::String(value)))
                 .join("\n"),
             template_values,
-        );
+        )?;
 
         let toml = toml::from_str::<serde_json::Value>(&config)
             .map_err(|e| Error::LabelParseError(e.to_string()))?;
@@ -127,7 +129,7 @@ impl Sync {
     fn get_monitors_from_labels(
         &self,
         labels: Vec<(String, String)>,
-        template_values: &Vec<(String, String)>,
+        template_values: &tera::Context,
     ) -> Result<Vec<(String, Monitor)>> {
         let entries = labels.iter()
             .flat_map(|(key, value)| {
@@ -140,28 +142,27 @@ impl Sync {
                         .ok();
                 
                     if let (Some(snippet), Some(args)) = (snippet, args) {
-                        let template_values = template_values.iter()
-                            .map(|f| (f.0.clone(), f.1.clone()))
-                            .chain(args.iter().enumerate().map(|(i, arg)| (format!("@{}", i), arg
-                                .to_string()
-                                .trim_matches('"')
-                                .to_owned()
-                            )))
-                            .collect::<Vec<_>>();
+                        let mut template_values = template_values.clone();
+                        template_values.insert("args", &args);
 
-                        Box::new(snippet.lines()
-                            .map(move |line| Self::fill_templates(line, &template_values))
-                            .flat_map(|line| line
-                                .split_once(": ")
-                                .map(|(key, value)| (key.trim_start().to_owned(), value.to_owned()))
-                                .log_warn(std::module_path!(), || format!("Invalid snippet line: '{}'", line)
-                            ))
-                        ) as Box<dyn Iterator<Item = (String, String)>>
-                    }else {
-                        Box::new(std::iter::empty()) as Box<dyn Iterator<Item = (String, String)>>
+                        if let Ok(snippet) = Self::fill_templates(snippet, &template_values)
+                            .log_warn(std::module_path!(), |e| format!("Error while parsing snippet: {}", e.to_string())) {
+                                snippet
+                                .lines()
+                                .filter(|line| !line.trim().is_empty())
+                                .flat_map(|line| line
+                                    .split_once(": ")
+                                    .map(|(key, value)| (key.trim_start().to_owned(), value.to_owned()))
+                                    .log_warn(std::module_path!(), || format!("Invalid snippet line: '{}'", line)
+                                )).collect::<Vec<_>>()
+                        } else {
+                            vec![]
+                        }
+                    } else {
+                        vec![]
                     }
                 } else {
-                    Box::new(std::iter::once((key.to_owned(), value.to_owned()))) as Box<dyn Iterator<Item = (String, String)>>
+                    vec![(key.to_owned(), value.to_owned())]
                 }
             })
             .collect::<Vec<_>>();
@@ -178,6 +179,24 @@ impl Sync {
             .collect()
     }
 
+    fn get_kuma_labels(&self, 
+        container: &ContainerSummary,
+        template_values: &tera::Context,
+    ) -> Result<Vec<(String, String)>> {
+        container.labels.as_ref().map_or_else(
+            || Ok(vec![]),
+            |labels| {
+                labels
+                    .iter()
+                    .filter(|(key, _)| {
+                        key.starts_with(&format!("{}.", self.config.docker.label_prefix))
+                    })
+                    .map(|(key, value)| Self::fill_templates(key.trim_start_matches(&format!("{}.", self.config.docker.label_prefix)), &template_values).map(|key| (key, value.to_owned())))
+                    .collect::<Result<Vec<_>>>()
+            },
+        )
+    }
+
     fn get_monitors_from_containers(
         &self,
         containers: &Vec<ContainerSummary>,
@@ -185,38 +204,20 @@ impl Sync {
         containers
             .into_iter()
             .map(|container| {
-                let template_values = [
-                    ("container_id", &container.id),
-                    ("image_id", &container.image_id),
-                    ("image", &container.image),
-                    (
-                        "container_name",
-                        &container
-                            .names
-                            .as_ref()
-                            .and_then(|names| names.first().map(|s| s.trim_start_matches("/").to_owned())),
-                    ),
-                ]
-                .into_iter()
-                .filter_map(|(key, value)| {
-                    value
-                        .as_ref()
-                        .map(|value| (key.to_owned(), value.to_owned()))
-                })
-                .collect_vec();
 
-                let kuma_labels = container.labels.as_ref().map_or_else(
-                    || vec![],
-                    |labels| {
-                        labels
-                            .iter()
-                            .filter(|(key, _)| {
-                                key.starts_with(&format!("{}.", self.config.docker.label_prefix))
-                            })
-                            .map(|(key, value)| (Self::fill_templates(key.trim_start_matches(&format!("{}.", self.config.docker.label_prefix)), &template_values), value.to_owned()))
-                            .collect::<Vec<_>>()
-                    },
+                let mut template_values = tera::Context::new();
+                template_values.insert("container_id", &container.id);
+                template_values.insert("image_id", &container.image_id);
+                template_values.insert("image", &container.image);
+                template_values.insert("container_name", &container 
+                    .names 
+                    .as_ref() 
+                    .and_then(|names| names.first().map(|s| s.trim_start_matches("/").to_owned()))
                 );
+
+                template_values.insert("container", &container);
+
+                let kuma_labels = self.get_kuma_labels(container, &template_values)?;
 
                 self.get_monitors_from_labels(kuma_labels, &template_values)
             })
