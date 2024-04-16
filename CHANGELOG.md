@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - You are using [Snippets](https://github.com/BigBoot/AutoKuma#snippets) with arguments:  
     The syntax for snippet arguments changed from `{{@0}}`, `{{@1}}`, `{{@2}}` etc. to `{{args[0]}}`, `{{args[1]}}`, `{{args[2]}}` etc.
 
+### Added
+- kuma-cli: docker-host management
+- kuma-cli: colored output in pretty print mode
+
+### Removed
+- kuma-cli: toml output format as it's not compatible with all data
+
 ## [0.5.0] - 2024-04-13
 ### Fixed
 - Use correct tag name when resolving groups, see [#17](https://github.com/BigBoot/AutoKuma/issues/17)

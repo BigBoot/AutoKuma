@@ -291,6 +291,13 @@ Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting wit
     - [x] `edit`
     - [x] `ls`
     - [x] `get`
+- [x] Commands : `kuma docker-host`
+    - [x] `add`
+    - [x] `delete`
+    - [x] `edit`
+    - [x] `ls`
+    - [x] `get`
+    - [x] `test`
 
 ## 🔧 How to Install
 

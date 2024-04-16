@@ -1,14 +1,5 @@
 use crate::{
-    error::{Error, Result},
-    event::Event,
-    maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage},
-    monitor::{Monitor, MonitorList, MonitorType},
-    notification::{Notification, NotificationList},
-    response::LoginResponse,
-    status_page::{PublicGroupList, StatusPage, StatusPageList},
-    tag::{Tag, TagDefinition},
-    util::ResultLogger,
-    Config,
+    docker_host::{DockerHost, DockerHostList}, error::{Error, Result}, event::Event, maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage}, monitor::{Monitor, MonitorList, MonitorType}, notification::{Notification, NotificationList}, response::LoginResponse, status_page::{PublicGroupList, StatusPage, StatusPageList}, tag::{Tag, TagDefinition}, util::ResultLogger, Config
 };
 use futures_util::FutureExt;
 use itertools::Itertools;
@@ -34,6 +25,7 @@ struct Ready {
     pub notification_list: bool,
     pub maintenance_list: bool,
     pub status_page_list: bool,
+    pub docker_host_list: bool,
 }
 
 impl Ready {
@@ -43,6 +35,7 @@ impl Ready {
             notification_list: false,
             maintenance_list: false,
             status_page_list: false,
+            docker_host_list: false,
         }
     }
 
@@ -55,6 +48,7 @@ impl Ready {
             && self.notification_list
             && self.maintenance_list
             && self.status_page_list
+            && self.docker_host_list
     }
 }
 
@@ -64,6 +58,7 @@ struct Worker {
     socket_io: Arc<Mutex<Option<SocketIO>>>,
     monitors: Arc<Mutex<MonitorList>>,
     notifications: Arc<Mutex<NotificationList>>,
+    docker_hosts: Arc<Mutex<DockerHostList>>,
     maintenances: Arc<Mutex<MaintenanceList>>,
     status_pages: Arc<Mutex<StatusPageList>>,
     is_connected: Arc<Mutex<bool>>,
@@ -82,6 +77,7 @@ impl Worker {
             notifications: Default::default(),
             maintenances: Default::default(),
             status_pages: Default::default(),
+            docker_hosts: Default::default(),
             is_connected: Arc::new(Mutex::new(false)),
             is_ready: Arc::new(Mutex::new(Ready::new())),
             is_logged_in: Arc::new(Mutex::new(false)),
@@ -142,6 +138,13 @@ impl Worker {
         Ok(())
     }
 
+    async fn on_docker_host_list(self: &Arc<Self>, docker_host_list: DockerHostList) -> Result<()> {
+        *self.docker_hosts.lock().await = docker_host_list;
+        self.is_ready.lock().await.docker_host_list = true;
+
+        Ok(())
+    }
+
     async fn on_info(self: &Arc<Self>) -> Result<()> {
         *self.is_connected.lock().await = true;
         if let (Some(username), Some(password), true) = (
@@ -178,6 +181,10 @@ impl Worker {
             }
             Event::StatusPageList => {
                 self.on_status_page_list(serde_json::from_value(payload).unwrap())
+                    .await?
+            }
+            Event::DockerHostList => {
+                self.on_docker_host_list(serde_json::from_value(payload).unwrap())
                     .await?
             }
             Event::Info => self.on_info().await?,
@@ -937,6 +944,57 @@ impl Worker {
         Ok(())
     }
 
+    pub async fn add_docker_host(self: &Arc<Self>, docker_host: &mut DockerHost) -> Result<()> {
+        self.edit_docker_host(docker_host).await
+    }
+
+    pub async fn edit_docker_host(self: &Arc<Self>, docker_host: &mut DockerHost) -> Result<()> {
+        docker_host.id = self
+            .call(
+                "addDockerHost",
+                vec![
+                    serde_json::to_value(docker_host.clone()).unwrap(),
+                    serde_json::to_value(docker_host.id.clone()).unwrap(),
+                ],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_docker_host(self: &Arc<Self>, docker_host_id: i32) -> Result<()> {
+        let _: bool = self
+            .call(
+                "deleteDockerHost",
+                vec![
+                    serde_json::to_value(docker_host_id).unwrap(),
+                ],
+                "/ok",
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+
+    pub async fn test_docker_host(self: &Arc<Self>, docker_host: &DockerHost) -> Result<String> {
+        let msg: String = self
+            .call(
+                "testDockerHost",
+                vec![
+                    serde_json::to_value(docker_host).unwrap(),
+                ],
+                "/msg",
+                true,
+            )
+            .await?;
+
+        Ok(msg)
+    }
+
     pub async fn connect(self: &Arc<Self>) -> Result<()> {
         self.is_ready.lock().await.reset();
         *self.is_logged_in.lock().await = false;
@@ -1335,6 +1393,46 @@ impl Client {
     /// Deletes a status page from Uptime Kuma based on its slug.
     pub async fn delete_status_page(&self, slug: &str) -> Result<()> {
         self.worker.delete_status_page(slug).await
+    }
+
+    /// Retrieves a list of status pages from Uptime Kuma.
+    pub async fn get_docker_hosts(&self) -> Result<DockerHostList> {
+        match self.worker.is_ready().await {
+            true => Ok(self.worker.docker_hosts.lock().await.clone()),
+            false => Err(Error::NotReady),
+        }
+    }
+
+    /// Retrieves information about a specific docker host identified by its id.
+    pub async fn get_docker_host(&self, docker_host_id: i32) -> Result<DockerHost> {
+        self.get_docker_hosts().await.and_then(|docker_host| {
+            docker_host
+                .into_iter()
+                .find(|docker_host| docker_host.id == Some(docker_host_id))
+                .ok_or_else(|| Error::IdNotFound("Docker Host".to_owned(), docker_host_id))
+        })
+    }
+
+    /// Adds a new docker host to Uptime Kuma.
+    pub async fn add_docker_host(&self, mut docker_host: DockerHost) -> Result<DockerHost> {
+        self.worker.add_docker_host(&mut docker_host).await?;
+        Ok(docker_host)
+    }
+
+    /// Edits an existing docker host in Uptime Kuma.
+    pub async fn edit_docker_host(&self, mut docker_host: DockerHost) -> Result<DockerHost> {
+        self.worker.edit_docker_host(&mut docker_host).await?;
+        Ok(docker_host)
+    }
+
+    /// Deletes a docker host from Uptime Kuma based on its id.
+    pub async fn delete_docker_host(&self, docker_host_id: i32) -> Result<()> {
+        self.worker.delete_docker_host(docker_host_id).await
+    }
+
+    /// Test a docker host in Uptime Kuma.
+    pub async fn test_docker_host(&self, docker_host: &DockerHost) -> Result<String> {
+        self.worker.test_docker_host(docker_host).await
     }
 
     /// Disconnects the client from Uptime Kuma.

@@ -321,17 +321,17 @@
 | `upside_down`                | bool          |
 
 ## `push`
-| Property               | Example Value |
-|------------------------|---------------|
-| `accepted_statuscodes` | 200-299       |
-| `active`               | true          |
-| `interval`             | 60            |
-| `max_retries`          | 0             |
-| `name`                 | Example       |
-| `parent`               | 0             |
-| `push_url`             |               |
-| `retry_interval`       | 60            |
-| `upside_down`          | bool          |
+| Property               | Example Value                    |
+|------------------------|----------------------------------|
+| `accepted_statuscodes` | 200-299                          |
+| `active`               | true                             |
+| `interval`             | 60                               |
+| `max_retries`          | 0                                |
+| `name`                 | Example                          |
+| `parent`               | 0                                |
+| `push_token`           | 4Gdp9cHeNu7MHZ6P6RPiiVbHgSdEHJz7 |
+| `retry_interval`       | 60                               |
+| `upside_down`          | bool                             |
 
 ## `radius`
 | Property                    | Example Value |
