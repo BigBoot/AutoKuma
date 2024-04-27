@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - You are using [Snippets](https://github.com/BigBoot/AutoKuma#snippets) with arguments:  
     The syntax for snippet arguments changed from `{{@0}}`, `{{@1}}`, `{{@2}}` etc. to `{{args[0]}}`, `{{args[1]}}`, `{{args[2]}}` etc.
 
+### Fixed
+- autokuma: connections not being closed when an error occurs during setup, see [#11](https://github.com/BigBoot/AutoKuma/issues/11)
+
 ### Added
 - kuma-cli: docker-host management
 - kuma-cli: colored output in pretty print mode

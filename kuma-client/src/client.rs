@@ -1202,18 +1202,26 @@ pub struct Client {
 
 impl Client {
     pub async fn connect(config: Config) -> Result<Client> {
-        let worker = Worker::new(config, None);
-        worker.connect().await?;
-
-        Ok(Self { worker })
+        Client::connect_impl(config, None).await
     }
 
     #[cfg(feature = "private-api")]
     pub async fn connect_with_tag_name(config: Config, tag_name: String) -> Result<Client> {
-        let worker = Worker::new(config, Some(tag_name));
-        worker.connect().await?;
+        Client::connect_impl(config, Some(tag_name)).await
+    }
 
-        Ok(Self { worker })
+    async fn connect_impl(config: Config, tag_name: Option<String>) -> Result<Client> {
+        let worker = Worker::new(config, tag_name);
+        match worker.connect().await {
+            Ok(_) =>  Ok(Self { worker }),
+            Err(e) => {
+                _ = worker
+                    .disconnect().await
+                    .log_error(std::module_path!(), |e| e.to_string());
+
+                Err(e)
+            }
+        }
     }
 
 
@@ -1438,5 +1446,16 @@ impl Client {
     /// Disconnects the client from Uptime Kuma.
     pub async fn disconnect(&self) -> Result<()> {
         self.worker.disconnect().await
+    }
+}
+
+impl Drop for Client {
+    fn drop(&mut self) {
+        let worker = self.worker.clone();
+        tokio::spawn(async move {
+            _ = worker.disconnect()
+                .await
+                .log_error(std::module_path!(), |e| e.to_string());
+        });
     }
 }

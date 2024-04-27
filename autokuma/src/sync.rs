@@ -466,8 +466,6 @@ impl Sync {
             }
         }
 
-        kuma.disconnect().await?;
-
         Ok(())
     }
 
