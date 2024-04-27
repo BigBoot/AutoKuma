@@ -1,5 +1,5 @@
 use crate::{
-    config::Config,
+    config::{Config, DeleteBehavior},
     error::{Error, KumaError, Result},
     util::{group_by_prefix, ResultLogger},
 };
@@ -457,10 +457,12 @@ impl Sync {
             }
         }
 
-        for (id, monitor) in to_delete {
-            info!("Deleting monitor: {}", id);
-            if let Some(id) = monitor.common().id() {
-                kuma.delete_monitor(*id).await?;
+        if self.config.on_delete == DeleteBehavior::Delete {
+            for (id, monitor) in to_delete {
+                info!("Deleting monitor: {}", id);
+                if let Some(id) = monitor.common().id() {
+                    kuma.delete_monitor(*id).await?;
+                }
             }
         }
 

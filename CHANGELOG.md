@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - kuma-cli: docker-host management
 - kuma-cli: colored output in pretty print mode
+- autokuma: add on_delete config option, see [#29](https://github.com/BigBoot/AutoKuma/issues/29)
 
 ### Removed
 - kuma-cli: toml output format as it's not compatible with all data

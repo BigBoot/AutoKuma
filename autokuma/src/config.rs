@@ -21,6 +21,14 @@ pub struct DockerConfig {
     pub label_prefix: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DeleteBehavior {
+    #[serde(alias = "delete")]
+    Delete,
+    #[serde(alias = "keep")]
+    Keep,
+}
+
 #[serde_alias(ScreamingSnakeCase)]
 #[serde_inline_default]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -36,6 +44,10 @@ pub struct Config {
     /// The path to the folder in which AutoKuma will search for static Monitor definitions.
     #[serde_inline_default(None)]
     pub static_monitors: Option<String>,
+
+    /// Specify what to do when a monitor with given autokuma id is not found anymore.
+    #[serde_inline_default(DeleteBehavior::Delete)]
+    pub on_delete: DeleteBehavior,
 
     /// The name of the AutoKuma tag, used to track managed containers
     #[serde_inline_default("AutoKuma".to_owned())]
