@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.6.0] - 2024-04-28
 ### Changed
 - **!! WARNING POTENTIAL BREAKING CHANGE !!**: switch from custom templating to [Tera](https://keats.github.io/tera/docs/#introduction)  
   This change *might* break your current configuration if one of the following applies:
