@@ -1,7 +1,7 @@
 use crate::{
     config::{Config, DeleteBehavior},
     error::{Error, KumaError, Result},
-    util::{group_by_prefix, ResultLogger},
+    util::{group_by_prefix, FlattenValue as _, ResultLogger},
 };
 use bollard::{
     container::ListContainersOptions, service::ContainerSummary, Docker
@@ -13,6 +13,7 @@ use kuma_client::{
     Client,
 };
 use log::{info, warn};
+use serde_json::json;
 use tera::Tera;
 use std::{
     collections::{BTreeMap, HashMap}, env, error::Error as _, sync::Arc, time::Duration
@@ -55,7 +56,7 @@ impl Sync {
             .map_err(|e| Error::LabelParseError(format!("{}\nContext: {:?}", e.source().unwrap(), &template_values.get("container"))))
     }
 
-    fn get_defaults(&self, monitor_type: impl AsRef<str>) -> Vec<(String, String)> {
+    fn get_defaults(&self, monitor_type: impl AsRef<str>) -> Vec<(String, serde_json::Value)> {
         vec![
             self.defaults.get("*"),
             self.defaults.get(monitor_type.as_ref()),
@@ -64,7 +65,8 @@ impl Sync {
         .flat_map(|defaults| {
             defaults
                 .into_iter()
-                .map(|entry| entry.to_owned())
+                .map(|entry| entry.into_iter()
+                    .map(|(key, value)| (key.to_owned(), json!(value))))
                 .collect_vec()
         })
         .flatten()
@@ -93,23 +95,23 @@ impl Sync {
             .collect::<Vec<_>>())
     }
 
-    fn get_monitor_from_labels(
+    fn get_monitor_from_settings(
         &self,
         id: &str,
         monitor_type: &str,
-        settings: Vec<(String, String)>,
+        settings: Vec<(String, serde_json::Value)>,
         template_values: &tera::Context,
     ) -> Result<Monitor> {
         let defaults = self.get_defaults(monitor_type);
 
         let config = Self::fill_templates(
-            vec![("type".to_owned(), monitor_type.to_owned())]
+            vec![("type".to_owned(), json!(monitor_type.to_owned()))]
                 .into_iter()
                 .chain(settings.into_iter())
                 .chain(defaults.into_iter())
                 .sorted_by(|a, b| Ord::cmp(&a.0, &b.0))
                 .unique_by(|(key, _)| key.to_owned())
-                .map(|(key, value)| format!("{} = {}", key, toml::Value::String(value)))
+                .map(|(key, value)| format!("{} = {}", key, value))
                 .join("\n"),
             template_values,
         )?;
@@ -172,7 +174,10 @@ impl Sync {
             .map(|(key, value)| (key, group_by_prefix(value, ".")))
             .flat_map(|(id, monitors)| {
                 monitors.into_iter().map(move |(monitor_type, settings)| {
-                    self.get_monitor_from_labels(&id, &monitor_type, settings, template_values)
+                    self.get_monitor_from_settings(&id, &monitor_type, settings.into_iter()
+                            .map(|(key, value)| (key, json!(value)))
+                            .collect_vec(), template_values
+                        )
                         .map(|monitor| (id.clone(), monitor))
                 })
             })
@@ -263,33 +268,47 @@ impl Sync {
             .collect::<HashMap<_, _>>())
     }
 
-    async fn get_monitor_from_file(file: impl AsRef<str>) -> Result<Option<(String, Monitor)>> {
+    async fn get_monitor_from_file(&self, file: impl AsRef<str>) -> Result<(String, Monitor)> {
         let file = file.as_ref();
         let id = std::path::Path::new(file)
             .file_stem()
             .and_then(|os| os.to_str().map(|str| str.to_owned()))
             .ok_or_else(|| Error::IO(format!("Unable to determine file: '{}'", file)))?;
 
-        Ok(if file.ends_with(".json") {
-            let content = tokio::fs::read_to_string(file)
+        let value: Option<serde_json::Value> = if file.ends_with(".json") {
+            let content: String = tokio::fs::read_to_string(file)
                 .await
                 .map_err(|e| Error::IO(e.to_string()))?;
-            Some((
-                id,
+
+            Some(
                 serde_json::from_str(&content)
                     .map_err(|e| Error::DeserializeError(e.to_string()))?,
-            ))
+            )
         } else if file.ends_with(".toml") {
             let content = tokio::fs::read_to_string(file)
                 .await
                 .map_err(|e| Error::IO(e.to_string()))?;
-            Some((
-                id,
+
+            Some(
                 toml::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?,
-            ))
+            )
         } else {
             None
-        })
+        };
+
+        let values = value
+            .ok_or_else(||Error::DeserializeError(format!("Unsupported static monitor file type: {}, supported: .json, .toml", file)))
+            .and_then(|v| v.flatten())?;
+
+        let monitor_type = values.iter()
+            .find(|(key, _)| key == "type")
+            .and_then(|(_, value)| value.as_str().map(|s| s.to_owned()))
+            .ok_or_else(|| Error::DeserializeError(format!("Static monitor {} is missing `type`", file)))?;
+
+        let context = tera::Context::new();
+        let monitor = self.get_monitor_from_settings(&id, &monitor_type, values, &context)?;
+
+        Ok((id, monitor))
     }
 
     fn merge_monitors(
@@ -374,11 +393,8 @@ impl Sync {
                         .await
                         .map_err(|e| Error::IO(e.to_string()))?
                     {
-                        if let Some((id, monitor)) =
-                            Self::get_monitor_from_file(f.path().to_string_lossy()).await?
-                        {
-                            new_monitors.insert(id, monitor);
-                        }
+                        let (id, monitor) = self.get_monitor_from_file(f.path().to_string_lossy()).await?;
+                        new_monitors.insert(id, monitor);
                     } else {
                         break;
                     }

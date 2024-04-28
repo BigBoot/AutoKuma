@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       `kuma.mygroup.group.name: "This is a {{ Group }}"` -> `kuma.mygroup.group.name: "{% raw %}This is a {{ Group }}{% endraw %}"`
   - You are using [Snippets](https://github.com/BigBoot/AutoKuma#snippets) with arguments:  
     The syntax for snippet arguments changed from `{{@0}}`, `{{@1}}`, `{{@2}}` etc. to `{{args[0]}}`, `{{args[1]}}`, `{{args[2]}}` etc.
+  - Static Monitors will be be postprocessed in the same way as monitors defined by container labels, see [#33](https://github.com/BigBoot/AutoKuma/issues/33)
 
 ### Fixed
 - autokuma: connections not being closed when an error occurs during setup, see [#11](https://github.com/BigBoot/AutoKuma/issues/11)
