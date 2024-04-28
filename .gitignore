@@ -5,3 +5,4 @@ kuma.toml
 docker.sock
 .vscode
 */logo.svg
+!/logo.svg
