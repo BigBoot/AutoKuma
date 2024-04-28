@@ -46,6 +46,9 @@ pub(crate) struct Cli {
     #[arg(long = "pretty", default_value_t = false, global = true)]
     pub output_pretty: bool,
 
+    #[arg(long, hide = true)]
+    pub shadow: bool,
+
     #[command(subcommand)]
     pub command: Option<Commands>,
 }

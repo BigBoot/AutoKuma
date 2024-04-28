@@ -29,6 +29,7 @@ async fn main() {
         Some(Commands::Maintenance { command }) => maintenance::handle(command, &config, &cli).await,
         Some(Commands::StatusPage { command }) => status_page::handle(command, &config, &cli).await,
         Some(Commands::DockerHost { command }) => docker_host::handle(command, &config, &cli).await,
+        None if cli.shadow => kuma_client::build::print_build_in(),
         None => {}
     };
 
