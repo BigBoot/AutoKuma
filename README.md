@@ -12,21 +12,21 @@
     </p>
     <p>
         <b>
-            <a href="#autokuma">AutoKuma</a>
+            <a href="#autokuma--">AutoKuma</a>
             &nbsp&nbsp
-            <a href="#kuma-cli">Kuma CLI</a> 
+            <a href="#kuma-cli--">Kuma CLI</a> 
             &nbsp&nbsp
-            <a href="#kuma-client">Kuma Client</a> 
+            <a href="#kuma-client--">Kuma Client</a> 
         </b>
     </p>
 </div>
 
 
-# AutoKuma <a href="https://crates.io/crates/autokuma"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/autokuma?logo=rust&color=blue"></a>
+# AutoKuma 🐻 <a href="https://crates.io/crates/autokuma"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/autokuma?logo=rust&color=blue"></a>
 
 AutoKuma is a utility that automates the creation of Uptime Kuma monitors based on Docker container labels. With AutoKuma, you can eliminate the need for manual monitor creation in the Uptime Kuma UI.
 
-## 🔧 How to Install
+## How to Install 📦
 
 Binaries for windows linux and mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest), additionally AutoKuma is available as a Docker container on [GitHub Container Registry (GHCR)](https://github.com/BigBoot/AutoKuma/pkgs/container/autokuma). To install, simply pull the container using:
 
@@ -34,7 +34,7 @@ Binaries for windows linux and mac are provided for [GitHub Releases](https://gi
 docker pull ghcr.io/bigboot/autokuma:latest
 ```
 
-## Example Docker Compose
+### Example Docker Compose 🚀
 
 Here's an example `docker-compose.yml`:
 
@@ -71,7 +71,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
-## Configuration
+## Configuration 🔧
 
 AutoKuma can be configured using the following environment variables/config keys:
 
@@ -111,7 +111,7 @@ password = "<password>"
 ```
 
 
-## Usage
+## Usage 💡
 
 AutoKuma interprets Docker container labels with the following format:
 
@@ -153,7 +153,7 @@ AutoKuma allows the usage of [Tera](https://keats.github.io/tera/) templates in 
 | `container_name` | Name of the container                   | immich-immich-1                                                                                                                               |
 | `container`      | Nested structure with container details | See the [Docker Engine Documentation](https://docs.docker.com/engine/api/v1.45/#tag/Container/operation/ContainerList) for the available data |
 
-### Snippets
+### Snippets 📝
 **_WARNING:_** Snippets are currently experimental and might change in the future.
 
 AutoKuma provides the ability to define reusable snippets. Snippets need to be defined in the configuration, for example, using environment variables:
@@ -237,7 +237,7 @@ kuma.__web: '{ "name": "Example HTTP", "url": "https://example.com", "keyword": 
 ```
 
 
-### Static Monitors
+### Static Monitors 📊
 In addition to reading Monitors from Docker labels, AutoKuma can create Monitors from files. This can be usefull if you have want AutoKuma to manage monitors which aren't directly related to a container.
 
 To create static Monitors just add a .json or .toml file in the directory specified by `AUTOKUMA__STATIC_MONITORS`, take a look at [the examples here](monitors).
@@ -253,11 +253,11 @@ The default directory for static monitors is:
 In case of static Monitors the id is determined by the filename (without the extension).
 
 
-# Kuma CLI <a href="https://crates.io/crates/kuma-cli"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-cli?logo=rust&color=blue"></a>
+# Kuma CLI 🤖 <a href="https://crates.io/crates/kuma-cli"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-cli?logo=rust&color=blue"></a>
 
 Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting with [Uptime Kuma](https://uptime.kuma.pet/). With Kuma CLI you can easily configure, monitor and manage your applications from the command line.
 
-## Features
+## Features 🎯
 - [x] Commands: `kuma monitor`
     - [x] `add`
     - [x] `delete`
@@ -300,7 +300,7 @@ Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting wit
     - [x] `get`
     - [x] `test`
 
-## 🔧 How to Install
+## How to Install 📦
 
 Binaries for Windows, Linux and Mac OS are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest) and additionally Kuma CLI can be installed using `cargo`:
 
@@ -308,7 +308,7 @@ Binaries for Windows, Linux and Mac OS are provided for [GitHub Releases](https:
 cargo install --git https://github.com/BigBoot/AutoKuma.git kuma-cli
 ```
 
-## Usage
+## Usage 💡
 
 ```bash
 Usage: kuma [OPTIONS] [COMMAND]
@@ -346,7 +346,7 @@ Options:
 ```
 
 
-## Configuration
+## Configuration 🔧
 
 All configuration options can also be specified as environment variables:
 ```
@@ -370,16 +370,16 @@ username = "<username>"
 password = "<password>"
 ```
 
-# Kuma Client <a href="https://crates.io/crates/kuma-client"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-client?logo=rust&color=blue"></a>
+# Kuma Client 🧑‍💻 <a href="https://crates.io/crates/kuma-client"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-client?logo=rust&color=blue"></a>
 
 `kuma-client` is a Rust crate that provides a client library for interacting with the Uptime Kuma SocketIO API.
 
 Please take a look at [the examples](kuma-client/examples/) and the [documentation](https://docs.rs/kuma-client/latest/kuma_client/) for further details.
 
-# Contributing
+# Contributing 👥
 
 Contributions to AutoKuma are welcome! Feel free to open issues, submit pull requests, or provide feedback.
 
-# License
+# License 📜
 
 AutoKuma is released under the [MIT License](LICENSE).
