@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Add missing `query` property for `sqlserver`, `postgres` and `mysql`, see [#36](https://github.com/BigBoot/AutoKuma/issues/36)
 
 ## [0.6.0] - 2024-04-28
 ### Changed
