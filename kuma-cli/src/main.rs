@@ -24,9 +24,13 @@ async fn main() {
 
     match &cli.command {
         Some(Commands::Monitor { command }) => monitor::handle(command, &config, &cli).await,
-        Some(Commands::Notification { command }) => notification::handle(command, &config, &cli).await,
+        Some(Commands::Notification { command }) => {
+            notification::handle(command, &config, &cli).await
+        }
         Some(Commands::Tag { command }) => tag::handle(command, &config, &cli).await,
-        Some(Commands::Maintenance { command }) => maintenance::handle(command, &config, &cli).await,
+        Some(Commands::Maintenance { command }) => {
+            maintenance::handle(command, &config, &cli).await
+        }
         Some(Commands::StatusPage { command }) => status_page::handle(command, &config, &cli).await,
         Some(Commands::DockerHost { command }) => docker_host::handle(command, &config, &cli).await,
         None if cli.shadow => kuma_client::build::print_build_in(),

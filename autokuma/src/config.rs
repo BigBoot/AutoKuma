@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 use serde_alias::serde_alias;
 use serde_inline_default::serde_inline_default;
+use std::collections::HashMap;
 
 #[serde_alias(ScreamingSnakeCase)]
 #[serde_inline_default]

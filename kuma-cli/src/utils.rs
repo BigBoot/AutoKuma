@@ -1,13 +1,15 @@
-
+use crate::cli::Cli;
 use clap::ValueEnum;
-use inkjet::{constants::HIGHLIGHT_NAMES, formatter::Formatter, tree_sitter_highlight::HighlightEvent, Highlighter, InkjetError};
+use inkjet::{
+    constants::HIGHLIGHT_NAMES, formatter::Formatter, tree_sitter_highlight::HighlightEvent,
+    Highlighter, InkjetError,
+};
 use kuma_client::Config;
 use owo_colors::Style;
 use serde::Serialize;
 use serde_json::json;
 use std::{collections::HashMap, path::PathBuf};
 use tokio::task;
-use crate::cli::Cli;
 
 pub(crate) type Result<T> = kuma_client::error::Result<T>;
 
@@ -61,9 +63,21 @@ where
     T: Serialize,
 {
     let str = match (&cli.output_format, &cli.output_pretty) {
-        (OutputFormat::Json, true) => Highlighter::new().highlight_to_string(inkjet::Language::Json, &ColorPrinter::new(), serde_json::to_string_pretty(value).unwrap()).unwrap(),
+        (OutputFormat::Json, true) => Highlighter::new()
+            .highlight_to_string(
+                inkjet::Language::Json,
+                &ColorPrinter::new(),
+                serde_json::to_string_pretty(value).unwrap(),
+            )
+            .unwrap(),
         (OutputFormat::Json, false) => serde_json::to_string(value).unwrap(),
-        (OutputFormat::Yaml, true) => Highlighter::new().highlight_to_string(inkjet::Language::Yaml, &ColorPrinter::new(),serde_yaml::to_string(value).unwrap()).unwrap(),
+        (OutputFormat::Yaml, true) => Highlighter::new()
+            .highlight_to_string(
+                inkjet::Language::Yaml,
+                &ColorPrinter::new(),
+                serde_yaml::to_string(value).unwrap(),
+            )
+            .unwrap(),
         (OutputFormat::Yaml, false) => serde_yaml::to_string(value).unwrap(),
     };
 
@@ -89,7 +103,6 @@ where
     .unwrap_or_die(cli)
 }
 
-
 #[derive(Clone)]
 struct Theme {
     pub default_style: Style,
@@ -110,7 +123,7 @@ impl Theme {
         if let Some(style) = self.styles.get(name) {
             return style;
         }
-        
+
         if let Some(pos) = name.rfind('.') {
             return self.resolve_style(&name[0..pos]);
         }
@@ -119,9 +132,7 @@ impl Theme {
     }
 
     pub fn add_style(&mut self, name: impl Into<String>, style: impl Into<Style>) -> &mut Self {
-        self
-            .styles
-            .insert(name.into(), style.into());
+        self.styles.insert(name.into(), style.into());
 
         self
     }
@@ -143,15 +154,14 @@ impl ColorPrinter {
                 .add_style("constant.builtin", Style::new().purple())
                 .clone(),
 
-            supports_color: 
-                std::env::var("FORCE_COLOR")
-                    .map(|force_color| force_color != "0")
-                    .ok()
-                    .unwrap_or_else(|| supports_color::on_cached(supports_color::Stream::Stdout)
+            supports_color: std::env::var("FORCE_COLOR")
+                .map(|force_color| force_color != "0")
+                .ok()
+                .unwrap_or_else(|| {
+                    supports_color::on_cached(supports_color::Stream::Stdout)
                         .map(|level| level.has_basic)
-                        .unwrap_or(false))
-                        
-                ,
+                        .unwrap_or(false)
+                }),
         }
     }
 }
@@ -172,22 +182,29 @@ impl std::fmt::Display for Suffix<'_> {
 }
 
 impl Formatter for ColorPrinter {
-    fn write<W>(&self, source: &str, writer: &mut W, event: HighlightEvent) -> std::result::Result<(), InkjetError>
-        where
-            W: std::fmt::Write 
+    fn write<W>(
+        &self,
+        source: &str,
+        writer: &mut W,
+        event: HighlightEvent,
+    ) -> std::result::Result<(), InkjetError>
+    where
+        W: std::fmt::Write,
     {
         match event {
             HighlightEvent::Source { start, end } => {
-                let span = source.get(start..end).expect("Source bounds should be in bounds!");
+                let span = source
+                    .get(start..end)
+                    .expect("Source bounds should be in bounds!");
                 writer.write_str(span)?;
-            },
+            }
             HighlightEvent::HighlightStart(idx) => {
                 if self.supports_color {
                     let name = HIGHLIGHT_NAMES[idx.0];
                     let style = self.theme.resolve_style(name);
                     write!(writer, "{}", Prefix(&style))?;
                 }
-            },
+            }
             HighlightEvent::HighlightEnd => {
                 if self.supports_color {
                     write!(writer, "{}", Suffix(&Style::new().white()))?;

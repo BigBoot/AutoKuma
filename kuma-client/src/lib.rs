@@ -53,5 +53,4 @@ pub use client::*;
 pub use config::*;
 #[doc(inline)]
 pub use models::*;
-
 pub use url::Url;

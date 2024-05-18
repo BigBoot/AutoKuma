@@ -3,21 +3,23 @@ use crate::{
     error::{Error, KumaError, Result},
     util::{group_by_prefix, FlattenValue as _, ResultLogger},
 };
-use bollard::{
-    container::ListContainersOptions, service::ContainerSummary, Docker
-};
+use bollard::{container::ListContainersOptions, service::ContainerSummary, Docker};
 use itertools::Itertools;
 use kuma_client::{
     monitor::{Monitor, MonitorType},
     tag::{Tag, TagDefinition},
     Client,
 };
-use log::{info, warn};
+use log::{debug, info, warn};
 use serde_json::json;
-use tera::Tera;
 use std::{
-    collections::{BTreeMap, HashMap}, env, error::Error as _, sync::Arc, time::Duration
+    collections::{BTreeMap, HashMap},
+    env,
+    error::Error as _,
+    sync::Arc,
+    time::Duration,
 };
+use tera::Tera;
 
 pub struct Sync {
     config: Arc<Config>,
@@ -53,7 +55,13 @@ impl Sync {
 
         tera.add_raw_template(&config, &config)
             .and_then(|_| tera.render(&config, template_values))
-            .map_err(|e| Error::LabelParseError(format!("{}\nContext: {:?}", e.source().unwrap(), &template_values.get("container"))))
+            .map_err(|e| {
+                Error::LabelParseError(format!(
+                    "{}\nContext: {:?}",
+                    e.source().unwrap(),
+                    &template_values.get("container")
+                ))
+            })
     }
 
     fn get_defaults(&self, monitor_type: impl AsRef<str>) -> Vec<(String, serde_json::Value)> {
@@ -65,8 +73,11 @@ impl Sync {
         .flat_map(|defaults| {
             defaults
                 .into_iter()
-                .map(|entry| entry.into_iter()
-                    .map(|(key, value)| (key.to_owned(), json!(value))))
+                .map(|entry| {
+                    entry
+                        .into_iter()
+                        .map(|(key, value)| (key.to_owned(), json!(value)))
+                })
                 .collect_vec()
         })
         .flatten()
@@ -80,7 +91,12 @@ impl Sync {
                 ..Default::default()
             }))
             .await
-            .log_warn(std::module_path!(), |_| format!("Using DOCKER_HOST={}", env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())))?
+            .log_warn(std::module_path!(), |_| {
+                format!(
+                    "Using DOCKER_HOST={}",
+                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
+                )
+            })?
             .into_iter()
             .filter(|c| {
                 c.labels.as_ref().map_or_else(
@@ -120,7 +136,9 @@ impl Sync {
             .map_err(|e| Error::LabelParseError(e.to_string()))?;
 
         let monitor = serde_json::from_value::<Monitor>(toml)
-            .log_warn(std::module_path!(), |e| format!("Error while parsing {}: {}!", id, e.to_string()))
+            .log_warn(std::module_path!(), |e| {
+                format!("Error while parsing {}: {}!", id, e.to_string())
+            })
             .map_err(|e| Error::LabelParseError(e.to_string()))?;
 
         monitor.validate(id)?;
@@ -133,30 +151,47 @@ impl Sync {
         labels: Vec<(String, String)>,
         template_values: &tera::Context,
     ) -> Result<Vec<(String, Monitor)>> {
-        let entries = labels.iter()
+        let entries = labels
+            .iter()
             .flat_map(|(key, value)| {
                 if key.starts_with("__") {
-                    let snippet = self.config.snippets.get(key.trim_start_matches("__"))
-                        .log_warn(std::module_path!(), || format!("Snippet '{}' not found!", key));
+                    let snippet = self
+                        .config
+                        .snippets
+                        .get(key.trim_start_matches("__"))
+                        .log_warn(std::module_path!(), || {
+                            format!("Snippet '{}' not found!", key)
+                        });
 
-                    let args = serde_json::from_str::<Vec<serde_json::Value>>(&format!("[{}]", value))
-                        .log_warn(std::module_path!(), |e| format!("Error while parsing snippet arguments: {}", e.to_string()))
-                        .ok();
-                
+                    let args =
+                        serde_json::from_str::<Vec<serde_json::Value>>(&format!("[{}]", value))
+                            .log_warn(std::module_path!(), |e| {
+                                format!("Error while parsing snippet arguments: {}", e.to_string())
+                            })
+                            .ok();
+
                     if let (Some(snippet), Some(args)) = (snippet, args) {
                         let mut template_values = template_values.clone();
                         template_values.insert("args", &args);
 
                         if let Ok(snippet) = Self::fill_templates(snippet, &template_values)
-                            .log_warn(std::module_path!(), |e| format!("Error while parsing snippet: {}", e.to_string())) {
-                                snippet
+                            .log_warn(std::module_path!(), |e| {
+                                format!("Error while parsing snippet: {}", e.to_string())
+                            })
+                        {
+                            snippet
                                 .lines()
                                 .filter(|line| !line.trim().is_empty())
-                                .flat_map(|line| line
-                                    .split_once(": ")
-                                    .map(|(key, value)| (key.trim_start().to_owned(), value.to_owned()))
-                                    .log_warn(std::module_path!(), || format!("Invalid snippet line: '{}'", line)
-                                )).collect::<Vec<_>>()
+                                .flat_map(|line| {
+                                    line.split_once(": ")
+                                        .map(|(key, value)| {
+                                            (key.trim_start().to_owned(), value.to_owned())
+                                        })
+                                        .log_warn(std::module_path!(), || {
+                                            format!("Invalid snippet line: '{}'", line)
+                                        })
+                                })
+                                .collect::<Vec<_>>()
                         } else {
                             vec![]
                         }
@@ -174,17 +209,23 @@ impl Sync {
             .map(|(key, value)| (key, group_by_prefix(value, ".")))
             .flat_map(|(id, monitors)| {
                 monitors.into_iter().map(move |(monitor_type, settings)| {
-                    self.get_monitor_from_settings(&id, &monitor_type, settings.into_iter()
+                    self.get_monitor_from_settings(
+                        &id,
+                        &monitor_type,
+                        settings
+                            .into_iter()
                             .map(|(key, value)| (key, json!(value)))
-                            .collect_vec(), template_values
-                        )
-                        .map(|monitor| (id.clone(), monitor))
+                            .collect_vec(),
+                        template_values,
+                    )
+                    .map(|monitor| (id.clone(), monitor))
                 })
             })
             .collect()
     }
 
-    fn get_kuma_labels(&self, 
+    fn get_kuma_labels(
+        &self,
         container: &ContainerSummary,
         template_values: &tera::Context,
     ) -> Result<Vec<(String, String)>> {
@@ -196,7 +237,16 @@ impl Sync {
                     .filter(|(key, _)| {
                         key.starts_with(&format!("{}.", self.config.docker.label_prefix))
                     })
-                    .map(|(key, value)| Self::fill_templates(key.trim_start_matches(&format!("{}.", self.config.docker.label_prefix)), &template_values).map(|key| (key, value.to_owned())))
+                    .map(|(key, value)| {
+                        Self::fill_templates(
+                            key.trim_start_matches(&format!(
+                                "{}.",
+                                self.config.docker.label_prefix
+                            )),
+                            &template_values,
+                        )
+                        .map(|key| (key, value.to_owned()))
+                    })
                     .collect::<Result<Vec<_>>>()
             },
         )
@@ -209,15 +259,15 @@ impl Sync {
         containers
             .into_iter()
             .map(|container| {
-
                 let mut template_values = tera::Context::new();
                 template_values.insert("container_id", &container.id);
                 template_values.insert("image_id", &container.image_id);
                 template_values.insert("image", &container.image);
-                template_values.insert("container_name", &container 
-                    .names 
-                    .as_ref() 
-                    .and_then(|names| names.first().map(|s| s.trim_start_matches("/").to_owned()))
+                template_values.insert(
+                    "container_name",
+                    &container.names.as_ref().and_then(|names| {
+                        names.first().map(|s| s.trim_start_matches("/").to_owned())
+                    }),
                 );
 
                 template_values.insert("container", &container);
@@ -289,21 +339,27 @@ impl Sync {
                 .await
                 .map_err(|e| Error::IO(e.to_string()))?;
 
-            Some(
-                toml::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?,
-            )
+            Some(toml::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?)
         } else {
             None
         };
 
         let values = value
-            .ok_or_else(||Error::DeserializeError(format!("Unsupported static monitor file type: {}, supported: .json, .toml", file)))
+            .ok_or_else(|| {
+                Error::DeserializeError(format!(
+                    "Unsupported static monitor file type: {}, supported: .json, .toml",
+                    file
+                ))
+            })
             .and_then(|v| v.flatten())?;
 
-        let monitor_type = values.iter()
+        let monitor_type = values
+            .iter()
             .find(|(key, _)| key == "type")
             .and_then(|(_, value)| value.as_str().map(|s| s.to_owned()))
-            .ok_or_else(|| Error::DeserializeError(format!("Static monitor {} is missing `type`", file)))?;
+            .ok_or_else(|| {
+                Error::DeserializeError(format!("Static monitor {} is missing `type`", file))
+            })?;
 
         let context = tera::Context::new();
         let monitor = self.get_monitor_from_settings(&id, &monitor_type, values, &context)?;
@@ -350,7 +406,9 @@ impl Sync {
     }
 
     async fn do_sync(&self) -> Result<()> {
-        let kuma = Client::connect_with_tag_name(self.config.kuma.clone(), self.config.tag_name.clone()).await?;
+        let kuma =
+            Client::connect_with_tag_name(self.config.kuma.clone(), self.config.tag_name.clone())
+                .await?;
 
         let autokuma_tag = self.get_autokuma_tag(&kuma).await?;
         let current_monitors = self.get_managed_monitors(&kuma).await?;
@@ -361,22 +419,33 @@ impl Sync {
             if let Some(docker_socket) = &self.config.docker.socket_path {
                 env::set_var("DOCKER_HOST", format!("unix://{}", docker_socket));
             }
-            
-            let docker = Docker::connect_with_defaults()
-                .log_warn(std::module_path!(), |_| format!("Using DOCKER_HOST={}", env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())))?;
+
+            let docker = Docker::connect_with_defaults().log_warn(std::module_path!(), |_| {
+                format!(
+                    "Using DOCKER_HOST={}",
+                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
+                )
+            })?;
 
             let containers = self.get_kuma_containers(&docker).await?;
             new_monitors.extend(self.get_monitors_from_containers(&containers)?);
         }
 
-        let static_monitor_path = self.config.static_monitors
+        let static_monitor_path = self
+            .config
+            .static_monitors
             .clone()
-            .unwrap_or_else(|| dirs::config_local_dir().map(|dir| dir
-                .join("autokuma")
-                .join("static-monitors")
-                .to_string_lossy()
-                .to_string()
-            ).unwrap_or_default()).to_owned();
+            .unwrap_or_else(|| {
+                dirs::config_local_dir()
+                    .map(|dir| {
+                        dir.join("autokuma")
+                            .join("static-monitors")
+                            .to_string_lossy()
+                            .to_string()
+                    })
+                    .unwrap_or_default()
+            })
+            .to_owned();
 
         if tokio::fs::metadata(&static_monitor_path)
             .await
@@ -393,7 +462,9 @@ impl Sync {
                         .await
                         .map_err(|e| Error::IO(e.to_string()))?
                     {
-                        let (id, monitor) = self.get_monitor_from_file(f.path().to_string_lossy()).await?;
+                        let (id, monitor) = self
+                            .get_monitor_from_file(f.path().to_string_lossy())
+                            .await?;
                         new_monitors.insert(id, monitor);
                     } else {
                         break;
@@ -469,6 +540,11 @@ impl Sync {
                 })
             {
                 info!("Updating monitor: {}", id);
+                debug!(
+                    "\n======= OLD =======\n{}\n===================\n\n======= NEW =======\n{}\n===================", 
+                    serde_json::to_string_pretty(&current).unwrap(),
+                    serde_json::to_string_pretty(&merge).unwrap()
+                );
                 kuma.edit_monitor(merge).await?;
             }
         }

@@ -1,7 +1,10 @@
+use crate::{
+    cli::Cli,
+    utils::{connect, load_file, PrintResult as _},
+};
 use clap::Subcommand;
 use kuma_client::{monitor::Monitor, Config};
 use std::path::PathBuf;
-use crate::{cli::Cli, utils::{connect, load_file, PrintResult as _}};
 
 #[derive(Subcommand, Clone, Debug)]
 #[command(arg_required_else_help = true)]

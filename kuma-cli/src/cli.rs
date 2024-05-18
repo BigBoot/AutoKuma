@@ -1,11 +1,9 @@
+use crate::utils::{OutputFormat, ResultOrDie as _};
 use clap::{arg, command, CommandFactory, Parser, Subcommand};
 use kuma_client::{
-    build::{
-        LONG_VERSION, SHORT_VERSION
-    }, Config
+    build::{LONG_VERSION, SHORT_VERSION},
+    Config,
 };
-
-use crate::utils::{OutputFormat, ResultOrDie as _};
 
 #[derive(Parser, Clone, Debug)]
 #[command(author, version = SHORT_VERSION, long_version = LONG_VERSION, about, long_about = None, arg_required_else_help = true)]
@@ -55,7 +53,7 @@ pub(crate) struct Cli {
 
 impl From<Cli> for Config {
     fn from(value: Cli) -> Self {
-        config::Config::builder() 
+        config::Config::builder()
             .add_source(config::File::with_name(&dirs::config_local_dir().map(|dir| dir.join("kuma").join("config").to_string_lossy().to_string()).unwrap_or_default()).required(false))
             .add_source(config::File::with_name("kuma").required(false))
             .add_source(
@@ -119,7 +117,7 @@ pub(crate) enum Commands {
     /// Manage Status Pages
     StatusPage {
         #[command(subcommand)]
-        command: Option<crate::status_page::Command>, 
+        command: Option<crate::status_page::Command>,
     },
     /// Manage Docker Hosts
     DockerHost {

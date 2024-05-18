@@ -10,6 +10,10 @@ readme = "README.md"
 categories = ["command-line-utilities"]
 keywords = ["uptime-kuma", "docker", "automation", "monitoring"]
 
+[features]
+default = []
+tokio-console = ["dep:console-subscriber", "tokio/tracing"]
+
 [dependencies]
 kuma-client = { path = "../kuma-client", version = "0.0.0", features = [
     "private-api",
@@ -17,6 +21,7 @@ kuma-client = { path = "../kuma-client", version = "0.0.0", features = [
 
 bollard = { workspace = true }
 config = { workspace = true }
+console-subscriber = { worspace = true, optional = true }
 const-str = { workspace = true }
 derivative = { workspace = true }
 dirs = { workspace = true }

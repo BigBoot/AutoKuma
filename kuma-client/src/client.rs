@@ -1,5 +1,15 @@
 use crate::{
-    docker_host::{DockerHost, DockerHostList}, error::{Error, Result}, event::Event, maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage}, monitor::{Monitor, MonitorList, MonitorType}, notification::{Notification, NotificationList}, response::LoginResponse, status_page::{PublicGroupList, StatusPage, StatusPageList}, tag::{Tag, TagDefinition}, util::ResultLogger, Config
+    docker_host::{DockerHost, DockerHostList},
+    error::{Error, Result},
+    event::Event,
+    maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage},
+    monitor::{Monitor, MonitorList, MonitorType},
+    notification::{Notification, NotificationList},
+    response::LoginResponse,
+    status_page::{PublicGroupList, StatusPage, StatusPageList},
+    tag::{Tag, TagDefinition},
+    util::ResultLogger,
+    Config,
 };
 use futures_util::FutureExt;
 use itertools::Itertools;
@@ -478,7 +488,9 @@ impl Worker {
     }
 
     async fn resolve_group(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
-        if let (Some(group_name), Some(tag_name)) = (monitor.common().parent_name().clone(), &self.tag_name) {
+        if let (Some(group_name), Some(tag_name)) =
+            (monitor.common().parent_name().clone(), &self.tag_name)
+        {
             if let Some(Some(group_id)) = self
                 .monitors
                 .lock()
@@ -968,9 +980,7 @@ impl Worker {
         let _: bool = self
             .call(
                 "deleteDockerHost",
-                vec![
-                    serde_json::to_value(docker_host_id).unwrap(),
-                ],
+                vec![serde_json::to_value(docker_host_id).unwrap()],
                 "/ok",
                 true,
             )
@@ -979,14 +989,11 @@ impl Worker {
         Ok(())
     }
 
-
     pub async fn test_docker_host(self: &Arc<Self>, docker_host: &DockerHost) -> Result<String> {
         let msg: String = self
             .call(
                 "testDockerHost",
-                vec![
-                    serde_json::to_value(docker_host).unwrap(),
-                ],
+                vec![serde_json::to_value(docker_host).unwrap()],
                 "/msg",
                 true,
             )
@@ -1031,16 +1038,21 @@ impl Worker {
                                 if let Ok(e) = Event::from_str(
                                     &params[0]
                                         .as_str()
-                                        .log_warn(std::module_path!(), || "Error while deserializing Event...")
+                                        .log_warn(std::module_path!(), || {
+                                            "Error while deserializing Event..."
+                                        })
                                         .unwrap_or(""),
                                 ) {
                                     handle.clone().spawn(async move {
-                                        _ = arc.on_event(e, json!(null)).await.log_warn(std::module_path!(), |e| {
-                                            format!(
-                                                "Error while sending message event: {}",
-                                                e.to_string()
-                                            )
-                                        });
+                                        _ = arc.on_event(e, json!(null)).await.log_warn(
+                                            std::module_path!(),
+                                            |e| {
+                                                format!(
+                                                    "Error while sending message event: {}",
+                                                    e.to_string()
+                                                )
+                                            },
+                                        );
                                     });
                                 }
                             }
@@ -1118,7 +1130,7 @@ impl Worker {
 }
 
 /// A client for interacting with Uptime Kuma.
-/// 
+///
 /// Example:
 /// ```
 /// // Connect to the server
@@ -1130,7 +1142,7 @@ impl Worker {
 ///     })
 ///     .await
 ///     .expect("Failed to connect to server");
-/// 
+///
 /// // Create a tag
 /// let tag_definition = client
 ///     .add_tag(TagDefinition {
@@ -1140,7 +1152,7 @@ impl Worker {
 ///     })
 ///     .await
 ///     .expect("Failed to add tag");
-/// 
+///
 /// // Create a group
 /// let group = client
 ///     .add_monitor(MonitorGroup {
@@ -1154,7 +1166,7 @@ impl Worker {
 ///     })
 ///     .await
 ///     .expect("Failed to add group");
-/// 
+///
 /// // Createa a notification
 /// let notification = client
 ///     .add_notification(Notification {
@@ -1167,7 +1179,7 @@ impl Worker {
 ///     })
 ///     .await
 ///     .expect("Failed to add notification");
-/// 
+///
 /// // Create a monitor
 /// client
 ///     .add_monitor(MonitorHttp {
@@ -1191,11 +1203,11 @@ impl Worker {
 ///     })
 ///     .await
 ///     .expect("Failed to add monitor");
-/// 
+///
 /// let monitors = client.get_monitors().await.expect("Failed to get monitors");
 /// println!("{:?}", monitors);
 /// ```
-/// 
+///
 pub struct Client {
     worker: Arc<Worker>,
 }
@@ -1213,17 +1225,17 @@ impl Client {
     async fn connect_impl(config: Config, tag_name: Option<String>) -> Result<Client> {
         let worker = Worker::new(config, tag_name);
         match worker.connect().await {
-            Ok(_) =>  Ok(Self { worker }),
+            Ok(_) => Ok(Self { worker }),
             Err(e) => {
                 _ = worker
-                    .disconnect().await
+                    .disconnect()
+                    .await
                     .log_error(std::module_path!(), |e| e.to_string());
 
                 Err(e)
             }
         }
     }
-
 
     /// Retrieves a list of monitors from Uptime Kuma.
     pub async fn get_monitors(&self) -> Result<MonitorList> {
@@ -1453,7 +1465,8 @@ impl Drop for Client {
     fn drop(&mut self) {
         let worker = self.worker.clone();
         tokio::spawn(async move {
-            _ = worker.disconnect()
+            _ = worker
+                .disconnect()
                 .await
                 .log_error(std::module_path!(), |e| e.to_string());
         });

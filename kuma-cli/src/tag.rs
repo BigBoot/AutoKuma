@@ -1,13 +1,13 @@
-
-
-
+use crate::{
+    cli::Cli,
+    utils::{connect, load_file, PrintResult as _},
+};
 use clap::{command, Subcommand};
 use kuma_client::Config;
 use std::path::PathBuf;
-use crate::{cli::Cli, utils::{connect, load_file, PrintResult as _}};
 
 #[derive(Subcommand, Clone, Debug)]
-#[command(arg_required_else_help = true)] 
+#[command(arg_required_else_help = true)]
 pub(crate) enum Command {
     /// Add a new Tag
     Add { file: PathBuf },
