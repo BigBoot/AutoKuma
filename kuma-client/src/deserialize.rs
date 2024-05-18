@@ -237,49 +237,65 @@ impl SerializeAs<PrimitiveDateTime> for SerializeDateTime {
 }
 pub(crate) struct SerializeDateRange;
 
-impl<'de> DeserializeAs<'de, Range<PrimitiveDateTime>> for SerializeDateRange {
-    fn deserialize_as<D>(deserializer: D) -> Result<Range<PrimitiveDateTime>, D::Error>
+impl<'de> DeserializeAs<'de, Option<Range<PrimitiveDateTime>>> for SerializeDateRange {
+    fn deserialize_as<D>(deserializer: D) -> Result<Option<Range<PrimitiveDateTime>>, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let value = Vec::<String>::deserialize(deserializer)
-            .map_err(serde::de::Error::custom)?
-            .into_iter()
-            .map(|s| PrimitiveDateTime::parse(&s, &Iso8601::DATE_TIME))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(serde::de::Error::custom)?;
+        if let Some(source) = Option::<Vec<Option<String>>>::deserialize(deserializer)? {
+            let value = source
+                .into_iter()
+                .map(|o| {
+                    o.map(|s| PrimitiveDateTime::parse(&s, &Iso8601::DATE_TIME))
+                        .transpose()
+                })
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(serde::de::Error::custom)?;
 
-        if value.len() != 2 {
-            return Err(serde::de::Error::custom(format!(
-                "Expected array of length 2 but got array of length {}",
+            match value.len() {
+                1 if value[0].is_none() => Ok(None),
+                2 => {
+                    let mut iter = value.into_iter();
+                    Ok(Some(Range {
+                        start: iter.next().unwrap().unwrap(),
+                        end: iter.next().unwrap().unwrap(),
+                    }))
+                }
+                _ => Err(serde::de::Error::custom(format!(
+                "Expected DateRange to be [Null] or array of length 2 but got array of length {}",
                 value.len()
-            )));
-        };
-
-        let mut iter = value.into_iter();
-        Ok(Range {
-            start: iter.next().unwrap(),
-            end: iter.next().unwrap(),
-        })
+            ))),
+            }
+        } else {
+            Ok(None)
+        }
     }
 }
 
-impl SerializeAs<Range<PrimitiveDateTime>> for SerializeDateRange {
-    fn serialize_as<S>(source: &Range<PrimitiveDateTime>, serializer: S) -> Result<S::Ok, S::Error>
+impl SerializeAs<Option<Range<PrimitiveDateTime>>> for SerializeDateRange {
+    fn serialize_as<S>(
+        source: &Option<Range<PrimitiveDateTime>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        vec![
-            &source
-                .start
-                .format(&Iso8601::DATE_TIME)
-                .map_err(serde::ser::Error::custom)?,
-            &source
-                .end
-                .format(&Iso8601::DATE_TIME)
-                .map_err(serde::ser::Error::custom)?,
-        ]
-        .serialize(serializer)
+        let values = match &source {
+            None => vec![None],
+            Some(Range { start, end }) => vec![
+                Some(
+                    start
+                        .format(&Iso8601::DATE_TIME)
+                        .map_err(serde::ser::Error::custom)?,
+                ),
+                Some(
+                    end.format(&Iso8601::DATE_TIME)
+                        .map_err(serde::ser::Error::custom)?,
+                ),
+            ],
+        };
+
+        values.serialize(serializer)
     }
 }
 

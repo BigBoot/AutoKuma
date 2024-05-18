@@ -287,7 +287,8 @@ pub struct MaintenanceCommon {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MaintenanceSchedule {
     #[serde(rename = "dateRange")]
-    #[serde_as(as = "Option<SerializeDateRange>")]
+    #[serde_as(as = "SerializeDateRange")]
+    #[serialize_always]
     pub date_range: Option<Range<PrimitiveDateTime>>,
 
     #[serde(rename = "timeRange")]
