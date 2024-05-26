@@ -12,7 +12,6 @@ use derivative::Derivative;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-use serde_json::json;
 use serde_with::{serde_as, skip_serializing_none};
 use std::collections::{HashMap, HashSet};
 
@@ -141,23 +140,13 @@ macro_rules! monitor_type {
             fn accepted_statuscodes_mut(&mut self) -> &mut Vec<String> { &mut self.accepted_statuscodes }
         }
 
-        impl Default for $struct_name {
-            fn default() -> Self {
-                serde_json::from_value(json!({})).unwrap()
-            }
-        }
-
-        impl $struct_name {
-            pub fn new() -> Self {
-                Default::default()
-            }
-        }
-
         impl From<$struct_name> for Monitor {
             fn from(value: $struct_name) -> Self {
                 Monitor::$type { value: value }
             }
         }
+
+        crate::default_from_serde!($struct_name);
     };
 }
 

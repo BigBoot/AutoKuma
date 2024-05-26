@@ -21,7 +21,7 @@ kuma-client = { path = "../kuma-client", version = "0.0.0", features = [
 
 bollard = { workspace = true }
 config = { workspace = true }
-console-subscriber = { worspace = true, optional = true }
+console-subscriber = { workspace = true, optional = true }
 const-str = { workspace = true }
 derivative = { workspace = true }
 dirs = { workspace = true }

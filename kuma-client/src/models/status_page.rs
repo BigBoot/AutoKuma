@@ -28,6 +28,7 @@ pub struct PublicGroupMonitor {
     #[serde(rename = "type")]
     pub monitor_type: Option<MonitorType>,
 }
+crate::default_from_serde!(PublicGroupMonitor);
 
 #[serde_inline_default]
 #[skip_serializing_none]
@@ -48,6 +49,7 @@ pub struct PublicGroup {
     #[serde(rename = "monitorList", default)]
     pub monitor_list: PublicGroupMonitorList,
 }
+crate::default_from_serde!(PublicGroup);
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Theme {
@@ -69,6 +71,7 @@ pub struct StatusPage {
     pub id: Option<i32>,
 
     #[serde(rename = "slug")]
+    #[serde_inline_default(Some("default".to_owned()))]
     pub slug: Option<String>,
 
     #[serde(rename = "title")]
@@ -78,6 +81,7 @@ pub struct StatusPage {
     pub description: Option<String>,
 
     #[serde(rename = "icon")]
+    #[serde_inline_default(Some("/icon.svg".to_owned()))]
     pub icon: Option<String>,
 
     #[serde(rename = "theme")]
@@ -95,6 +99,7 @@ pub struct StatusPage {
     pub domain_name_list: Vec<String>,
 
     #[serde(rename = "customCSS")]
+    #[serde_inline_default(Some("body {\n  \n}\n".to_owned()))]
     pub custom_css: Option<String>,
 
     #[serde(rename = "footerText")]
@@ -114,6 +119,7 @@ pub struct StatusPage {
     #[serde(rename = "publicGroupList")]
     pub public_group_list: Option<PublicGroupList>,
 }
+crate::default_from_serde!(StatusPage);
 
 pub type StatusPageList = HashMap<String, StatusPage>;
 pub type PublicGroupList = Vec<PublicGroup>;

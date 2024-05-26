@@ -939,12 +939,15 @@ impl Worker {
     }
 
     pub async fn edit_status_page(self: &Arc<Self>, status_page: &mut StatusPage) -> Result<()> {
+        let mut config = serde_json::to_value(status_page.clone()).unwrap();
+        config.as_object_mut().unwrap().insert("logo".to_owned(), status_page.icon.clone().into());
+
         let _: bool = self
             .call(
                 "saveStatusPage",
                 vec![
                     serde_json::to_value(status_page.slug.clone()).unwrap(),
-                    serde_json::to_value(status_page.clone()).unwrap(),
+                    serde_json::to_value(config).unwrap(),
                     serde_json::to_value(status_page.icon.clone()).unwrap(),
                     serde_json::to_value(status_page.public_group_list.clone()).unwrap(),
                 ],

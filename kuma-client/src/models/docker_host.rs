@@ -36,5 +36,11 @@ pub struct DockerHost {
     pub user_id: Option<i32>,
 }
 
+impl DockerHost {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
 /// A list of docker hosts.
 pub type DockerHostList = Vec<DockerHost>;

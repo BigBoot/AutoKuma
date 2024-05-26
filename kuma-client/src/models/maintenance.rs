@@ -280,6 +280,7 @@ pub struct MaintenanceCommon {
     #[serde(default)]
     pub status_pages: Option<Vec<MaintenanceStatusPage>>,
 }
+crate::default_from_serde!(MaintenanceCommon);
 
 #[serde_inline_default]
 #[skip_serializing_none]
@@ -299,6 +300,7 @@ pub struct MaintenanceSchedule {
     #[serde(rename = "timezone")]
     pub timezone: Option<TimeZoneOption>,
 }
+crate::default_from_serde!(MaintenanceSchedule);
 
 #[serde_inline_default]
 #[skip_serializing_none]
@@ -312,6 +314,7 @@ pub struct MaintenanceCron {
     #[serde_inline_default(Some(60.0))]
     pub duration_minutes: Option<f64>,
 }
+crate::default_from_serde!(MaintenanceCron);
 
 #[serde_inline_default]
 #[skip_serializing_none]
@@ -325,6 +328,7 @@ pub struct MaintenanceRecurringInterval {
     #[serde(default)]
     pub timeslots: Vec<TimeSlot>,
 }
+crate::default_from_serde!(MaintenanceRecurringInterval);
 
 #[serde_inline_default]
 #[skip_serializing_none]
@@ -338,6 +342,7 @@ pub struct MaintenanceRecurringWeekday {
     #[serde(default)]
     pub weekdays: Vec<Weekday>,
 }
+crate::default_from_serde!(MaintenanceRecurringWeekday);
 
 #[serde_inline_default]
 #[skip_serializing_none]
@@ -351,6 +356,7 @@ pub struct MaintenanceRecurringDayOfMonth {
     #[serde(default)]
     pub timeslots: Vec<TimeSlot>,
 }
+crate::default_from_serde!(MaintenanceRecurringDayOfMonth);
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "strategy")]

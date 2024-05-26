@@ -104,3 +104,20 @@ where
         self
     }
 }
+
+#[macro_export]
+macro_rules! default_from_serde {
+    ($struct_name:ident) => {
+        impl Default for $struct_name {
+            fn default() -> Self {
+                serde_json::from_value(serde_json::json!({})).unwrap()
+            }
+        }
+
+        impl $struct_name {
+            pub fn new() -> Self {
+                Default::default()
+            }
+        }
+    };
+}
