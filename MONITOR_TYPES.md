@@ -109,9 +109,10 @@
 | `accepted_statuscodes` | 200-299             |
 | `active`               | true                |
 | `auth_domain`          |                     |
-| `auth_method`          |                     |
+| `authMethod`           |                     |
 | `auth_workstation`     |                     |
 | `basic_auth_user`      |                     |
+| `basic_auth_password`  |                     |
 | `body`                 |                     |
 | `expiry_notification`  | true                |
 | `http_body_encoding`   |                     |
@@ -143,9 +144,10 @@
 | `accepted_statuscodes` | 200-299             |
 | `active`               | true                |
 | `auth_domain`          |                     |
-| `auth_method`          |                     |
+| `authMethod`           |                     |
 | `auth_workstation`     |                     |
 | `basic_auth_user`      |                     |
+| `basic_auth_password`  |                     |
 | `body`                 |                     |
 | `expected_value`       |                     |
 | `expiry_notification`  | true                |
@@ -203,9 +205,10 @@
 | `accepted_statuscodes` | 200-299             |
 | `active`               | true                |
 | `auth_domain`          |                     |
-| `auth_method`          |                     |
+| `authMethod`           |                     |
 | `auth_workstation`     |                     |
 | `basic_auth_user`      |                     |
+| `basic_auth_password`  |                     |
 | `body`                 |                     |
 | `expiry_notification`  | true                |
 | `http_body_encoding`   |                     |
