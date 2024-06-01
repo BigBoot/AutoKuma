@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add missing `query` property for `sqlserver`, `postgres` and `mysql`, see [#36](https://github.com/BigBoot/AutoKuma/issues/36)
 - Fix parsing of recurring maintenance with no effective date range, see [#43](https://github.com/BigBoot/AutoKuma/issues/43)
 
+### Changed
+- Transparently flatten arrays in static monitor definitions, see [#51](https://github.com/BigBoot/AutoKuma/issues/51)
+
 ## [0.6.0] - 2024-04-28
 ### Changed
 - **!! WARNING POTENTIAL BREAKING CHANGE !!**: switch from custom templating to [Tera](https://keats.github.io/tera/docs/#introduction)  

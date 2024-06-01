@@ -46,7 +46,7 @@ impl FlattenValue for serde_json::Value {
             None,
             self.as_object()
                 .ok_or_else(|| Error::DeserializeError("Not an object".to_string()))?,
-        );
+        )?;
         Ok(map.into_iter().collect())
     }
 }
@@ -55,14 +55,22 @@ fn insert_object(
     base_json: &mut serde_json::Map<String, serde_json::Value>,
     base_key: Option<&str>,
     object: &serde_json::Map<String, serde_json::Value>,
-) {
+) -> Result<()> {
     for (key, value) in object {
         let new_key = base_key.map_or_else(|| key.clone(), |base_key| format!("{base_key}.{key}"));
 
         if let Some(object) = value.as_object() {
-            insert_object(base_json, Some(&new_key), object);
+            insert_object(base_json, Some(&new_key), object)?;
+        } else if let Some(array) = value.as_array() {
+            base_json.insert(
+                new_key.to_string(),
+                json!(serde_json::to_string(&array)
+                    .map_err(|e| Error::DeserializeError(e.to_string()))?),
+            );
         } else {
             base_json.insert(new_key.to_string(), json!(value));
         }
     }
+
+    Ok(())
 }
