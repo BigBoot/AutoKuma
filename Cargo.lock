@@ -152,7 +152,7 @@ dependencies = [
  "dirs",
  "flexi_logger",
  "futures-util",
- "itertools",
+ "itertools 0.13.0",
  "kuma-client",
  "log",
  "rust_socketio",
@@ -1467,6 +1467,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1530,7 +1539,7 @@ dependencies = [
  "const-str",
  "derivative",
  "futures-util",
- "itertools",
+ "itertools 0.13.0",
  "log",
  "regex",
  "reqwest",
@@ -2063,7 +2072,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81bddcdb20abf9501610992b6759a4c888aef7d1a7247ef75e2404275ac24af1"
 dependencies = [
  "anyhow",
- "itertools",
+ "itertools 0.12.1",
  "proc-macro2",
  "quote",
  "syn 2.0.52",
@@ -2607,9 +2616,9 @@ dependencies = [
 
 [[package]]
 name = "shadow-rs"
-version = "0.27.1"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7960cbd6ba74691bb15e7ebf97f7136bd02d1115f5695a58c1f31d5645750128"
+checksum = "1d75516bdaee8f640543ad1f6e292448c23ce57143f812c3736ab4b0874383df"
 dependencies = [
  "const_format",
  "git2",

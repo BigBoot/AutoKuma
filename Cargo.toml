@@ -25,7 +25,7 @@ inkjet = { version = "0.10.4", default-features = false, features = [
     "language-yaml",
     "language-json",
 ] }
-itertools = { version = "0.12.0" }
+itertools = { version = "0.13.0" }
 log = { version = "0.4.20" }
 owo-colors = { version = "4.0.0" }
 regex = { version = "1.5.4" }
@@ -39,7 +39,7 @@ serde_repr = { version = "0.1.18" }
 serde_with = { version = "3.4.0", features = ["time_0_3"] }
 serde-inline-default = { version = "0.2.0" }
 serde_yaml = { version = "0.9.30" }
-shadow-rs = { version = "0.27.1" }
+shadow-rs = { version = "0.28.0" }
 strum = { version = "0.26.1", features = ["derive"] }
 supports-color = { version = "3.0.0" }
 tera = { version = "1.19.1" }
