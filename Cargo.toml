@@ -10,7 +10,7 @@ license = "MIT"
 repository = "https://github.com/BigBoot/AutoKuma"
 
 [workspace.dependencies]
-bollard = { version = "0.16.0" }
+bollard = { version = "0.16.0", features = ["ssl"] }
 clap = { version = "4.4.14", features = ["derive"] }
 config = { version = "0.14.0" }
 const-str = { version = "0.5.6", features = ["proc"] }
