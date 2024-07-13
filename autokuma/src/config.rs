@@ -3,6 +3,16 @@ use serde_alias::serde_alias;
 use serde_inline_default::serde_inline_default;
 use std::collections::HashMap;
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DockerSource {
+    #[serde(alias = "container")]
+    Containers,
+    #[serde(alias = "service")]
+    Services,
+    #[serde(alias = "both")]
+    Both,
+}
+
 #[serde_alias(ScreamingSnakeCase)]
 #[serde_inline_default]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -14,6 +24,10 @@ pub struct DockerConfig {
     /// Path to the Docker socket.
     #[serde_inline_default(None)]
     pub socket_path: Option<String>,
+
+    /// Wether monitors should be created from container or service labels (or both).
+    #[serde_inline_default(DockerSource::Containers)]
+    pub source: DockerSource,
 
     /// Prefix used when scanning for container labels.
     #[serde_inline_default("kuma".to_owned())]

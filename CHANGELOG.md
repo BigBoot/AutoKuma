@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Enable SSL for docker connections (using DOCKER_HOST, DOCKER_CERT_PATH, DOCKER_TLS_VERIFY env vars), see [#50](https://github.com/BigBoot/AutoKuma/issues/50)
+- Create monitors from docker swarm services, see [#54](https://github.com/BigBoot/AutoKuma/issues/54)
 
 ### Fixed
 - Add missing `query` property for `sqlserver`, `postgres` and `mysql`, see [#36](https://github.com/BigBoot/AutoKuma/issues/36)

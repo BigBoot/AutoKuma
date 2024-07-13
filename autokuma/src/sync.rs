@@ -1,9 +1,9 @@
 use crate::{
-    config::{Config, DeleteBehavior},
+    config::{Config, DeleteBehavior, DockerSource},
     error::{Error, KumaError, Result},
     util::{group_by_prefix, FlattenValue as _, ResultLogger},
 };
-use bollard::{container::ListContainersOptions, service::ContainerSummary, Docker};
+use bollard::{container::ListContainersOptions, service::{ContainerSummary, ListServicesOptions, Service}, Docker};
 use itertools::Itertools;
 use kuma_client::{
     monitor::{Monitor, MonitorType},
@@ -107,6 +107,32 @@ impl Sync {
                         })
                     },
                 )
+            })
+            .collect::<Vec<_>>())
+    }
+
+    async fn get_kuma_services(&self, docker: &Docker) -> Result<Vec<Service>> {
+        Ok(docker
+            .list_services(Some(ListServicesOptions::<String> {
+                ..Default::default()
+            }))
+            .await
+            .log_warn(std::module_path!(), |_| {
+                format!(
+                    "Using DOCKER_HOST={}",
+                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
+                )
+            })?
+            .into_iter()
+            .filter(|c| {
+                c.spec.as_ref().map_or_else(||false,|spec| spec.labels.as_ref().map_or_else(
+                    || false,
+                    |labels| {
+                        labels.keys().any(|key| {
+                            key.starts_with(&format!("{}.", self.config.docker.label_prefix))
+                        })
+                    },
+                ))
             })
             .collect::<Vec<_>>())
     }
@@ -226,10 +252,10 @@ impl Sync {
 
     fn get_kuma_labels(
         &self,
-        container: &ContainerSummary,
+        labels: Option<&HashMap<String, String>>,
         template_values: &tera::Context,
     ) -> Result<Vec<(String, String)>> {
-        container.labels.as_ref().map_or_else(
+        labels.as_ref().map_or_else(
             || Ok(vec![]),
             |labels| {
                 labels
@@ -272,7 +298,29 @@ impl Sync {
 
                 template_values.insert("container", &container);
 
-                let kuma_labels = self.get_kuma_labels(container, &template_values)?;
+                let kuma_labels = self.get_kuma_labels(container.labels.as_ref(), &template_values)?;
+
+                self.get_monitors_from_labels(kuma_labels, &template_values)
+            })
+            .flatten_ok()
+            .try_collect()
+    }
+
+    fn get_monitors_from_services(
+        &self,
+        services: &Vec<Service>,
+    ) -> Result<HashMap<String, Monitor>> {
+        services
+            .into_iter()
+            .map(|service| {
+                let mut template_values = tera::Context::new();
+
+                template_values.insert("service", &service);
+
+                let spec = service.spec.as_ref();
+                let labels = spec.and_then(|spec| spec.labels.as_ref());
+
+                let kuma_labels = self.get_kuma_labels(labels, &template_values)?;
 
                 self.get_monitors_from_labels(kuma_labels, &template_values)
             })
@@ -426,6 +474,16 @@ impl Sync {
                     env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
                 )
             })?;
+
+            if self.config.docker.source == DockerSource::Containers || self.config.docker.source == DockerSource::Both{
+                let containers = self.get_kuma_containers(&docker).await?;
+                new_monitors.extend(self.get_monitors_from_containers(&containers)?);
+            }
+            
+            if self.config.docker.source == DockerSource::Services  || self.config.docker.source == DockerSource::Both {
+                let services = self.get_kuma_services(&docker).await?;
+                new_monitors.extend(self.get_monitors_from_services(&services)?);
+            }
 
             let containers = self.get_kuma_containers(&docker).await?;
             new_monitors.extend(self.get_monitors_from_containers(&containers)?);
