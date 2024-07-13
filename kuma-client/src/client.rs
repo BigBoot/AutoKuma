@@ -491,6 +491,18 @@ impl Worker {
         if let (Some(group_name), Some(tag_name)) =
             (monitor.common().parent_name().clone(), &self.tag_name)
         {
+            if Some(&group_name)
+                == monitor
+                    .common()
+                    .tags()
+                    .iter()
+                    .find(|tag| tag.name.as_ref().is_some_and(|tag| tag == tag_name))
+                    .and_then(|tag| tag.value.to_owned())
+                    .as_ref()
+            {
+                return Ok(());
+            }
+
             if let Some(Some(group_id)) = self
                 .monitors
                 .lock()
@@ -940,7 +952,10 @@ impl Worker {
 
     pub async fn edit_status_page(self: &Arc<Self>, status_page: &mut StatusPage) -> Result<()> {
         let mut config = serde_json::to_value(status_page.clone()).unwrap();
-        config.as_object_mut().unwrap().insert("logo".to_owned(), status_page.icon.clone().into());
+        config 
+            .as_object_mut()
+            .unwrap()
+            .insert("logo".to_owned(), status_page.icon.clone().into());
 
         let _: bool = self
             .call(
