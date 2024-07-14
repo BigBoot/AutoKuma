@@ -592,10 +592,12 @@ impl Sync {
             let merge: Monitor = self.merge_monitors(current, new, Some(vec![tag]));
 
             if current != &merge
-                || merge.common().parent_name().is_some() != current.common().parent().is_some()
+                || merge.common().parent_name().as_ref() != Some(id)
+                    && (merge.common().parent_name().is_some()
+                        != current.common().parent().is_some()
                 || merge.common().parent_name().as_ref().is_some_and(|name| {
                     Some(name) != current.common().parent().map(|id| groups[&id])
-                })
+                        }))
             {
                 info!("Updating monitor: {}", id);
                 debug!(
