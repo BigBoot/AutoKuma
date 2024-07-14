@@ -14,7 +14,7 @@ bollard = { version = "0.16.0", features = ["ssl"] }
 clap = { version = "4.4.14", features = ["derive"] }
 config = { version = "0.14.0" }
 const-str = { version = "0.5.6", features = ["proc"] }
-console-subscriber = { version = "0.2.0" }
+console-subscriber = { version = "0.3.0" }
 cute_custom_default = { version = "2.1.0" }
 derivative = { version = "2.2.0" }
 dirs = { version = "5.0.1" }
@@ -39,7 +39,7 @@ serde_repr = { version = "0.1.18" }
 serde_with = { version = "3.4.0", features = ["time_0_3"] }
 serde-inline-default = { version = "0.2.0" }
 serde_yaml = { version = "0.9.30" }
-shadow-rs = { version = "0.28.0" }
+shadow-rs = { version = "0.29.0" }
 strum = { version = "0.26.1", features = ["derive"] }
 supports-color = { version = "3.0.0" }
 tera = { version = "1.19.1" }
