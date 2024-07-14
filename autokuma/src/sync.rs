@@ -3,7 +3,11 @@ use crate::{
     error::{Error, KumaError, Result},
     util::{group_by_prefix, FlattenValue as _, ResultLogger},
 };
-use bollard::{container::ListContainersOptions, service::{ContainerSummary, ListServicesOptions, Service}, Docker};
+use bollard::{
+    container::ListContainersOptions,
+    service::{ContainerSummary, ListServicesOptions, Service},
+    Docker,
+};
 use itertools::Itertools;
 use kuma_client::{
     monitor::{Monitor, MonitorType},
@@ -125,14 +129,22 @@ impl Sync {
             })?
             .into_iter()
             .filter(|c| {
-                c.spec.as_ref().map_or_else(||false,|spec| spec.labels.as_ref().map_or_else(
+                c.spec.as_ref().map_or_else(
                     || false,
-                    |labels| {
-                        labels.keys().any(|key| {
-                            key.starts_with(&format!("{}.", self.config.docker.label_prefix))
-                        })
+                    |spec| {
+                        spec.labels.as_ref().map_or_else(
+                            || false,
+                            |labels| {
+                                labels.keys().any(|key| {
+                                    key.starts_with(&format!(
+                                        "{}.",
+                                        self.config.docker.label_prefix
+                                    ))
+                                })
+                            },
+                        )
                     },
-                ))
+                )
             })
             .collect::<Vec<_>>())
     }
@@ -298,7 +310,8 @@ impl Sync {
 
                 template_values.insert("container", &container);
 
-                let kuma_labels = self.get_kuma_labels(container.labels.as_ref(), &template_values)?;
+                let kuma_labels =
+                    self.get_kuma_labels(container.labels.as_ref(), &template_values)?;
 
                 self.get_monitors_from_labels(kuma_labels, &template_values)
             })
@@ -475,12 +488,16 @@ impl Sync {
                 )
             })?;
 
-            if self.config.docker.source == DockerSource::Containers || self.config.docker.source == DockerSource::Both{
+            if self.config.docker.source == DockerSource::Containers
+                || self.config.docker.source == DockerSource::Both
+            {
                 let containers = self.get_kuma_containers(&docker).await?;
                 new_monitors.extend(self.get_monitors_from_containers(&containers)?);
             }
-            
-            if self.config.docker.source == DockerSource::Services  || self.config.docker.source == DockerSource::Both {
+
+            if self.config.docker.source == DockerSource::Services
+                || self.config.docker.source == DockerSource::Both
+            {
                 let services = self.get_kuma_services(&docker).await?;
                 new_monitors.extend(self.get_monitors_from_services(&services)?);
             }
@@ -595,8 +612,8 @@ impl Sync {
                 || merge.common().parent_name().as_ref() != Some(id)
                     && (merge.common().parent_name().is_some()
                         != current.common().parent().is_some()
-                || merge.common().parent_name().as_ref().is_some_and(|name| {
-                    Some(name) != current.common().parent().map(|id| groups[&id])
+                        || merge.common().parent_name().as_ref().is_some_and(|name| {
+                            Some(name) != current.common().parent().map(|id| groups[&id])
                         }))
             {
                 info!("Updating monitor: {}", id);

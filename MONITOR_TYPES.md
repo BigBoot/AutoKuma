@@ -1,3 +1,12 @@
+# AutoKuma specific properties:
+
+AutoKuma adds a few special properties which are handled internally and aren't sent to Uptime Kuma:
+| Property        | Example Value | Description                                                                           |
+|-----------------|---------------|---------------------------------------------------------------------------------------|
+| `parent_name`   | `apps`        | The autokuma id of the parent group                                                   |
+| `create_paused` | false         | If true new monitors will be added in paused state, does not effect existing monitors |
+
+
 # Monitor Types
 - [`dns`](#dns)
 - [`docker`](#docker)

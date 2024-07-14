@@ -212,8 +212,6 @@ where
     }
 }
 
-pub(crate) struct SerializeDateTime;
-
 impl<'de> DeserializeAs<'de, PrimitiveDateTime> for DeserializeBoolLenient {
     fn deserialize_as<D>(deserializer: D) -> Result<PrimitiveDateTime, D::Error>
     where
@@ -224,17 +222,6 @@ impl<'de> DeserializeAs<'de, PrimitiveDateTime> for DeserializeBoolLenient {
     }
 }
 
-impl SerializeAs<PrimitiveDateTime> for SerializeDateTime {
-    fn serialize_as<S>(source: &PrimitiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        source
-            .format(&Iso8601::DATE_TIME)
-            .map_err(serde::ser::Error::custom)?
-            .serialize(serializer)
-    }
-}
 pub(crate) struct SerializeDateRange;
 
 impl<'de> DeserializeAs<'de, Option<Range<PrimitiveDateTime>>> for SerializeDateRange {

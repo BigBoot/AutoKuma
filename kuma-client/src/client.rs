@@ -3,7 +3,7 @@ use crate::{
     error::{Error, Result},
     event::Event,
     maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage},
-    monitor::{Monitor, MonitorList, MonitorType},
+    monitor::{Monitor, MonitorList},
     notification::{Notification, NotificationList},
     response::LoginResponse,
     status_page::{PublicGroupList, StatusPage, StatusPageList},
@@ -64,6 +64,7 @@ impl Ready {
 
 struct Worker {
     config: Arc<Config>,
+    #[allow(dead_code)]
     tag_name: Option<String>,
     socket_io: Arc<Mutex<Option<SocketIO>>>,
     monitors: Arc<Mutex<MonitorList>>,
@@ -487,6 +488,7 @@ impl Worker {
         Ok(())
     }
 
+    #[cfg(feature = "private-api")]
     async fn resolve_group(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
         if let (Some(group_name), Some(tag_name)) =
             (monitor.common().parent_name().clone(), &self.tag_name)
@@ -509,7 +511,7 @@ impl Worker {
                 .await
                 .iter()
                 .find(|x| {
-                    x.1.monitor_type() == MonitorType::Group
+                    x.1.monitor_type() == crate::monitor::MonitorType::Group
                         && x.1.common().tags().iter().any(|tag| {
                             tag.name.as_ref().is_some_and(|tag| tag == tag_name)
                                 && tag
@@ -526,6 +528,11 @@ impl Worker {
             }
         }
         return Ok(());
+    }
+
+    #[cfg(not(feature = "private-api"))]
+    async fn resolve_group(self: &Arc<Self>, _monitor: &mut Monitor) -> Result<()> {
+        Ok(())
     }
 
     async fn update_monitor_tags(self: &Arc<Self>, monitor_id: i32, tags: &Vec<Tag>) -> Result<()> {
@@ -606,7 +613,11 @@ impl Worker {
 
         let tags = mem::take(monitor.common_mut().tags_mut());
         let notifications = mem::take(monitor.common_mut().notification_id_list_mut());
+
+        #[cfg(feature = "private-api")]
         let parent_name = mem::take(monitor.common_mut().parent_name_mut());
+        #[cfg(feature = "private-api")]
+        let create_paused = mem::take(monitor.common_mut().create_paused_mut());
 
         let id: i32 = self
             .clone()
@@ -621,7 +632,12 @@ impl Worker {
         *monitor.common_mut().id_mut() = Some(id);
         *monitor.common_mut().notification_id_list_mut() = notifications;
         *monitor.common_mut().tags_mut() = tags;
-        *monitor.common_mut().parent_name_mut() = parent_name;
+
+        #[cfg(feature = "private-api")]
+        {
+            *monitor.common_mut().parent_name_mut() = parent_name;
+            *monitor.common_mut().create_paused_mut() = create_paused;
+        }
 
         self.edit_monitor(monitor).await?;
 
@@ -629,6 +645,11 @@ impl Worker {
             .lock()
             .await
             .insert(id.to_string(), monitor.clone());
+
+        #[cfg(feature = "private-api")]
+        if create_paused == Some(true) {
+            self.pause_monitor(id).await?;
+        }
 
         Ok(())
     }
@@ -654,6 +675,9 @@ impl Worker {
 
         let tags = mem::take(monitor.common_mut().tags_mut());
 
+        #[cfg(feature = "private-api")]
+        let create_paused = mem::take(monitor.common_mut().create_paused_mut());
+
         let id: i32 = self
             .call(
                 "editMonitor",
@@ -666,6 +690,11 @@ impl Worker {
         self.update_monitor_tags(id, &tags).await?;
 
         *monitor.common_mut().tags_mut() = tags;
+
+        #[cfg(feature = "private-api")]
+        {
+            *monitor.common_mut().create_paused_mut() = create_paused;
+        }
 
         Ok(())
     }
@@ -952,7 +981,7 @@ impl Worker {
 
     pub async fn edit_status_page(self: &Arc<Self>, status_page: &mut StatusPage) -> Result<()> {
         let mut config = serde_json::to_value(status_page.clone()).unwrap();
-        config 
+        config
             .as_object_mut()
             .unwrap()
             .insert("logo".to_owned(), status_page.icon.clone().into());

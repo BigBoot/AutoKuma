@@ -32,14 +32,21 @@ pub trait MonitorCommon {
     fn upside_down_mut(&mut self) -> &mut Option<bool>;
     fn parent(&self) -> &Option<i32>;
     fn parent_mut(&mut self) -> &mut Option<i32>;
-    fn parent_name(&self) -> &Option<String>;
-    fn parent_name_mut(&mut self) -> &mut Option<String>;
     fn tags(&self) -> &Vec<Tag>;
     fn tags_mut(&mut self) -> &mut Vec<Tag>;
     fn notification_id_list(&self) -> &Option<HashMap<String, bool>>;
     fn notification_id_list_mut(&mut self) -> &mut Option<HashMap<String, bool>>;
     fn accepted_statuscodes(&self) -> &Vec<String>;
     fn accepted_statuscodes_mut(&mut self) -> &mut Vec<String>;
+
+    #[cfg(feature = "private-api")]
+    fn parent_name(&self) -> &Option<String>;
+    #[cfg(feature = "private-api")]
+    fn parent_name_mut(&mut self) -> &mut Option<String>;
+    #[cfg(feature = "private-api")]
+    fn create_paused(&self) -> &Option<bool>;
+    #[cfg(feature = "private-api")]
+    fn create_paused_mut(&mut self) -> &mut Option<bool>;
 }
 
 macro_rules! monitor_type {
@@ -67,6 +74,8 @@ macro_rules! monitor_type {
             #[serde(rename = "active")]
             #[serde_inline_default(None)]
             #[serde_as(as = "Option<DeserializeBoolLenient>")]
+            #[derivative(PartialEq="ignore")]
+            #[derivative(Hash = "ignore")]
             pub active: Option<bool>,
 
             #[serde(rename = "maxretries")]
@@ -88,11 +97,6 @@ macro_rules! monitor_type {
             #[serialize_always]
             pub parent: Option<i32>,
 
-            #[serde(rename = "parent_name")]
-            #[derivative(PartialEq = "ignore")]
-            #[derivative(Hash = "ignore")]
-            pub parent_name: Option<String>,
-
             #[serde(rename = "tags")]
             #[serde(skip_serializing_if = "Vec::is_empty")]
             #[serde(default)]
@@ -109,6 +113,21 @@ macro_rules! monitor_type {
             #[serde_as(as = "DeserializeVecLenient<String>")]
             #[serde_inline_default(vec!["200-299".to_owned()])]
             pub accepted_statuscodes: Vec<String>,
+
+
+            #[cfg(feature = "private-api")]
+            #[serde(rename = "parent_name")]
+            #[derivative(PartialEq = "ignore")]
+            #[derivative(Hash = "ignore")]
+            pub parent_name: Option<String>,
+
+            #[cfg(feature = "private-api")]
+            #[serde(rename = "create_paused")]
+            #[serde_inline_default(None)]
+            #[serde_as(as = "Option<DeserializeBoolLenient>")]
+            #[derivative(PartialEq = "ignore")]
+            #[derivative(Hash = "ignore")]
+            pub create_paused: Option<bool>,
 
             $($field)*
         }
@@ -130,14 +149,21 @@ macro_rules! monitor_type {
             fn upside_down_mut(&mut self) -> &mut Option<bool> { &mut self.upside_down }
             fn parent(&self) -> &Option<i32> { &self.parent }
             fn parent_mut(&mut self) -> &mut Option<i32> { &mut self.parent }
-            fn parent_name(&self) -> &Option<String> { &self.parent_name }
-            fn parent_name_mut(&mut self) -> &mut Option<String> { &mut self.parent_name }
             fn tags(&self) -> &Vec<Tag> { &self.tags }
             fn tags_mut(&mut self) -> &mut Vec<Tag> { &mut self.tags }
             fn notification_id_list(&self) -> &Option<HashMap<String, bool>> { &self.notification_id_list }
             fn notification_id_list_mut(&mut self) -> &mut Option<HashMap<String, bool>> { &mut self.notification_id_list }
             fn accepted_statuscodes(&self) -> &Vec<String> { &self.accepted_statuscodes }
             fn accepted_statuscodes_mut(&mut self) -> &mut Vec<String> { &mut self.accepted_statuscodes }
+
+            #[cfg(feature = "private-api")]
+            fn parent_name(&self) -> &Option<String> { &self.parent_name }
+            #[cfg(feature = "private-api")]
+            fn parent_name_mut(&mut self) -> &mut Option<String> { &mut self.parent_name }
+            #[cfg(feature = "private-api")]
+            fn create_paused(&self) -> &Option<bool> { &self.create_paused }
+            #[cfg(feature = "private-api")]
+            fn create_paused_mut(&mut self) -> &mut Option<bool> { &mut self.create_paused }
         }
 
         impl From<$struct_name> for Monitor {

@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Enable SSL for docker connections (using DOCKER_HOST, DOCKER_CERT_PATH, DOCKER_TLS_VERIFY env vars), see [#50](https://github.com/BigBoot/AutoKuma/issues/50)
 - Create monitors from docker swarm services, see [#54](https://github.com/BigBoot/AutoKuma/issues/54)
+- `create_paused` property to create new monitors in paused state, see [#53](https://github.com/BigBoot/AutoKuma/issues/53)
 
 ### Fixed
 - Add missing `query` property for `sqlserver`, `postgres` and `mysql`, see [#36](https://github.com/BigBoot/AutoKuma/issues/36)
 - Fix parsing of recurring maintenance with no effective date range, see [#43](https://github.com/BigBoot/AutoKuma/issues/43)
 - Filter cyclic parent_name reference, see [#56](https://github.com/BigBoot/AutoKuma/issues/56)
-
 
 ### Changed
 - Transparently flatten arrays in static monitor definitions, see [#51](https://github.com/BigBoot/AutoKuma/issues/51)
