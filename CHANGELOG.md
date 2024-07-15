@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.0] - 2024-07-15
 ### Added
 - Enable SSL for docker connections (using DOCKER_HOST, DOCKER_CERT_PATH, DOCKER_TLS_VERIFY env vars), see [#50](https://github.com/BigBoot/AutoKuma/issues/50)
 - Create monitors from docker swarm services, see [#54](https://github.com/BigBoot/AutoKuma/issues/54)
