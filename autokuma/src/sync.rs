@@ -24,6 +24,7 @@ use std::{
     time::Duration,
 };
 use tera::Tera;
+use unescaper::unescape;
 
 pub struct Sync {
     config: Arc<Config>,
@@ -223,7 +224,11 @@ impl Sync {
                                 .flat_map(|line| {
                                     line.split_once(": ")
                                         .map(|(key, value)| {
-                                            (key.trim_start().to_owned(), value.to_owned())
+                                            (
+                                                key.trim_start().to_owned(),
+                                                unescape(value)
+                                                    .unwrap_or_else(|_| value.to_owned()),
+                                            )
                                         })
                                         .log_warn(std::module_path!(), || {
                                             format!("Invalid snippet line: '{}'", line)
