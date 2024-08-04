@@ -20,6 +20,8 @@ pub trait MonitorCommon {
     fn id_mut(&mut self) -> &mut Option<i32>;
     fn name(&self) -> &Option<String>;
     fn name_mut(&mut self) -> &mut Option<String>;
+    fn description(&self) -> &Option<String>;
+    fn description_mut(&mut self) -> &mut Option<String>;
     fn interval(&self) -> &Option<i32>;
     fn interval_mut(&mut self) -> &mut Option<i32>;
     fn active(&self) -> &Option<bool>;
@@ -65,6 +67,9 @@ macro_rules! monitor_type {
 
             #[serde(rename = "name")]
             pub name: Option<String>,
+
+            #[serde(rename = "description")]
+            pub description: Option<String>,
 
             #[serde(rename = "interval")]
             #[serde_inline_default(Some(60))]
@@ -114,7 +119,6 @@ macro_rules! monitor_type {
             #[serde_inline_default(vec!["200-299".to_owned()])]
             pub accepted_statuscodes: Vec<String>,
 
-
             #[cfg(feature = "private-api")]
             #[serde(rename = "parent_name")]
             #[derivative(PartialEq = "ignore")]
@@ -137,6 +141,8 @@ macro_rules! monitor_type {
             fn id_mut(&mut self) -> &mut Option<i32> { &mut self.id }
             fn name(&self) -> &Option<String> { &self.name }
             fn name_mut(&mut self) -> &mut Option<String> { &mut self.name }
+            fn description(&self) -> &Option<String> { &self.description }
+            fn description_mut(&mut self) -> &mut Option<String> { &mut self.description }
             fn interval(&self) -> &Option<i32> { &self.interval }
             fn interval_mut(&mut self) -> &mut Option<i32> { &mut self.interval }
             fn active(&self) -> &Option<bool> { &self.active }

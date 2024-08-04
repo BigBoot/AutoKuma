@@ -37,6 +37,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `description`          | A Monitor     |
 | `dns_resolve_server`   | 1.1.1.1       |
 | `dns_resolve_type`     | A             |
 | `hostname`             | localhost     |
@@ -53,6 +54,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `description`          | A Monitor     |
 | `docker_container`     |               |
 | `docker_host`          |               |
 | `interval`             | 60            |
@@ -67,6 +69,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |---------------------------|---------------|
 | `accepted_statuscodes`    | 200-299       |
 | `active`                  | true          |
+| `description`             | A Monitor     |
 | `game`                    |               |
 | `gamedig_given_port_only` |               |
 | `hostname`                | localhost     |
@@ -83,6 +86,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `description`          | A Monitor     |
 | `interval`             | 60            |
 | `max_retries`          | 0             |
 | `name`                 | Example       |
@@ -95,6 +99,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `description`          | A Monitor     |
 | `grpc_body`            |               |
 | `grpc_enable_tls`      |               |
 | `grpc_metadata`        |               |
@@ -123,6 +128,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `basic_auth_user`      |                     |
 | `basic_auth_password`  |                     |
 | `body`                 |                     |
+| `description`          | A Monitor           |
 | `expiry_notification`  | true                |
 | `http_body_encoding`   |                     |
 | `ignore_tls`           | false               |
@@ -158,6 +164,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `basic_auth_user`      |                     |
 | `basic_auth_password`  |                     |
 | `body`                 |                     |
+| `description`          | A Monitor           |
 | `expected_value`       |                     |
 | `expiry_notification`  | true                |
 | `http_body_encoding`   |                     |
@@ -189,6 +196,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------------------------------------|---------------|
 | `accepted_statuscodes`                               | 200-299       |
 | `active`                                             | true          |
+| `description`                                        | A Monitor     |
 | `interval`                                           | 60            |
 | `kafka_producer_allow_auto_topic_creation`           |               |
 | `kafka_producer_brokers`                             |               |
@@ -219,6 +227,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `basic_auth_user`      |                     |
 | `basic_auth_password`  |                     |
 | `body`                 |                     |
+| `description`          | A Monitor           |
 | `expiry_notification`  | true                |
 | `http_body_encoding`   |                     |
 | `ignore_tls`           | false               |
@@ -252,6 +261,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
 | `database_connection_string` |               |
+| `description`                | A Monitor     |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
@@ -263,8 +273,9 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | Property               | Example Value |
 |------------------------|---------------|
 | `active`               | true          |
-| `hostname`             | localhost     |
+| `description`          | A Monitor     |
 | `interval`             | 60            |
+| `hostname`             | localhost     |
 | `max_retries`          | 0             |
 | `mqtt_check_type`      |               |
 | `mqtt_password`        |               |
@@ -283,6 +294,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
 | `database_connection_string` |               |
+| `description`                | A Monitor     |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
@@ -296,6 +308,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `description`          | A Monitor     |
 | `hostname`             | localhost     |
 | `interval`             | 60            |
 | `max_retries`          | 0             |
@@ -310,6 +323,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `description`          | A Monitor     |
 | `hostname`             | localhost     |
 | `interval`             | 60            |
 | `max_retries`          | 0             |
@@ -325,6 +339,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
 | `database_connection_string` |               |
+| `description`                | A Monitor     |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
@@ -337,6 +352,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|----------------------------------|
 | `accepted_statuscodes` | 200-299                          |
 | `active`               | true                             |
+| `description`          | A Monitor                        |
 | `interval`             | 60                               |
 | `max_retries`          | 0                                |
 | `name`                 | Example                          |
@@ -350,6 +366,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |-----------------------------|---------------|
 | `accepted_statuscodes`      | 200-299       |
 | `active`                    | true          |
+| `description`               | A Monitor     |
 | `hostname`                  | localhost     |
 | `interval`                  | 60            |
 | `max_retries`               | 0             |
@@ -369,6 +386,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |--------------------------|---------------------|
 | `accepted_statuscodes`   | 200-299             |
 | `active`                 | true                |
+| `description`            | A Monitor           |
 | `interval`               | 60                  |
 | `max_retries`            | 0                   |
 | `name`                   | Example             |
@@ -385,6 +403,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
 | `database_connection_string` |               |
+| `description`                | A Monitor     |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
@@ -397,6 +416,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `description`          | A Monitor     |
 | `hostname`             | localhost     |
 | `interval`             | 60            |
 | `max_retries`          | 0             |
@@ -412,6 +432,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
 | `database_connection_string` |               |
+| `description`                | A Monitor     |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
@@ -424,6 +445,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `description`          | A Monitor     |
 | `hostname`             | localhost     |
 | `interval`             | 60            |
 | `max_retries`          | 0             |
