@@ -482,33 +482,44 @@ impl Sync {
         let mut new_monitors: HashMap<String, Monitor> = HashMap::new();
 
         if self.config.docker.enabled {
-            if let Some(docker_socket) = &self.config.docker.socket_path {
-                env::set_var("DOCKER_HOST", format!("unix://{}", docker_socket));
-            }
+            let docker_hosts = self
+                .config
+                .docker
+                .hosts
+                .clone()
+                .map(|f| f.into_iter().map(Some).collect::<Vec<_>>())
+                .unwrap_or_else(|| vec![self.config.docker.socket_path.clone()]);
 
-            let docker = Docker::connect_with_defaults().log_warn(std::module_path!(), |_| {
-                format!(
-                    "Using DOCKER_HOST={}",
-                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
-                )
-            })?;
+            for docker_host in docker_hosts {
+                if let Some(docker_socket) = &docker_host {
+                    env::set_var("DOCKER_HOST", format!("unix://{}", docker_socket));
+                }
 
-            if self.config.docker.source == DockerSource::Containers
-                || self.config.docker.source == DockerSource::Both
-            {
+                let docker =
+                    Docker::connect_with_defaults().log_warn(std::module_path!(), |_| {
+                        format!(
+                            "Using DOCKER_HOST={}",
+                            env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
+                        )
+                    })?;
+
+                if self.config.docker.source == DockerSource::Containers
+                    || self.config.docker.source == DockerSource::Both
+                {
+                    let containers = self.get_kuma_containers(&docker).await?;
+                    new_monitors.extend(self.get_monitors_from_containers(&containers)?);
+                }
+
+                if self.config.docker.source == DockerSource::Services
+                    || self.config.docker.source == DockerSource::Both
+                {
+                    let services = self.get_kuma_services(&docker).await?;
+                    new_monitors.extend(self.get_monitors_from_services(&services)?);
+                }
+
                 let containers = self.get_kuma_containers(&docker).await?;
                 new_monitors.extend(self.get_monitors_from_containers(&containers)?);
             }
-
-            if self.config.docker.source == DockerSource::Services
-                || self.config.docker.source == DockerSource::Both
-            {
-                let services = self.get_kuma_services(&docker).await?;
-                new_monitors.extend(self.get_monitors_from_services(&services)?);
-            }
-
-            let containers = self.get_kuma_containers(&docker).await?;
-            new_monitors.extend(self.get_monitors_from_containers(&containers)?);
         }
 
         let static_monitor_path = self

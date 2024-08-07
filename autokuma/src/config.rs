@@ -1,6 +1,8 @@
+use kuma_client::deserialize::DeserializeVecLenient;
 use serde::{Deserialize, Serialize};
 use serde_alias::serde_alias;
 use serde_inline_default::serde_inline_default;
+use serde_with::{formats::SemicolonSeparator, serde_as, PickFirst, StringWithSeparator};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -15,15 +17,23 @@ pub enum DockerSource {
 
 #[serde_alias(ScreamingSnakeCase)]
 #[serde_inline_default]
+#[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerConfig {
     /// Wether docker integration should be enabled or not.
     #[serde_inline_default(true)]
     pub enabled: bool,
 
-    /// Path to the Docker socket.
+    /// Path to the Docker socket. If not set, the DOCKER_HOST will be used.
     #[serde_inline_default(None)]
     pub socket_path: Option<String>,
+
+    /// List of Docker hosts. If set this will override socker_path. Use a semicolon separated string when setting using an env variable.
+    #[serde_as(
+        as = "Option<PickFirst<(DeserializeVecLenient<String>, StringWithSeparator::<SemicolonSeparator, String>)>>"
+    )]
+    #[serde(default)]
+    pub hosts: Option<Vec<String>>,
 
     /// Wether monitors should be created from container or service labels (or both).
     #[serde_inline_default(DockerSource::Containers)]

@@ -34,6 +34,12 @@ build_env: {}, {}"#,
     );
 }
 
+#[cfg(feature = "private-api")]
+#[doc(hidden)]
+pub mod deserialize;
+
+#[cfg(not(feature = "private-api"))]
+#[doc(hidden)]
 pub(crate) mod deserialize;
 
 #[doc(hidden)]
