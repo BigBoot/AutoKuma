@@ -492,7 +492,12 @@ impl Sync {
 
             for docker_host in docker_hosts {
                 if let Some(docker_socket) = &docker_host {
-                    env::set_var("DOCKER_HOST", format!("unix://{}", docker_socket));
+                    let docker_host_value = if docker_socket.starts_with("tcp://") {
+                        docker_socket.clone()
+                    } else {
+                        format!("unix://{}", docker_socket)
+                    };
+                    env::set_var("DOCKER_HOST", docker_host_value);
                 }
 
                 let docker =
