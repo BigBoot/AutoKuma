@@ -26,13 +26,37 @@
 
 AutoKuma is a utility that automates the creation of Uptime Kuma monitors based on Docker container labels. With AutoKuma, you can eliminate the need for manual monitor creation in the Uptime Kuma UI.
 
+
+
 ## How to Install 📦
 
+### Supported Platforms 
+| Platform | Architecture | Docker Images | Prebuild Binaries | Notes                            |
+|----------|--------------|---------------|-------------------|----------------------------------|
+| Windows  | x64          | ✅             | ✅                 |                                  |
+| Windows  | arm64        | ⛔︎            | ⛔︎                |                                  |
+| Linux    | x64          | ✅             | ✅                 |                                  |
+| Linux    | arm64        | ⚠️*           | ⛔︎                | Experimental/Only release builds |
+| Mac      | x64          | ⛔︎            | ⛔︎                |                                  |
+| Mac      | arm64        | ⚠️*           | ⚠️*               | Experimental                     |
+
+
 Binaries for windows linux and mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest), additionally AutoKuma is available as a Docker container on [GitHub Container Registry (GHCR)](https://github.com/BigBoot/AutoKuma/pkgs/container/autokuma). To install, simply pull the container using:
+
+Latest Release:
 
 ```bash
 docker pull ghcr.io/bigboot/autokuma:latest
 ```
+
+Dev Version:
+
+```bash
+docker pull ghcr.io/bigboot/autokuma:master
+```
+
+
+❗ The dev version might break or contain breaking changes without warning, usage on a production system is not adviced.
 
 ### Example Docker Compose 🚀
 
