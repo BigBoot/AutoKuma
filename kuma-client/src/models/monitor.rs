@@ -424,7 +424,7 @@ monitor_type! {
         #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
 
-        #[serde(rename = "sqlQuery")]
+        #[serde(rename = "databaseQuery")]
         #[serde(alias = "query")]
         pub query: Option<String>,
     }
@@ -436,7 +436,7 @@ monitor_type! {
         #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
 
-        #[serde(rename = "sqlQuery")]
+        #[serde(rename = "databaseQuery")]
         #[serde(alias = "query")]
         pub query: Option<String>,
     }
@@ -460,7 +460,7 @@ monitor_type! {
         #[serde(alias = "radius_password")]
         pub password: Option<String>,
 
-        #[serde(rename = "sqlQuery")]
+        #[serde(rename = "databaseQuery")]
         #[serde(alias = "query")]
         pub query: Option<String>,
     }
