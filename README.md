@@ -33,12 +33,12 @@ AutoKuma is a utility that automates the creation of Uptime Kuma monitors based 
 ### Supported Platforms 
 | Platform | Architecture | Docker Images | Prebuild Binaries | Notes                            |
 |----------|--------------|---------------|-------------------|----------------------------------|
-| Windows  | x64          | ✅             | ✅                 |                                  |
+| Windows  | x64          | ⛔︎            | ✅                 |                                  |
 | Windows  | arm64        | ⛔︎            | ⛔︎                |                                  |
 | Linux    | x64          | ✅             | ✅                 |                                  |
 | Linux    | arm64        | ⚠️*           | ⛔︎                | Experimental/Only release builds |
 | Mac      | x64          | ⛔︎            | ⛔︎                |                                  |
-| Mac      | arm64        | ⚠️*           | ⚠️*               | Experimental                     |
+| Mac      | arm64        | ⛔︎            | ⚠️*               | Experimental                     |
 
 
 Binaries for windows linux and mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest), additionally AutoKuma is available as a Docker container on [GitHub Container Registry (GHCR)](https://github.com/BigBoot/AutoKuma/pkgs/container/autokuma). To install, simply pull the container using:
