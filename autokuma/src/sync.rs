@@ -488,11 +488,18 @@ impl Sync {
                 .hosts
                 .clone()
                 .map(|f| f.into_iter().map(Some).collect::<Vec<_>>())
-                .unwrap_or_else(|| vec![self.config.docker.socket_path.clone()]);
+                .unwrap_or_else(|| {
+                    vec![self
+                        .config
+                        .docker
+                        .socket_path
+                        .as_ref()
+                        .and_then(|path| Some(format!("unix://{}", path)))]
+                });
 
             for docker_host in docker_hosts {
-                if let Some(docker_socket) = &docker_host {
-                    env::set_var("DOCKER_HOST", format!("unix://{}", docker_socket));
+                if let Some(docker_host) = &docker_host {
+                    env::set_var("DOCKER_HOST", docker_host);
                 }
 
                 let docker =

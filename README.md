@@ -64,7 +64,7 @@ services:
       #    {{container_name}}_http.http.url: https://{{@0}}:{{@1}}
       #    {{container_name}}_docker.docker.name: {{container_name}} Docker
       #    {{container_name}}_docker.docker.docker_container: {{container_name}}
-      # AUTOKUMA__DOCKER__HOSTS: /var/run/docker.sock
+      # AUTOKUMA__DOCKER__HOSTS: unix:///var/run/docker.sock
       # AUTOKUMA__DOCKER__LABEL_PREFIX: kuma
       
     volumes:
