@@ -11,42 +11,42 @@ repository = "https://github.com/BigBoot/AutoKuma"
 
 [workspace.dependencies]
 bollard = { version = "0.17.0", features = ["ssl"] }
-clap = { version = "4.4.14", features = ["derive"] }
+clap = { version = "4.5.15", features = ["derive"] }
 config = { version = "0.14.0" }
-const-str = { version = "0.5.6", features = ["proc"] }
+const-str = { version = "0.5.7", features = ["proc"] }
 console-subscriber = { version = "0.4.0" }
-cute_custom_default = { version = "2.1.0" }
+cute_custom_default = { version = "2.2.0" }
 derivative = { version = "2.2.0" }
 dirs = { version = "5.0.1" }
-flexi_logger = { version = "0.28.0", features = ["compress"] }
+flexi_logger = { version = "0.28.5", features = ["compress"] }
 futures-util = { version = "0.3.30" }
 humantime-serde = { version = "1.1.1" }
-inkjet = { version = "0.10.4", default-features = false, features = [
+inkjet = { version = "0.10.5", default-features = false, features = [
     "language-yaml",
     "language-json",
 ] }
 itertools = { version = "0.13.0" }
-log = { version = "0.4.20" }
+log = { version = "0.4.22" }
 native-tls = { version = "0.2.12" }
 owo-colors = { version = "4.0.0" }
-regex = { version = "1.5.4" }
-reqwest = { version = "0.12.2", features = ["json"] }
+regex = { version = "1.10.6" }
+reqwest = { version = "0.12.5", features = ["json"] }
 rust_socketio = { version = "0.6.0", features = ["async"] }
-serde = { version = "1.0.194", features = ["derive"] }
+serde = { version = "1.0.207", features = ["derive"] }
 serde_alias = { version = "0.0.2" }
-serde_json = { version = "1.0.111" }
+serde_json = { version = "1.0.124" }
 serde_merge = { version = "0.1.3" }
-serde_repr = { version = "0.1.18" }
-serde_with = { version = "3.4.0", features = ["time_0_3"] }
+serde_repr = { version = "0.1.19" }
+serde_with = { version = "3.9.0", features = ["time_0_3"] }
 serde-inline-default = { version = "0.2.0" }
-serde_yaml = { version = "0.9.30" }
+serde_yaml = { version = "0.9.34" }
 unescaper = { version = "0.1.5" }
-shadow-rs = { version = "0.31.1" }
-strum = { version = "0.26.1", features = ["derive"] }
+shadow-rs = { version = "0.32.0" }
+strum = { version = "0.26.3", features = ["derive"] }
 supports-color = { version = "3.0.0" }
-tera = { version = "1.19.1" }
-thiserror = { version = "1.0.56" }
-time = { version = "0.3.31", features = ["serde"] }
-tokio = { version = "1.35.1", features = ["full"] }
-toml = { version = "0.8.8" }
-url = { version = "2.5.0", features = ["serde"] }
+tera = { version = "1.20.0" }
+thiserror = { version = "1.0.63" }
+time = { version = "0.3.36", features = ["serde"] }
+tokio = { version = "1.39.2", features = ["full"] }
+toml = { version = "0.8.19" }
+url = { version = "2.5.2", features = ["serde"] }

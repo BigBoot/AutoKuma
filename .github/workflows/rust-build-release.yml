@@ -5,7 +5,7 @@ on:
     branches:
       - master
     tags:
-      - '*'
+      - "*"
 
 jobs:
   build:
@@ -22,55 +22,60 @@ jobs:
             os: mac
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with: 
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ matrix.runs-on }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ matrix.runs-on }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Build
-      run: cargo build --release
+      - name: Setup NASM
+        if: matrix.os == 'windows'
+        run: |
+          choco install nasm -y
+          refreshenv
 
-    - name: Prepare artifacts
-      shell: bash
-      run: |-
-        mkdir dist
-        for file in autokuma autokuma.exe kuma kuma.exe; do
-          if [[ ! -e "target/release/$file" ]]; then
-            continue
-          fi
+      - name: Build
+        run: cargo build --release
 
-          filename=$(basename "$file")
-          
-          if [[ "$filename" == *.* ]]; then
-            extension=".${filename##*.}"
-            filename="${filename%.*}"
-          else
-            extension=""
-          fi
-          
-          mv "target/release/${filename}${extension}" "dist/${filename}-${{ matrix.os }}${extension}"
-        done
+      - name: Prepare artifacts
+        shell: bash
+        run: |-
+          mkdir dist
+          for file in autokuma autokuma.exe kuma kuma.exe; do
+            if [[ ! -e "target/release/$file" ]]; then
+              continue
+            fi
 
+            filename=$(basename "$file")
+            
+            if [[ "$filename" == *.* ]]; then
+              extension=".${filename##*.}"
+              filename="${filename%.*}"
+            else
+              extension=""
+            fi
+            
+            mv "target/release/${filename}${extension}" "dist/${filename}-${{ matrix.os }}${extension}"
+          done
 
-    - name: Archive artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: autokuma-${{ matrix.os }}
-        path: dist/*
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: autokuma-${{ matrix.os }}
+          path: dist/*
 
   github-release:
     needs: [build]
@@ -78,35 +83,35 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with: 
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Install cargo-release
-      uses: taiki-e/install-action@v2
-      with:
-        tool: cargo-release
+      - name: Install cargo-release
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-release
 
-    - name: Parse Changelog
-      id: changelog
-      uses: coditory/changelog-parser@v1
+      - name: Parse Changelog
+        id: changelog
+        uses: coditory/changelog-parser@v1
 
-    - name: Download All Artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: dist
-        pattern:  autokuma-*
-        merge-multiple: true
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: autokuma-*
+          merge-multiple: true
 
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        name: Release ${{ github.ref_name }}
-        body: ${{ steps.changelog.outputs.description }}
-        files: dist/*
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.description }}
+          files: dist/*
 
   crates-io:
     needs: [build]
@@ -114,24 +119,24 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with: 
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Install tools
-      uses: taiki-e/install-action@v2
-      with:
-        tool: cargo-release,markdown-extract
+      - name: Install tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-release,markdown-extract
 
-    - name: setup git
-      shell: bash
-      run: |-   
-        git config user.email "runner@github.com"
-        git config user.name "Github Runner"
+      - name: setup git
+        shell: bash
+        run: |-
+          git config user.email "runner@github.com"
+          git config user.name "Github Runner"
 
-    - name: Publish to crates.io
-      shell: bash
-      env:
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      run: cargo release --workspace --execute --no-confirm "${GITHUB_REF_NAME#v}"
+      - name: Publish to crates.io
+        shell: bash
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo release --workspace --execute --no-confirm "${GITHUB_REF_NAME#v}"
