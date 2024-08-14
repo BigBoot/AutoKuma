@@ -90,7 +90,7 @@ impl From<Cli> for Config {
             .set_override_option("connect_timeout", value.connect_timeout).unwrap()
             .set_override_option("call_timeout", value.call_timeout).unwrap()
             .set_override_option("tls.verify", value.tls_no_verify.map(|v| !v)).unwrap()
-            .set_override_option("tls.tls_cert", value.tls_certificate.clone()).unwrap()
+            .set_override_option("tls.cert", value.tls_certificate.clone()).unwrap()
             .build()
             .and_then(|config| config.try_deserialize())
             .map(|config| {

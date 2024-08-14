@@ -30,7 +30,7 @@ pub struct TlsConfig {
     /// This can be used to connect to a server that has a self-signed
     /// certificate for example.
     #[serde(default)]
-    pub tls_cert: Option<String>,
+    pub cert: Option<String>,
 }
 
 /// Configuration for the [Client](crate::Client).

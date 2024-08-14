@@ -84,7 +84,7 @@ impl Worker {
     fn new(config: Config, tag_name: Option<String>) -> Result<Arc<Self>> {
         let custom_cert = config
             .tls
-            .tls_cert
+            .cert
             .as_ref()
             .map(|file| -> Result<(String, Certificate)> {
                 fs::read(file)
