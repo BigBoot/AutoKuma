@@ -42,10 +42,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup NASM
+        uses: ilammy/setup-nasm@v1
         if: matrix.os == 'windows'
-        run: |
-          choco install nasm -y
-          refreshenv
 
       - name: Build
         run: cargo build --release
