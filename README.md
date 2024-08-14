@@ -219,7 +219,7 @@ To use a snippet on a container, assign a label in the format:
 For example, the above snippet could be included using the following label:
 
 ```plaintext
-kuma.__web: "example.com", 443
+kuma.__web: '"example.com", 443'
 ```
 
 Snippets also use [Tera](https://keats.github.io/tera/), which allows for some quite advanced templates, here's a extended variation of the above example:
