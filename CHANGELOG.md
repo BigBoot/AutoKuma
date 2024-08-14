@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Support for multiple docker hosts, see [#62](https://github.com/BigBoot/AutoKuma/issues/62)
+- Ability to specify custom tls cert when connecting to Uptime Kuma over HTTPS, see [#66](https://github.com/BigBoot/AutoKuma/issues/66)
+- Ability to ignore invalid tls certs when connecting to Uptime Kuma over HTTPS, see [#66](https://github.com/BigBoot/AutoKuma/issues/66)
 
 ### Fixed
 - Fix control sequences not being expanded in snippets, see [#60](https://github.com/BigBoot/AutoKuma/issues/60)

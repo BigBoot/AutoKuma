@@ -14,6 +14,7 @@ use crate::{
 use futures_util::FutureExt;
 use itertools::Itertools;
 use log::{debug, trace, warn};
+use native_tls::{Certificate, TlsConnector};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use rust_socketio::{
     asynchronous::{Client as SocketIO, ClientBuilder},
@@ -23,7 +24,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::{
     collections::HashMap,
-    mem,
+    fs, mem,
     str::FromStr,
     sync::{Arc, Weak},
     time::Duration,
@@ -76,11 +77,56 @@ struct Worker {
     is_ready: Arc<Mutex<Ready>>,
     is_logged_in: Arc<Mutex<bool>>,
     reqwest: Arc<Mutex<reqwest::Client>>,
+    custom_cert: Option<(String, Certificate)>,
 }
 
 impl Worker {
-    fn new(config: Config, tag_name: Option<String>) -> Arc<Self> {
-        Arc::new(Worker {
+    fn new(config: Config, tag_name: Option<String>) -> Result<Arc<Self>> {
+        let custom_cert = config
+            .tls
+            .tls_cert
+            .as_ref()
+            .map(|file| -> Result<(String, Certificate)> {
+                fs::read(file)
+                    .map_err(|e| Error::InvalidTlsCert(file.clone(), e.to_string()))
+                    .and_then(|content| {
+                        Certificate::from_pem(&content)
+                            .map_err(|e| Error::InvalidTlsCert(file.clone(), e.to_string()))
+                    })
+                    .map(|cert| (file.clone(), cert))
+            })
+            .transpose()?;
+
+        let mut reqwest_builder = reqwest::Client::builder()
+            .danger_accept_invalid_certs(!config.tls.verify)
+            .default_headers(HeaderMap::from_iter(
+                config
+                    .headers
+                    .iter()
+                    .filter_map(|header| header.split_once("="))
+                    .filter_map(|(key, value)| {
+                        match (
+                            HeaderName::from_bytes(key.as_bytes()),
+                            HeaderValue::from_bytes(value.as_bytes()),
+                        ) {
+                            (Ok(key), Ok(value)) => Some((key, value)),
+                            _ => None,
+                        }
+                    }),
+            ));
+
+        if let Some((file, cert)) = &custom_cert {
+            reqwest_builder = reqwest_builder.add_root_certificate(
+                reqwest::Certificate::from_der(
+                    &cert
+                        .to_der()
+                        .map_err(|e| Error::InvalidTlsCert(file.clone(), e.to_string()))?,
+                )
+                .map_err(|e| Error::InvalidTlsCert(file.clone(), e.to_string()))?,
+            );
+        }
+
+        Ok(Arc::new(Worker {
             config: Arc::new(config.clone()),
             tag_name: tag_name.to_owned(),
             socket_io: Arc::new(Mutex::new(None)),
@@ -92,27 +138,9 @@ impl Worker {
             is_connected: Arc::new(Mutex::new(false)),
             is_ready: Arc::new(Mutex::new(Ready::new())),
             is_logged_in: Arc::new(Mutex::new(false)),
-            reqwest: Arc::new(Mutex::new(
-                reqwest::Client::builder()
-                    .default_headers(HeaderMap::from_iter(
-                        config
-                            .headers
-                            .iter()
-                            .filter_map(|header| header.split_once("="))
-                            .filter_map(|(key, value)| {
-                                match (
-                                    HeaderName::from_bytes(key.as_bytes()),
-                                    HeaderValue::from_bytes(value.as_bytes()),
-                                ) {
-                                    (Ok(key), Ok(value)) => Some((key, value)),
-                                    _ => None,
-                                }
-                            }),
-                    ))
-                    .build()
-                    .unwrap(),
-            )),
-        })
+            reqwest: Arc::new(Mutex::new(reqwest_builder.build().unwrap())),
+            custom_cert: custom_cert,
+        }))
     }
 
     async fn on_monitor_list(self: &Arc<Self>, monitor_list: MonitorList) -> Result<()> {
@@ -1050,6 +1078,14 @@ impl Worker {
     }
 
     pub async fn connect(self: &Arc<Self>) -> Result<()> {
+        let mut tls_config = TlsConnector::builder();
+
+        tls_config.danger_accept_invalid_certs(!self.config.tls.verify);
+
+        if let Some((_, cert)) = &self.custom_cert {
+            tls_config.add_root_certificate(cert.clone());
+        }
+
         self.is_ready.lock().await.reset();
         *self.is_logged_in.lock().await = false;
         *self.socket_io.lock().await = None;
@@ -1060,6 +1096,15 @@ impl Worker {
                 .join("/socket.io/")
                 .map_err(|e| Error::InvalidUrl(e.to_string()))?,
         )
+        .tls_config(tls_config.build().map_err(|e| {
+            Error::InvalidTlsCert(
+                self.custom_cert
+                    .as_ref()
+                    .map(|(file, _)| file.to_owned())
+                    .unwrap_or_default(),
+                e.to_string(),
+            )
+        })?)
         .transport_type(rust_socketio::TransportType::Websocket);
 
         for (key, value) in self
@@ -1270,7 +1315,7 @@ impl Client {
     }
 
     async fn connect_impl(config: Config, tag_name: Option<String>) -> Result<Client> {
-        let worker = Worker::new(config, tag_name);
+        let worker = Worker::new(config, tag_name)?;
         match worker.connect().await {
             Ok(_) => Ok(Self { worker }),
             Err(e) => {

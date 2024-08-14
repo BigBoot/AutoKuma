@@ -5,6 +5,34 @@ use serde_inline_default::serde_inline_default;
 use serde_with::{formats::CommaSeparator, serde_as, PickFirst, StringWithSeparator};
 use url::Url;
 
+/// TLS Configuration for the [Client](crate::Client).
+#[serde_alias(ScreamingSnakeCase)]
+#[serde_inline_default]
+#[serde_as]
+#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TlsConfig {
+    /// Whether to verify the TLS certificate or not.
+    ///
+    /// Defaults to `true`.
+    ///
+    /// # Warning
+    ///
+    /// You should think very carefully before using this method. If
+    /// invalid certificates are trusted, *any* certificate for *any* site
+    /// will be trusted for use. This includes expired certificates. This
+    /// introduces significant vulnerabilities, and should only be used
+    /// as a last resort.
+    #[serde_inline_default(true)]
+    pub verify: bool,
+
+    /// The path to a custom tls certificate in PEM format.
+    ///
+    /// This can be used to connect to a server that has a self-signed
+    /// certificate for example.
+    #[serde(default)]
+    pub tls_cert: Option<String>,
+}
+
 /// Configuration for the [Client](crate::Client).
 #[serde_alias(ScreamingSnakeCase)]
 #[serde_inline_default]
@@ -37,6 +65,9 @@ pub struct Config {
     /// The timeout for executing calls to the Uptime Kuma server.
     #[serde_inline_default(30.0)]
     pub call_timeout: f64,
+
+    /// TLS Configuration for the [Client](crate::Client).
+    pub tls: TlsConfig,
 }
 
 impl Default for Config {
@@ -49,6 +80,7 @@ impl Default for Config {
             headers: Vec::new(),
             connect_timeout: 30.0,
             call_timeout: 30.0,
+            tls: TlsConfig::default(),
         }
     }
 }

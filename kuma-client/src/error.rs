@@ -63,6 +63,10 @@ pub enum Error {
     #[error("No {0} with slug {1} could be found")]
     SlugNotFound(String, String),
 
+    /// Error when an entity with a specific slug is not found.
+    #[error("Unable to load custom tls cert {0}: {1}")]
+    InvalidTlsCert(String, String),
+
     /// Wrapper for an underlying reqwest error.
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),

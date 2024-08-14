@@ -1,9 +1,11 @@
 use crate::utils::{OutputFormat, ResultOrDie as _};
-use clap::{arg, command, CommandFactory, Parser, Subcommand};
+use clap::{arg, command, ArgAction, CommandFactory, Parser, Subcommand};
+use config::{File, FileFormat};
 use kuma_client::{
     build::{LONG_VERSION, SHORT_VERSION},
     Config,
 };
+use serde_json::json;
 
 #[derive(Parser, Clone, Debug)]
 #[command(author, version = SHORT_VERSION, long_version = LONG_VERSION, about, long_about = None, arg_required_else_help = true)]
@@ -40,6 +42,14 @@ pub(crate) struct Cli {
     #[arg(value_enum, long = "format", default_value_t = OutputFormat::Json, global = true)]
     pub output_format: OutputFormat,
 
+    /// Disable TLS certificate verification
+    #[arg(long = "tls-no-verify", global = true, action = ArgAction::SetTrue)]
+    pub tls_no_verify: Option<bool>,
+
+    /// Path to custom TLS certificate in PEM format to use for connecting to Uptime Kuma
+    #[arg(long = "tls-certificate", global = true)]
+    pub tls_certificate: Option<String>,
+
     /// Wether the output should be pretty printed or condensed
     #[arg(long = "pretty", default_value_t = false, global = true)]
     pub output_pretty: bool,
@@ -54,6 +64,10 @@ pub(crate) struct Cli {
 impl From<Cli> for Config {
     fn from(value: Cli) -> Self {
         config::Config::builder()
+            .add_source(File::from_str(
+                &serde_json::to_string(&json!({"tls": {}})).unwrap(),
+                FileFormat::Json,
+            ))
             .add_source(config::File::with_name(&dirs::config_local_dir().map(|dir| dir.join("kuma").join("config").to_string_lossy().to_string()).unwrap_or_default()).required(false))
             .add_source(config::File::with_name("kuma").required(false))
             .add_source(
@@ -62,28 +76,27 @@ impl From<Cli> for Config {
                     .prefix_separator("__"),
             )
             .set_default("headers", Vec::<String>::new()).unwrap()
-            .set_override_option("url", value.url.clone())
-            .unwrap()
-            .set_override_option("username", value.username.clone())
-            .unwrap()
-            .set_override_option("password", value.password.clone())
-            .unwrap()
-            .set_override_option("mfa_token", value.mfa_token.clone())
-            .unwrap()
+            .set_override_option("url", value.url.clone()).unwrap()
+            .set_override_option("username", value.username.clone()).unwrap()
+            .set_override_option("password", value.password.clone()).unwrap()
+            .set_override_option("mfa_token", value.mfa_token.clone()).unwrap()
             .set_override_option(
                 "headers",
                 match value.headers.is_empty() {
                     true => None,
                     false => Some(value.headers.clone()),
                 },
-            )
-            .unwrap()
-            .set_override_option("connect_timeout", value.connect_timeout)
-            .unwrap()
-            .set_override_option("call_timeout", value.call_timeout)
-            .unwrap()
+            ).unwrap()
+            .set_override_option("connect_timeout", value.connect_timeout).unwrap()
+            .set_override_option("call_timeout", value.call_timeout).unwrap()
+            .set_override_option("tls.verify", value.tls_no_verify.map(|v| !v)).unwrap()
+            .set_override_option("tls.tls_cert", value.tls_certificate.clone()).unwrap()
             .build()
             .and_then(|config| config.try_deserialize())
+            .map(|config| {
+                println!("{:?}", config);
+                config
+            })
             .unwrap_or_else(|e| match &e {
                 config::ConfigError::Message(msg) if msg == "missing field `url`" => Cli::command().error(clap::error::ErrorKind::MissingRequiredArgument, "the following required arguments were not provided:\n  \x1b[32m--url <URL>\x1b[0m").exit(),
                 e => Err(e).unwrap_or_die(&value),

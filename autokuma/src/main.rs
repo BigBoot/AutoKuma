@@ -82,7 +82,7 @@ async fn main() {
     let config: Arc<crate::config::Config> = Arc::new(
         Config::builder()
             .add_source(File::from_str(
-                &serde_json::to_string(&json!({"kuma": {}, "docker": {}})).unwrap(),
+                &serde_json::to_string(&json!({"kuma": {"tls": {}}, "docker": {}})).unwrap(),
                 FileFormat::Json,
             ))
             .add_source(
