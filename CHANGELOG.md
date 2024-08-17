@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix control sequences not being expanded in snippets, see [#60](https://github.com/BigBoot/AutoKuma/issues/60)
 - Add missing `description` property, see [#61](https://github.com/BigBoot/AutoKuma/issues/61)
 - Fix wrong name for `query` property of database monitors, see [#65](https://github.com/BigBoot/AutoKuma/issues/65)
+- Add missing `upside_down` property alias, see [#71](https://github.com/BigBoot/AutoKuma/issues/71)
 
 ## [0.7.0] - 2024-07-15
 ### Added

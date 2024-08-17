@@ -94,6 +94,7 @@ macro_rules! monitor_type {
             pub retry_interval: Option<i32>,
 
             #[serde(rename = "upsideDown")]
+            #[serde(alias = "upside_down")]
             #[serde_as(as = "Option<DeserializeBoolLenient>")]
             pub upside_down: Option<bool>,
 
