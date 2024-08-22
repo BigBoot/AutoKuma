@@ -705,13 +705,17 @@ impl Worker {
         #[cfg(feature = "private-api")]
         let create_paused = mem::take(monitor.common_mut().create_paused_mut());
 
+        let mut monitor_json = serde_json::to_value(&monitor).unwrap();
+
+        // Workaround for https://github.com/BigBoot/AutoKuma/issues/72 until fixed in UptimeKuma
+        if let Some(monitor_json) = monitor_json.as_object_mut() {
+            if !monitor_json.contains_key("url") {
+                monitor_json.insert("url".to_owned(), json!("https://"));
+            }
+        }
+
         let id: i32 = self
-            .call(
-                "editMonitor",
-                vec![serde_json::to_value(&monitor).unwrap()],
-                "/monitorID",
-                true,
-            )
+            .call("editMonitor", vec![monitor_json], "/monitorID", true)
             .await?;
 
         self.update_monitor_tags(id, &tags).await?;
