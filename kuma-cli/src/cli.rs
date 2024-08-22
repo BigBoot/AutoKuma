@@ -93,10 +93,6 @@ impl From<Cli> for Config {
             .set_override_option("tls.cert", value.tls_certificate.clone()).unwrap()
             .build()
             .and_then(|config| config.try_deserialize())
-            .map(|config| {
-                println!("{:?}", config);
-                config
-            })
             .unwrap_or_else(|e| match &e {
                 config::ConfigError::Message(msg) if msg == "missing field `url`" => Cli::command().error(clap::error::ErrorKind::MissingRequiredArgument, "the following required arguments were not provided:\n  \x1b[32m--url <URL>\x1b[0m").exit(),
                 e => Err(e).unwrap_or_die(&value),
