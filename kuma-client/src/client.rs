@@ -186,11 +186,10 @@ impl Worker {
 
     async fn on_info(self: &Arc<Self>) -> Result<()> {
         *self.is_connected.lock().await = true;
-        if let (Some(username), Some(password), true) = (
-            &self.config.username,
-            &self.config.password,
-            !*self.is_logged_in.lock().await,
-        ) {
+        let logged_in = *self.is_logged_in.lock().await;
+        if let (Some(username), Some(password), true) =
+            (&self.config.username, &self.config.password, !logged_in)
+        {
             self.login(username, password, self.config.mfa_token.clone())
                 .await?;
         }
