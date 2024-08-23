@@ -6,3 +6,4 @@ docker.sock
 .vscode
 */logo.svg
 !/logo.svg
+*.snap
