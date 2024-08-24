@@ -1,6 +1,7 @@
 name: kuma
 adopt-info: kuma
 summary: A cli for uptime-kuma
+icon: icon.svg
 description: |
   Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting with Uptime Kuma (1).
   With Kuma CLI you can easily configure, monitor and manage your applications from the command line.
