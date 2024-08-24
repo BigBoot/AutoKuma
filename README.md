@@ -16,7 +16,7 @@
             &nbsp&nbsp
             <a href="#kuma-cli--">Kuma CLI</a> 
             &nbsp&nbsp
-            <a href="#kuma-client--">Kuma Client</a> 
+            <a href="#kuma-client---">Kuma Client</a> 
         </b>
     </p>
 </div>
@@ -35,7 +35,7 @@ AutoKuma is a utility that automates the creation of Uptime Kuma monitors based 
 |----------|--------------|---------------|-------------------|----------------------------------|
 | Windows  | x64          | ⛔︎            | ✅                 |                                  |
 | Windows  | arm64        | ⛔︎            | ⛔︎                |                                  |
-| Linux    | x64          | ✅             | ✅                 |                                  |
+| Linux    | x64          | ✅             | ✅*                | CLI Snaps Experimental           |
 | Linux    | arm64        | ⚠️*           | ⛔︎                | Experimental/Only release builds |
 | Mac      | x64          | ⛔︎            | ⛔︎                |                                  |
 | Mac      | arm64        | ⛔︎            | ⚠️*               | Experimental                     |
@@ -283,7 +283,7 @@ The default directory for static monitors is:
 In case of static Monitors the id is determined by the filename (without the extension).
 
 
-# Kuma CLI 🤖 <a href="https://crates.io/crates/kuma-cli"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-cli?logo=rust&color=blue"></a>
+# Kuma CLI 🤖 <a href="https://crates.io/crates/kuma-cli"><img alt="Crates.io Version" src="https://img.shields.io/crates/v/kuma-cli?logo=rust&color=blue"></a> [![kuma](https://snapcraft.io/kuma/badge.svg)](https://snapcraft.io/kuma)
 
 Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting with [Uptime Kuma](https://uptime.kuma.pet/). With Kuma CLI you can easily configure, monitor and manage your applications from the command line.
 
