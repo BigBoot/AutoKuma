@@ -28,8 +28,8 @@ jobs:
     - name: Publish snap
       uses: snapcore/action-publish@v1
       env:
-        SNAP_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
-      if: env.SNAP_STORE_CREDENTIALS
+        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
+      if: env.SNAPCRAFT_STORE_CREDENTIALS
       with:
         snap: ${{ steps.build.outputs.snap }}
         release: latest/${{ startsWith(github.ref, 'refs/tags/') && 'candidate' || 'edge'}}
