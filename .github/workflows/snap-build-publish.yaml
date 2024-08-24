@@ -28,7 +28,7 @@ jobs:
     - name: Publish snap
       uses: snapcore/action-publish@v1
       env:
-        SNAP_STORE_CREDENTIALS: ${{ secrets.store-login }}
+        SNAP_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_TOKEN }}
       if: env.SNAP_STORE_CREDENTIALS
       with:
         snap: ${{ steps.build.outputs.snap }}
