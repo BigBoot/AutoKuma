@@ -41,9 +41,10 @@ serde_with = { version = "3.9.0", features = ["time_0_3"] }
 serde-inline-default = { version = "0.2.0" }
 serde_yaml = { version = "0.9.34" }
 unescaper = { version = "0.1.5" }
-shadow-rs = { version = "0.32.0" }
+shadow-rs = { version = "0.33.0" }
 strum = { version = "0.26.3", features = ["derive"] }
 supports-color = { version = "3.0.0" }
+tap = { version = "1.0.1" }
 tera = { version = "1.20.0" }
 thiserror = { version = "1.0.63" }
 time = { version = "0.3.36", features = ["serde"] }

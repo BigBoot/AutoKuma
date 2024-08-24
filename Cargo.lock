@@ -1553,6 +1553,7 @@ dependencies = [
  "const-str",
  "dirs",
  "flexi_logger",
+ "futures-util",
  "inkjet",
  "kuma-client",
  "log",
@@ -1561,6 +1562,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "supports-color",
+ "tap",
  "tokio",
  "toml",
 ]
@@ -2692,9 +2694,9 @@ dependencies = [
 
 [[package]]
 name = "shadow-rs"
-version = "0.32.0"
+version = "0.33.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25d4535372eab969a98536e39dd272bca49fc338b09b25babea715968d15eeae"
+checksum = "8a3978e7641f86a78c2f619f9b13bdffb4e43a1d5119f39eb03d1bc5ac61daaf"
 dependencies = [
  "const_format",
  "git2",
@@ -2871,6 +2873,12 @@ dependencies = [
  "core-foundation-sys",
  "libc",
 ]
+
+[[package]]
+name = "tap"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "tempfile"

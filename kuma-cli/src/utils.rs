@@ -1,14 +1,16 @@
 use crate::cli::Cli;
 use clap::ValueEnum;
+use futures_util::future::join_all;
 use inkjet::{
     constants::HIGHLIGHT_NAMES, formatter::Formatter, tree_sitter_highlight::HighlightEvent,
     Highlighter, InkjetError,
 };
 use kuma_client::Config;
 use owo_colors::Style;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::HashMap, path::PathBuf};
+use tap::Pipe;
 use tokio::task;
 
 pub(crate) type Result<T> = kuma_client::error::Result<T>;
@@ -84,14 +86,34 @@ where
     print!("{}", str);
 }
 
-pub(crate) async fn load_file<T>(file: &PathBuf, cli: &Cli) -> T
+#[derive(Deserialize, Serialize)]
+#[serde(untagged)]
+pub(crate) enum OneOrMany<T> {
+    One(T),
+    Many(Vec<T>),
+}
+pub(crate) async fn load_files<T>(file: &Vec<PathBuf>, cli: &Cli) -> Vec<T>
+where
+    T: Send + for<'de> serde::Deserialize<'de> + 'static,
+{
+    file.into_iter()
+        .map(|file| load_file(file, cli))
+        .collect::<Vec<_>>()
+        .pipe(|futures| join_all(futures))
+        .await
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
+pub(crate) async fn load_file<T>(file: &PathBuf, cli: &Cli) -> Vec<T>
 where
     T: Send + for<'de> serde::Deserialize<'de> + 'static,
 {
     let file_clone = file.clone();
     let cli_clone = cli.clone();
 
-    task::spawn_blocking(move || {
+    let result = task::spawn_blocking(move || {
         if file_clone.to_string_lossy() == "-" {
             serde_json::from_reader(std::io::stdin()).unwrap_or_die(&cli_clone)
         } else {
@@ -100,8 +122,28 @@ where
         }
     })
     .await
-    .unwrap_or_die(cli)
+    .unwrap_or_die(cli);
+
+    match result {
+        OneOrMany::One(x) => vec![x],
+        OneOrMany::Many(x) => x,
+    }
 }
+
+pub(crate) trait CollectOrUnwrap: Iterator {
+    fn collect_or_unwrap(self) -> OneOrMany<Self::Item>
+    where
+        Self: Sized,
+    {
+        let vec = self.collect::<Vec<_>>();
+        match vec.len() {
+            1 => OneOrMany::One(vec.into_iter().next().unwrap()),
+            _ => OneOrMany::Many(vec),
+        }
+    }
+}
+
+impl<T: Iterator> CollectOrUnwrap for T {}
 
 #[derive(Clone)]
 struct Theme {

@@ -1546,8 +1546,11 @@ impl Client {
     }
 
     /// Test a docker host in Uptime Kuma.
-    pub async fn test_docker_host(&self, docker_host: &DockerHost) -> Result<String> {
-        self.worker.test_docker_host(docker_host).await
+    pub async fn test_docker_host<T: std::borrow::Borrow<DockerHost>>(
+        &self,
+        docker_host: T,
+    ) -> Result<String> {
+        self.worker.test_docker_host(docker_host.borrow()).await
     }
 
     /// Disconnects the client from Uptime Kuma.

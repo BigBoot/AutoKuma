@@ -22,6 +22,7 @@ config = { workspace = true }
 const-str = { workspace = true }
 dirs = { workspace = true }
 flexi_logger = { workspace = true }
+futures-util = { workspace = true }
 inkjet = { workspace = true }
 log = { workspace = true }
 owo-colors = { workspace = true }
@@ -29,5 +30,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 supports-color = { workspace = true }
+tap = { workspace = true }
 tokio = { workspace = true }
 toml = { workspace = true }
