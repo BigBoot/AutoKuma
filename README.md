@@ -14,9 +14,9 @@
         <b>
             <a href="#autokuma--">AutoKuma</a>
             &nbsp&nbsp
-            <a href="#kuma-cli--">Kuma CLI</a> 
+            <a href="#kuma-cli---">Kuma CLI</a> 
             &nbsp&nbsp
-            <a href="#kuma-client---">Kuma Client</a> 
+            <a href="#kuma-client--">Kuma Client</a> 
         </b>
     </p>
 </div>
