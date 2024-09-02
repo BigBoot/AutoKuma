@@ -41,7 +41,7 @@ description: |
         --format <OUTPUT_FORMAT>
             The output format [default: json] [possible values: json, toml, yaml]
         --pretty
-            Wether the output should be pretty printed or condensed
+            Whether the output should be pretty printed or condensed
     -h, --help
             Print help
     -V, --version
