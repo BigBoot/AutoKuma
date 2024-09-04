@@ -117,7 +117,7 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__KUMA__CALL_TIMEOUT`    | `kuma.call_timeout`    | The timeout for executing calls to the Uptime Kuma server                                                  |
 | `AUTOKUMA__DOCKER__HOSTS`         | `docker.hosts`         | List of Docker hosts.  Use a semicolon separated string when setting using an env variable.                |
 | `AUTOKUMA__DOCKER__LABEL_PREFIX`  | `docker.label_prefix`  | Prefix used when scanning for container labels                                                             |
-| `AUTOKUMA__DOCKER__SOURCE`        | `docker.source`        | Wether monitors should be created from `Containers` or `Services` labels (or `Both`).                        |
+| `AUTOKUMA__DOCKER__SOURCE`        | `docker.source`        | Whether monitors should be created from `Containers` or `Services` labels (or `Both`).                     |
 | `AUTOKUMA__DOCKER__TLS__VERIFY`   | `docker.tls.verify`    | Whether to verify the TLS certificate or not.                                                              |
 | `AUTOKUMA__DOCKER__TLS__CERT`     | `docker.tls.cert`      | The path to a custom tls certificate in PEM format.                                                        |
 
@@ -368,7 +368,7 @@ Options:
       --format <OUTPUT_FORMAT>
           The output format [default: json] [possible values: json, toml, yaml]
       --pretty
-          Wether the output should be pretty printed or condensed
+          Whether the output should be pretty printed or condensed
   -h, --help
           Print help
   -V, --version
