@@ -50,7 +50,7 @@ pub(crate) struct Cli {
     #[arg(long = "tls-certificate", global = true)]
     pub tls_certificate: Option<String>,
 
-    /// Wether the output should be pretty printed or condensed
+    /// Whether the output should be pretty printed or condensed
     #[arg(long = "pretty", default_value_t = false, global = true)]
     pub output_pretty: bool,
 
