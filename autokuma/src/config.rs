@@ -20,7 +20,7 @@ pub enum DockerSource {
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerConfig {
-    /// Wether docker integration should be enabled or not.
+    /// Whether docker integration should be enabled or not.
     #[serde_inline_default(true)]
     pub enabled: bool,
 
@@ -35,7 +35,7 @@ pub struct DockerConfig {
     #[serde(default)]
     pub hosts: Option<Vec<String>>,
 
-    /// Wether monitors should be created from container or service labels (or both).
+    /// Whether monitors should be created from container or service labels (or both).
     #[serde_inline_default(DockerSource::Containers)]
     pub source: DockerSource,
 

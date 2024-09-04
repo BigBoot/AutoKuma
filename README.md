@@ -172,16 +172,18 @@ kuma.mymonitor.http.url: "https://example.com"
 ```
 
 AutoKuma allows the usage of [Tera](https://keats.github.io/tera/) templates in labels and [Snippets](#snippets), the following variables are available:
-|                | Template         | Description                             | Example Value                                                                                                                                 |
-|----------------|------------------|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| **Containers** |                  |                                         |                                                                                                                                               |
-|                | `container_id`   | The container id                        | 92366941fb1f211c573c56d261f3b3e5302f354941f2aa295ae56d5781e97221                                                                              |
-|                | `image_id`       | Sha256 of the container image           | sha256:c2e38600b252f147de1df1a5ca7964f9c8e8bace97111e56471a4a431639287a                                                                       |
-|                | `image`          | Name of the container image             | ghcr.io/immich-app/immich-server:release                                                                                                      |
-|                | `container_name` | Name of the container                   | immich-immich-1                                                                                                                               |
-|                | `container`      | Nested structure with container details | See the [Docker Engine Documentation](https://docs.docker.com/engine/api/v1.45/#tag/Container/operation/ContainerList) for the available data |
-| **Services**   |                  |                                         |                                                                                                                                               |
-|                | `service`        | Nested structure with service details   | See the [Docker Engine Documentation](https://docs.docker.com/engine/api/v1.45/#tag/Service/operation/ServiceList) for the available data     |
+|                | Template         | Description                             | Example Value                                                                                                                                        |
+|----------------|------------------|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Containers** |                  |                                         |                                                                                                                                                      |
+|                | `container_id`   | The container id                        | 92366941fb1f211c573c56d261f3b3e5302f354941f2aa295ae56d5781e97221                                                                                     |
+|                | `image_id`       | Sha256 of the container image           | sha256:c2e38600b252f147de1df1a5ca7964f9c8e8bace97111e56471a4a431639287a                                                                              |
+|                | `image`          | Name of the container image             | ghcr.io/immich-app/immich-server:release                                                                                                             |
+|                | `container_name` | Name of the container                   | immich-immich-1                                                                                                                                      |
+|                | `container`      | Nested structure with container details | See the [Docker Engine Documentation](https://docs.docker.com/engine/api/v1.45/#tag/Container/operation/ContainerList) for the available data        |
+|                | `system_info`    | Nested structure with host details      | See the [Docker Engine Documentation](https://docs.docker.com/reference/api/engine/v1.45/#tag/System/operation/SystemInfo) for the available data    |
+| **Services**   |                  |                                         |                                                                                                                                                      |
+|                | `service`        | Nested structure with service details   | See the [Docker Engine Documentation](https://docs.docker.com/reference/api/engine/v1.45/#tag/System/operation/ContainerList) for the available data |
+|                | `system_info`    | Nested structure with host details      | See the [Docker Engine Documentation](https://docs.docker.com/reference/api/engine/v1.45/#tag/System/operation/SystemInfo) for the available data    |
 
 ### Snippets 📝
 **_WARNING:_** Snippets are currently experimental and might change in the future.

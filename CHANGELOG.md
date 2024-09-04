@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - All CLI commands now support reading multiple files/ids/slugs at once, as well as parsing arrays of objects where applicable, [#74](https://github.com/BigBoot/AutoKuma/issues/74)
+- Access to `system_info` in templates, see [#2]
 
 ## [0.8.0] - 2024-08-22
 ### Added

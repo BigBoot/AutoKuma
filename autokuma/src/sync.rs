@@ -5,6 +5,7 @@ use crate::{
 };
 use bollard::{
     container::ListContainersOptions,
+    secret::SystemInfo,
     service::{ContainerSummary, ListServicesOptions, Service},
     Docker,
 };
@@ -297,6 +298,7 @@ impl Sync {
 
     fn get_monitors_from_containers(
         &self,
+        system_info: &SystemInfo,
         containers: &Vec<ContainerSummary>,
     ) -> Result<HashMap<String, Monitor>> {
         containers
@@ -314,6 +316,7 @@ impl Sync {
                 );
 
                 template_values.insert("container", &container);
+                template_values.insert("system_info", system_info);
 
                 let kuma_labels =
                     self.get_kuma_labels(container.labels.as_ref(), &template_values)?;
@@ -326,6 +329,7 @@ impl Sync {
 
     fn get_monitors_from_services(
         &self,
+        system_info: &SystemInfo,
         services: &Vec<Service>,
     ) -> Result<HashMap<String, Monitor>> {
         services
@@ -334,6 +338,7 @@ impl Sync {
                 let mut template_values = tera::Context::new();
 
                 template_values.insert("service", &service);
+                template_values.insert("system_info", system_info);
 
                 let spec = service.spec.as_ref();
                 let labels = spec.and_then(|spec| spec.labels.as_ref());
@@ -510,22 +515,23 @@ impl Sync {
                         )
                     })?;
 
+                let system_info: bollard::secret::SystemInfo =
+                    docker.info().await.unwrap_or_default();
+
                 if self.config.docker.source == DockerSource::Containers
                     || self.config.docker.source == DockerSource::Both
                 {
                     let containers = self.get_kuma_containers(&docker).await?;
-                    new_monitors.extend(self.get_monitors_from_containers(&containers)?);
+                    new_monitors
+                        .extend(self.get_monitors_from_containers(&system_info, &containers)?);
                 }
 
                 if self.config.docker.source == DockerSource::Services
                     || self.config.docker.source == DockerSource::Both
                 {
                     let services = self.get_kuma_services(&docker).await?;
-                    new_monitors.extend(self.get_monitors_from_services(&services)?);
+                    new_monitors.extend(self.get_monitors_from_services(&system_info, &services)?);
                 }
-
-                let containers = self.get_kuma_containers(&docker).await?;
-                new_monitors.extend(self.get_monitors_from_containers(&containers)?);
             }
         }
 
