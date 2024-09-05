@@ -1590,6 +1590,7 @@ dependencies = [
  "serde_with",
  "shadow-rs",
  "strum",
+ "tap",
  "thiserror",
  "time",
  "tokio",

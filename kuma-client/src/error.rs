@@ -55,6 +55,14 @@ pub enum Error {
     #[error("No group named {0} could be found")]
     GroupNotFound(String),
 
+    /// Error when a group with a specific name is not found.
+    #[error("No notification named {0} could be found")]
+    NotificationNotFound(String),
+
+    /// Error when a group with a specific name is not found.
+    #[error("No docker host named {0} could be found")]
+    DockerHostNotFound(String),
+
     /// Error when an entity with a specific ID is not found.
     #[error("No {0} with ID {1} could be found")]
     IdNotFound(String, i32),

@@ -5,8 +5,13 @@ use serde_json::json;
 use std::sync::Arc;
 use util::{ResultLogger, ResultOrDie};
 
+mod app_state;
 mod config;
+mod docker_source;
+mod entity;
 mod error;
+mod file_source;
+mod kuma;
 mod sync;
 mod util;
 

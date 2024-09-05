@@ -1,0 +1,11 @@
+{
+    "type": "notification",
+    "active": true,
+    "isDefault": true,
+    "config": {
+        "accessToken": "XXXXXXXXXXXXXXXXXX",
+        "homeserverUrl": "https://matrix.org",
+        "internalRoomId": "!xxxxxxxxxxxxxxxxxx:matrix.org",
+        "type": "matrix"
+    }
+}

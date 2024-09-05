@@ -24,10 +24,12 @@ pub struct Notification {
 
     /// The user identifier associated with the notification service.
     #[serde(rename = "userId")]
+    #[serde(alias = "user_id")]
     pub user_id: Option<i32>,
 
     /// Indicates whether the notification service is enabled by default.
     #[serde(rename = "isDefault")]
+    #[serde(alias = "is_default")]
     pub is_default: Option<bool>,
 
     /// Additional service specific configuration in JSON format.

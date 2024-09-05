@@ -49,6 +49,10 @@ pub trait MonitorCommon {
     fn create_paused(&self) -> &Option<bool>;
     #[cfg(feature = "private-api")]
     fn create_paused_mut(&mut self) -> &mut Option<bool>;
+    #[cfg(feature = "private-api")]
+    fn notification_name_list(&self) -> &Option<Vec<String>>;
+    #[cfg(feature = "private-api")]
+    fn notification_name_list_mut(&mut self) -> &mut Option<Vec<String>>;
 }
 
 macro_rules! monitor_type {
@@ -134,6 +138,13 @@ macro_rules! monitor_type {
             #[derivative(Hash = "ignore")]
             pub create_paused: Option<bool>,
 
+            #[cfg(feature = "private-api")]
+            #[serde(rename = "notification_name_list")]
+            #[derivative(PartialEq = "ignore")]
+            #[derivative(Hash = "ignore")]
+            #[serde_as(as = "Option<DeserializeVecLenient<String>>")]
+            pub notification_name_list: Option<Vec<String>>,
+
             $($field)*
         }
 
@@ -171,6 +182,10 @@ macro_rules! monitor_type {
             fn create_paused(&self) -> &Option<bool> { &self.create_paused }
             #[cfg(feature = "private-api")]
             fn create_paused_mut(&mut self) -> &mut Option<bool> { &mut self.create_paused }
+            #[cfg(feature = "private-api")]
+            fn notification_name_list(&self) -> &Option<Vec<String>> { &self.notification_name_list }
+            #[cfg(feature = "private-api")]
+            fn notification_name_list_mut(&mut self) -> &mut Option<Vec<String>> { &mut self.notification_name_list }
         }
 
         impl From<$struct_name> for Monitor {
@@ -502,6 +517,12 @@ monitor_type! {
         #[serde(rename = "docker_host")]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub docker_host: Option<i32>,
+
+        #[cfg(feature = "private-api")]
+        #[serde(rename = "docker_host_name")]
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        pub docker_host_name: Option<String>,
     }
 }
 

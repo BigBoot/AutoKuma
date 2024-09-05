@@ -33,6 +33,7 @@ serde_with = { workspace = true }
 serde-inline-default = { workspace = true }
 shadow-rs = { workspace = true }
 strum = { workspace = true }
+tap = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true }
 tokio = { workspace = true }

@@ -1,7 +1,8 @@
 use crate::error::{Error, Result};
 pub use kuma_client::util::ResultLogger;
 use serde_json::json;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, error::Error as _};
+use tera::Tera;
 
 pub fn group_by_prefix<A, B, I>(v: I, delimiter: &str) -> BTreeMap<String, Vec<(String, String)>>
 where
@@ -73,4 +74,22 @@ fn insert_object(
     }
 
     Ok(())
+}
+
+pub fn fill_templates(
+    config: impl Into<String>,
+    template_values: &tera::Context,
+) -> Result<String> {
+    let config = config.into();
+    let mut tera = Tera::default();
+
+    tera.add_raw_template(&config, &config)
+        .and_then(|_| tera.render(&config, template_values))
+        .map_err(|e| {
+            Error::LabelParseError(format!(
+                "{}\nContext: {:?}",
+                e.source().unwrap(),
+                &template_values.get("container")
+            ))
+        })
 }

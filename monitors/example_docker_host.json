@@ -1,0 +1,5 @@
+{
+    "dockerType": "socket",
+    "dockerDaemon": "/var/run/docker.sock",
+    "type": "docker_host"
+}

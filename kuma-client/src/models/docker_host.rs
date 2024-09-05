@@ -22,12 +22,18 @@ pub struct DockerHost {
     #[serde_as(as = "Option<DeserializeNumberLenient>")]
     pub id: Option<i32>,
 
+    /// The name of the docker host.
+    #[serde(rename = "name")]
+    pub name: Option<String>,
+
     /// The connection type.
     #[serde(rename = "dockerType")]
+    #[serde(alias = "connection_type")]
     pub connection_type: Option<DockerConnectionType>,
 
     /// The docker host. Depending on the connection type, this could be a uri or a path to a socket.
     #[serde(rename = "dockerDaemon")]
+    #[serde(alias = "docker_daemon")]
     pub docker_daemon: Option<String>,
 
     /// The user identifier associated with the docker host.

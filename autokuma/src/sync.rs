@@ -1,354 +1,36 @@
+use crate::app_state::AppState;
+use crate::docker_source::{
+    get_entities_from_containers, get_entities_from_services, get_kuma_containers,
+    get_kuma_services,
+};
+use crate::entity::{merge_entities, Entity};
+use crate::file_source::get_entity_from_file;
+use crate::kuma::get_managed_entities;
 use crate::{
     config::{Config, DeleteBehavior, DockerSource},
-    error::{Error, KumaError, Result},
-    util::{group_by_prefix, FlattenValue as _, ResultLogger},
+    error::{Error, Result},
+    util::ResultLogger,
 };
-use bollard::{
-    container::ListContainersOptions,
-    secret::SystemInfo,
-    service::{ContainerSummary, ListServicesOptions, Service},
-    Docker,
-};
+use bollard::Docker;
 use itertools::Itertools;
 use kuma_client::{
-    monitor::{Monitor, MonitorType},
+    error::Error as KumaError,
+    monitor::MonitorType,
     tag::{Tag, TagDefinition},
     Client,
 };
 use log::{debug, info, warn};
-use serde_json::json;
-use std::{
-    collections::{BTreeMap, HashMap},
-    env,
-    error::Error as _,
-    sync::Arc,
-    time::Duration,
-};
-use tera::Tera;
-use unescaper::unescape;
+use std::{collections::HashMap, env, sync::Arc, time::Duration};
 
 pub struct Sync {
-    config: Arc<Config>,
-    defaults: BTreeMap<String, Vec<(String, String)>>,
+    app_state: AppState,
 }
 
 impl Sync {
     pub fn new(config: Arc<Config>) -> Result<Self> {
-        let defaults = config
-            .default_settings
-            .lines()
-            .map(|line| {
-                line.split_once(":")
-                    .map(|(key, value)| (key.trim().to_owned(), value.trim().to_owned()))
-                    .ok_or_else(|| {
-                        Error::InvalidConfig("kuma.default_settings".to_owned(), line.to_owned())
-                    })
-            })
-            .collect::<Result<Vec<_>>>()?;
-
         Ok(Self {
-            config: config.clone(),
-            defaults: group_by_prefix(defaults, "."),
+            app_state: AppState::new(config)?,
         })
-    }
-
-    fn fill_templates(
-        config: impl Into<String>,
-        template_values: &tera::Context,
-    ) -> Result<String> {
-        let config = config.into();
-        let mut tera = Tera::default();
-
-        tera.add_raw_template(&config, &config)
-            .and_then(|_| tera.render(&config, template_values))
-            .map_err(|e| {
-                Error::LabelParseError(format!(
-                    "{}\nContext: {:?}",
-                    e.source().unwrap(),
-                    &template_values.get("container")
-                ))
-            })
-    }
-
-    fn get_defaults(&self, monitor_type: impl AsRef<str>) -> Vec<(String, serde_json::Value)> {
-        vec![
-            self.defaults.get("*"),
-            self.defaults.get(monitor_type.as_ref()),
-        ]
-        .into_iter()
-        .flat_map(|defaults| {
-            defaults
-                .into_iter()
-                .map(|entry| {
-                    entry
-                        .into_iter()
-                        .map(|(key, value)| (key.to_owned(), json!(value)))
-                })
-                .collect_vec()
-        })
-        .flatten()
-        .collect_vec()
-    }
-
-    async fn get_kuma_containers(&self, docker: &Docker) -> Result<Vec<ContainerSummary>> {
-        Ok(docker
-            .list_containers(Some(ListContainersOptions::<String> {
-                all: true,
-                ..Default::default()
-            }))
-            .await
-            .log_warn(std::module_path!(), |_| {
-                format!(
-                    "Using DOCKER_HOST={}",
-                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
-                )
-            })?
-            .into_iter()
-            .filter(|c| {
-                c.labels.as_ref().map_or_else(
-                    || false,
-                    |labels| {
-                        labels.keys().any(|key| {
-                            key.starts_with(&format!("{}.", self.config.docker.label_prefix))
-                        })
-                    },
-                )
-            })
-            .collect::<Vec<_>>())
-    }
-
-    async fn get_kuma_services(&self, docker: &Docker) -> Result<Vec<Service>> {
-        Ok(docker
-            .list_services(Some(ListServicesOptions::<String> {
-                ..Default::default()
-            }))
-            .await
-            .log_warn(std::module_path!(), |_| {
-                format!(
-                    "Using DOCKER_HOST={}",
-                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
-                )
-            })?
-            .into_iter()
-            .filter(|c| {
-                c.spec.as_ref().map_or_else(
-                    || false,
-                    |spec| {
-                        spec.labels.as_ref().map_or_else(
-                            || false,
-                            |labels| {
-                                labels.keys().any(|key| {
-                                    key.starts_with(&format!(
-                                        "{}.",
-                                        self.config.docker.label_prefix
-                                    ))
-                                })
-                            },
-                        )
-                    },
-                )
-            })
-            .collect::<Vec<_>>())
-    }
-
-    fn get_monitor_from_settings(
-        &self,
-        id: &str,
-        monitor_type: &str,
-        settings: Vec<(String, serde_json::Value)>,
-        template_values: &tera::Context,
-    ) -> Result<Monitor> {
-        let defaults = self.get_defaults(monitor_type);
-
-        let config = Self::fill_templates(
-            vec![("type".to_owned(), json!(monitor_type.to_owned()))]
-                .into_iter()
-                .chain(settings.into_iter())
-                .chain(defaults.into_iter())
-                .sorted_by(|a, b| Ord::cmp(&a.0, &b.0))
-                .unique_by(|(key, _)| key.to_owned())
-                .map(|(key, value)| format!("{} = {}", key, value))
-                .join("\n"),
-            template_values,
-        )?;
-
-        let toml = toml::from_str::<serde_json::Value>(&config)
-            .map_err(|e| Error::LabelParseError(e.to_string()))?;
-
-        let monitor = serde_json::from_value::<Monitor>(toml)
-            .log_warn(std::module_path!(), |e| {
-                format!("Error while parsing {}: {}!", id, e.to_string())
-            })
-            .map_err(|e| Error::LabelParseError(e.to_string()))?;
-
-        monitor.validate(id)?;
-
-        Ok(monitor)
-    }
-
-    fn get_monitors_from_labels(
-        &self,
-        labels: Vec<(String, String)>,
-        template_values: &tera::Context,
-    ) -> Result<Vec<(String, Monitor)>> {
-        let entries = labels
-            .iter()
-            .flat_map(|(key, value)| {
-                if key.starts_with("__") {
-                    let snippet = self
-                        .config
-                        .snippets
-                        .get(key.trim_start_matches("__"))
-                        .log_warn(std::module_path!(), || {
-                            format!("Snippet '{}' not found!", key)
-                        });
-
-                    let args =
-                        serde_json::from_str::<Vec<serde_json::Value>>(&format!("[{}]", value))
-                            .log_warn(std::module_path!(), |e| {
-                                format!("Error while parsing snippet arguments: {}", e.to_string())
-                            })
-                            .ok();
-
-                    if let (Some(snippet), Some(args)) = (snippet, args) {
-                        let mut template_values = template_values.clone();
-                        template_values.insert("args", &args);
-
-                        if let Ok(snippet) = Self::fill_templates(snippet, &template_values)
-                            .log_warn(std::module_path!(), |e| {
-                                format!("Error while parsing snippet: {}", e.to_string())
-                            })
-                        {
-                            snippet
-                                .lines()
-                                .filter(|line| !line.trim().is_empty())
-                                .flat_map(|line| {
-                                    line.split_once(": ")
-                                        .map(|(key, value)| {
-                                            (
-                                                key.trim_start().to_owned(),
-                                                unescape(value)
-                                                    .unwrap_or_else(|_| value.to_owned()),
-                                            )
-                                        })
-                                        .log_warn(std::module_path!(), || {
-                                            format!("Invalid snippet line: '{}'", line)
-                                        })
-                                })
-                                .collect::<Vec<_>>()
-                        } else {
-                            vec![]
-                        }
-                    } else {
-                        vec![]
-                    }
-                } else {
-                    vec![(key.to_owned(), value.to_owned())]
-                }
-            })
-            .collect::<Vec<_>>();
-
-        group_by_prefix(entries, ".")
-            .into_iter()
-            .map(|(key, value)| (key, group_by_prefix(value, ".")))
-            .flat_map(|(id, monitors)| {
-                monitors.into_iter().map(move |(monitor_type, settings)| {
-                    self.get_monitor_from_settings(
-                        &id,
-                        &monitor_type,
-                        settings
-                            .into_iter()
-                            .map(|(key, value)| (key, json!(value)))
-                            .collect_vec(),
-                        template_values,
-                    )
-                    .map(|monitor| (id.clone(), monitor))
-                })
-            })
-            .collect()
-    }
-
-    fn get_kuma_labels(
-        &self,
-        labels: Option<&HashMap<String, String>>,
-        template_values: &tera::Context,
-    ) -> Result<Vec<(String, String)>> {
-        labels.as_ref().map_or_else(
-            || Ok(vec![]),
-            |labels| {
-                labels
-                    .iter()
-                    .filter(|(key, _)| {
-                        key.starts_with(&format!("{}.", self.config.docker.label_prefix))
-                    })
-                    .map(|(key, value)| {
-                        Self::fill_templates(
-                            key.trim_start_matches(&format!(
-                                "{}.",
-                                self.config.docker.label_prefix
-                            )),
-                            &template_values,
-                        )
-                        .map(|key| (key, value.to_owned()))
-                    })
-                    .collect::<Result<Vec<_>>>()
-            },
-        )
-    }
-
-    fn get_monitors_from_containers(
-        &self,
-        system_info: &SystemInfo,
-        containers: &Vec<ContainerSummary>,
-    ) -> Result<HashMap<String, Monitor>> {
-        containers
-            .into_iter()
-            .map(|container| {
-                let mut template_values = tera::Context::new();
-                template_values.insert("container_id", &container.id);
-                template_values.insert("image_id", &container.image_id);
-                template_values.insert("image", &container.image);
-                template_values.insert(
-                    "container_name",
-                    &container.names.as_ref().and_then(|names| {
-                        names.first().map(|s| s.trim_start_matches("/").to_owned())
-                    }),
-                );
-
-                template_values.insert("container", &container);
-                template_values.insert("system_info", system_info);
-
-                let kuma_labels =
-                    self.get_kuma_labels(container.labels.as_ref(), &template_values)?;
-
-                self.get_monitors_from_labels(kuma_labels, &template_values)
-            })
-            .flatten_ok()
-            .try_collect()
-    }
-
-    fn get_monitors_from_services(
-        &self,
-        system_info: &SystemInfo,
-        services: &Vec<Service>,
-    ) -> Result<HashMap<String, Monitor>> {
-        services
-            .into_iter()
-            .map(|service| {
-                let mut template_values = tera::Context::new();
-
-                template_values.insert("service", &service);
-                template_values.insert("system_info", system_info);
-
-                let spec = service.spec.as_ref();
-                let labels = spec.and_then(|spec| spec.labels.as_ref());
-
-                let kuma_labels = self.get_kuma_labels(labels, &template_values)?;
-
-                self.get_monitors_from_labels(kuma_labels, &template_values)
-            })
-            .flatten_ok()
-            .try_collect()
     }
 
     async fn get_autokuma_tag(&self, kuma: &Client) -> Result<TagDefinition> {
@@ -356,138 +38,154 @@ impl Sync {
             .get_tags()
             .await?
             .into_iter()
-            .find(|tag| tag.name.as_deref() == Some(&self.config.tag_name))
+            .find(|tag| tag.name.as_deref() == Some(&self.app_state.config.tag_name))
         {
             Some(tag) => Ok(tag),
             None => Ok(kuma
                 .add_tag(TagDefinition {
-                    name: Some(self.config.tag_name.clone()),
-                    color: Some(self.config.tag_color.clone()),
+                    name: Some(self.app_state.config.tag_name.clone()),
+                    color: Some(self.app_state.config.tag_color.clone()),
                     ..Default::default()
                 })
                 .await?),
         }
     }
 
-    async fn get_managed_monitors(&self, kuma: &Client) -> Result<HashMap<String, Monitor>> {
-        Ok(kuma
-            .get_monitors()
-            .await?
-            .into_iter()
-            .filter_map(|(_, monitor)| {
-                match monitor
-                    .common()
-                    .tags()
-                    .iter()
-                    .filter(|tag| tag.name.as_deref() == Some(&self.config.tag_name))
-                    .find_map(|tag| tag.value.as_ref())
-                {
-                    Some(id) => Some((id.to_owned(), monitor)),
-                    None => None,
-                }
-            })
-            .collect::<HashMap<_, _>>())
-    }
-
-    async fn get_monitor_from_file(&self, file: impl AsRef<str>) -> Result<(String, Monitor)> {
-        let file = file.as_ref();
-        let id = std::path::Path::new(file)
-            .file_stem()
-            .and_then(|os| os.to_str().map(|str| str.to_owned()))
-            .ok_or_else(|| Error::IO(format!("Unable to determine file: '{}'", file)))?;
-
-        let value: Option<serde_json::Value> = if file.ends_with(".json") {
-            let content: String = tokio::fs::read_to_string(file)
-                .await
-                .map_err(|e| Error::IO(e.to_string()))?;
-
-            Some(
-                serde_json::from_str(&content)
-                    .map_err(|e| Error::DeserializeError(e.to_string()))?,
-            )
-        } else if file.ends_with(".toml") {
-            let content = tokio::fs::read_to_string(file)
-                .await
-                .map_err(|e| Error::IO(e.to_string()))?;
-
-            Some(toml::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?)
-        } else {
-            None
-        };
-
-        let values = value
-            .ok_or_else(|| {
-                Error::DeserializeError(format!(
-                    "Unsupported static monitor file type: {}, supported: .json, .toml",
-                    file
-                ))
-            })
-            .and_then(|v| v.flatten())?;
-
-        let monitor_type = values
-            .iter()
-            .find(|(key, _)| key == "type")
-            .and_then(|(_, value)| value.as_str().map(|s| s.to_owned()))
-            .ok_or_else(|| {
-                Error::DeserializeError(format!("Static monitor {} is missing `type`", file))
-            })?;
-
-        let context = tera::Context::new();
-        let monitor = self.get_monitor_from_settings(&id, &monitor_type, values, &context)?;
-
-        Ok((id, monitor))
-    }
-
-    fn merge_monitors(
+    async fn create_entity(
         &self,
-        current: &Monitor,
-        new: &Monitor,
-        addition_tags: Option<Vec<Tag>>,
-    ) -> Monitor {
-        let mut new = new.clone();
+        kuma: &Client,
+        autokuma_tag: &TagDefinition,
+        id: &String,
+        entity: &Entity,
+    ) -> Result<()> {
+        info!("Creating new {}: {}", entity.entity_type(), id);
+        match entity.clone() {
+            Entity::Monitor(mut monitor) => {
+                let mut tag = Tag::from(autokuma_tag.clone());
 
-        let current_tags = current
-            .common()
-            .tags()
-            .iter()
-            .filter_map(|tag| tag.tag_id.as_ref().map(|id| (*id, tag)))
-            .collect::<HashMap<_, _>>();
+                tag.value = Some(id.clone());
+                monitor.common_mut().tags_mut().push(tag);
 
-        let merged_tags: Vec<Tag> = new
-            .common_mut()
-            .tags_mut()
-            .drain(..)
-            .chain(addition_tags.unwrap_or_default())
-            .map(|new_tag| {
-                new_tag
-                    .tag_id
-                    .as_ref()
-                    .and_then(|id| {
-                        current_tags.get(id).and_then(|current_tag| {
-                            serde_merge::omerge(current_tag, &new_tag).unwrap()
-                        })
-                    })
-                    .unwrap_or_else(|| new_tag)
-            })
-            .collect_vec();
+                match kuma.add_monitor(monitor).await {
+                    Ok(_) => Ok(()),
+                    Err(KumaError::GroupNotFound(group)) => {
+                        warn!(
+                            "Cannot create monitor {} because group {} does not exist",
+                            id, group
+                        );
+                        Ok(())
+                    }
+                    Err(err) => Err(err),
+                }?;
+            }
+            Entity::DockerHost(docker_host) => {
+                kuma.add_docker_host(docker_host).await?;
+            }
+            Entity::Notification(notification) => {
+                kuma.add_notification(notification).await?;
+            }
+        }
 
-        *new.common_mut().tags_mut() = merged_tags;
+        Ok(())
+    }
 
-        serde_merge::omerge(current, new).unwrap()
+    async fn delete_entity(&self, kuma: &Client, id: &String, entity: &Entity) -> Result<()> {
+        info!("Deleting {}: {}", entity.entity_type(), id);
+        match entity {
+            Entity::Monitor(monitor) => {
+                if let Some(id) = monitor.common().id() {
+                    kuma.delete_monitor(*id).await?;
+                }
+            }
+            Entity::DockerHost(docker_host) => {
+                if let Some(id) = docker_host.id {
+                    kuma.delete_docker_host(id).await?;
+                }
+            }
+            Entity::Notification(notification) => {
+                if let Some(id) = notification.id {
+                    kuma.delete_notification(id).await?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn update_entity(
+        &self,
+        kuma: &Client,
+        autokuma_tag: &TagDefinition,
+        groups: &HashMap<&i32, &String>,
+        id: &String,
+        current: &Entity,
+        new: &Entity,
+    ) -> Result<()> {
+        let mut tag = Tag::from(autokuma_tag.clone());
+        tag.value = Some(id.clone());
+
+        let merge = merge_entities(&current, &new, Some(vec![tag]));
+
+        if current != &merge {
+            debug!(
+                "\n======= OLD =======\n{}\n===================\n\n======= NEW =======\n{}\n===================", 
+                serde_json::to_string_pretty(&current).unwrap(),
+                serde_json::to_string_pretty(&merge).unwrap()
+            );
+
+            if current.entity_type() != new.entity_type() {
+                info!(
+                    "Recreating entity because type changed: {} ({} -> {})",
+                    id,
+                    current.entity_type(),
+                    new.entity_type()
+                );
+                self.delete_entity(kuma, id, &current).await?;
+                self.create_entity(kuma, autokuma_tag, id, &new).await?;
+                return Ok(());
+            }
+
+            info!("Updating {}: {}", new.entity_type(), id);
+
+            match (merge, current) {
+                (Entity::Monitor(merge), Entity::Monitor(current))
+                    if merge.common().parent_name().as_ref() != Some(id)
+                        && (merge.common().parent_name().is_some()
+                            != current.common().parent().is_some()
+                            || merge.common().parent_name().as_ref().is_some_and(|name| {
+                                Some(name) != current.common().parent().map(|id| groups[&id])
+                            })) =>
+                {
+                    kuma.edit_monitor(merge).await?;
+                }
+                (Entity::DockerHost(merge), Entity::DockerHost(_)) => {
+                    kuma.edit_docker_host(merge).await?;
+                }
+                (Entity::Notification(merge), Entity::Notification(_)) => {
+                    kuma.edit_notification(merge).await?;
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     async fn do_sync(&self) -> Result<()> {
-        let kuma =
-            Client::connect_with_tag_name(self.config.kuma.clone(), self.config.tag_name.clone())
-                .await?;
+        let kuma = Client::connect_with_tag_name(
+            self.app_state.config.kuma.clone(),
+            self.app_state.config.tag_name.clone(),
+        )
+        .await?;
 
         let autokuma_tag = self.get_autokuma_tag(&kuma).await?;
-        let current_monitors = self.get_managed_monitors(&kuma).await?;
+        let current_entities = get_managed_entities(&self.app_state, &kuma).await?;
 
-        let mut new_monitors: HashMap<String, Monitor> = HashMap::new();
+        let mut new_entities: HashMap<String, Entity> = HashMap::new();
 
-        if self.config.docker.enabled {
+        if self.app_state.config.docker.enabled {
             let docker_hosts = self
+                .app_state
                 .config
                 .docker
                 .hosts
@@ -495,6 +193,7 @@ impl Sync {
                 .map(|f| f.into_iter().map(Some).collect::<Vec<_>>())
                 .unwrap_or_else(|| {
                     vec![self
+                        .app_state
                         .config
                         .docker
                         .socket_path
@@ -518,24 +217,32 @@ impl Sync {
                 let system_info: bollard::secret::SystemInfo =
                     docker.info().await.unwrap_or_default();
 
-                if self.config.docker.source == DockerSource::Containers
-                    || self.config.docker.source == DockerSource::Both
+                if self.app_state.config.docker.source == DockerSource::Containers
+                    || self.app_state.config.docker.source == DockerSource::Both
                 {
-                    let containers = self.get_kuma_containers(&docker).await?;
-                    new_monitors
-                        .extend(self.get_monitors_from_containers(&system_info, &containers)?);
+                    let containers = get_kuma_containers(&self.app_state, &docker).await?;
+                    new_entities.extend(get_entities_from_containers(
+                        &self.app_state,
+                        &system_info,
+                        &containers,
+                    )?);
                 }
 
-                if self.config.docker.source == DockerSource::Services
-                    || self.config.docker.source == DockerSource::Both
+                if self.app_state.config.docker.source == DockerSource::Services
+                    || self.app_state.config.docker.source == DockerSource::Both
                 {
-                    let services = self.get_kuma_services(&docker).await?;
-                    new_monitors.extend(self.get_monitors_from_services(&system_info, &services)?);
+                    let services = get_kuma_services(&self.app_state, &docker).await?;
+                    new_entities.extend(get_entities_from_services(
+                        &self.app_state,
+                        &system_info,
+                        &services,
+                    )?);
                 }
             }
         }
 
         let static_monitor_path = self
+            .app_state
             .config
             .static_monitors
             .clone()
@@ -566,10 +273,10 @@ impl Sync {
                         .await
                         .map_err(|e| Error::IO(e.to_string()))?
                     {
-                        let (id, monitor) = self
-                            .get_monitor_from_file(f.path().to_string_lossy())
-                            .await?;
-                        new_monitors.insert(id, monitor);
+                        let (id, monitor) =
+                            get_entity_from_file(&self.app_state, f.path().to_string_lossy())
+                                .await?;
+                        new_entities.insert(id, monitor);
                     } else {
                         break;
                     }
@@ -577,8 +284,12 @@ impl Sync {
             }
         }
 
-        let groups = current_monitors
+        let groups = current_entities
             .iter()
+            .filter_map(|entity| match entity {
+                (id, Entity::Monitor(monitor)) => Some((id, monitor)),
+                _ => None,
+            })
             .filter(|(_, monitor)| monitor.monitor_type() == MonitorType::Group)
             .filter_map(|(id, monitor)| {
                 monitor
@@ -589,78 +300,38 @@ impl Sync {
             })
             .collect::<HashMap<_, _>>();
 
-        let to_delete = current_monitors
+        let to_delete = current_entities
             .iter()
-            .filter(|(id, _)| !new_monitors.contains_key(*id))
+            .filter(|(id, _)| !new_entities.contains_key(*id))
             .collect_vec();
 
-        let to_create = new_monitors
+        let to_create = new_entities
             .iter()
-            .filter(|(id, _)| !current_monitors.contains_key(*id))
+            .filter(|(id, _)| !current_entities.contains_key(*id))
             .collect_vec();
 
-        let to_update = current_monitors
+        let to_update = current_entities
             .keys()
             .filter_map(
-                |id| match (current_monitors.get(id), new_monitors.get(id)) {
+                |id| match (current_entities.get(id), new_entities.get(id)) {
                     (Some(current), Some(new)) => Some((id, current, new)),
                     _ => None,
                 },
             )
             .collect_vec();
 
-        for (id, monitor) in to_create {
-            info!("Creating new monitor: {}", id);
-
-            let mut monitor = monitor.clone();
-            let mut tag = Tag::from(autokuma_tag.clone());
-
-            tag.value = Some(id.clone());
-            monitor.common_mut().tags_mut().push(tag);
-
-            match kuma.add_monitor(monitor).await {
-                Ok(_) => Ok(()),
-                Err(KumaError::GroupNotFound(group)) => {
-                    warn!(
-                        "Cannot create monitor {} because group {} does not exist",
-                        id, group
-                    );
-                    Ok(())
-                }
-                Err(err) => Err(err),
-            }?;
+        for (id, entity) in to_create {
+            self.create_entity(&kuma, &autokuma_tag, id, entity).await?;
         }
 
         for (id, current, new) in to_update {
-            let mut tag = Tag::from(autokuma_tag.clone());
-            tag.value = Some(id.clone());
-
-            let merge: Monitor = self.merge_monitors(current, new, Some(vec![tag]));
-
-            if current != &merge
-                || merge.common().parent_name().as_ref() != Some(id)
-                    && (merge.common().parent_name().is_some()
-                        != current.common().parent().is_some()
-                        || merge.common().parent_name().as_ref().is_some_and(|name| {
-                            Some(name) != current.common().parent().map(|id| groups[&id])
-                        }))
-            {
-                info!("Updating monitor: {}", id);
-                debug!(
-                    "\n======= OLD =======\n{}\n===================\n\n======= NEW =======\n{}\n===================", 
-                    serde_json::to_string_pretty(&current).unwrap(),
-                    serde_json::to_string_pretty(&merge).unwrap()
-                );
-                kuma.edit_monitor(merge).await?;
-            }
+            self.update_entity(&kuma, &autokuma_tag, &groups, id, current, new)
+                .await?;
         }
 
-        if self.config.on_delete == DeleteBehavior::Delete {
+        if self.app_state.config.on_delete == DeleteBehavior::Delete {
             for (id, monitor) in to_delete {
-                info!("Deleting monitor: {}", id);
-                if let Some(id) = monitor.common().id() {
-                    kuma.delete_monitor(*id).await?;
-                }
+                self.delete_entity(&kuma, id, monitor).await?;
             }
         }
 
@@ -672,7 +343,7 @@ impl Sync {
             if let Err(err) = self.do_sync().await {
                 warn!("Encountered error during sync: {}", err);
             }
-            tokio::time::sleep(Duration::from_secs_f64(self.config.sync_interval)).await;
+            tokio::time::sleep(Duration::from_secs_f64(self.app_state.config.sync_interval)).await;
         }
     }
 }

@@ -159,10 +159,10 @@ kuma.example.http.name: "Example"
 kuma.example.http.url: "https://example.com"
 ```
 
-Take a look at [all available monitor types](MONITOR_TYPES.md) and the corresponding settings.
+Take a look at [all available entity types](ENTITY_TYPES.md) and their corresponding settings.
 
-
-AutoKuma also provides support for creating and assigning groups:
+### Groups
+To assign a monitor to a group set it's parent_name property to the autokuma id of the group, e.g.
 
 ```plaintext
 kuma.mygroup.group.name: "This is a Group"
@@ -171,6 +171,16 @@ kuma.mymonitor.http.parent_name: "mygroup"
 kuma.mymonitor.http.url: "https://example.com"
 ```
 
+### Notifications
+**_WARNING:_** Defining Notifications is currently experimental and might change in the future.
+**TODO**
+
+
+### Docker Hosts
+**_WARNING:_** Defining Docker Hosts is currently experimental and might change in the future.
+**TODO**
+
+### Templating
 AutoKuma allows the usage of [Tera](https://keats.github.io/tera/) templates in labels and [Snippets](#snippets), the following variables are available:
 |                | Template         | Description                             | Example Value                                                                                                                                        |
 |----------------|------------------|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -186,8 +196,6 @@ AutoKuma allows the usage of [Tera](https://keats.github.io/tera/) templates in 
 |                | `system_info`    | Nested structure with host details      | See the [Docker Engine Documentation](https://docs.docker.com/reference/api/engine/v1.45/#tag/System/operation/SystemInfo) for the available data    |
 
 ### Snippets 📝
-**_WARNING:_** Snippets are currently experimental and might change in the future.
-
 AutoKuma provides the ability to define reusable snippets. Snippets need to be defined in the configuration, for example, using environment variables:
 
 ```yaml

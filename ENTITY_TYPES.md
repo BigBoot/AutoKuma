@@ -1,11 +1,25 @@
 # AutoKuma specific properties:
 
 AutoKuma adds a few special properties which are handled internally and aren't sent to Uptime Kuma:
-| Property        | Example Value | Description                                                                           |
-|-----------------|---------------|---------------------------------------------------------------------------------------|
-| `parent_name`   | `apps`        | The autokuma id of the parent group                                                   |
-| `create_paused` | false         | If true new monitors will be added in paused state, does not effect existing monitors |
+| Property                 | Example Value           | Description                                                                           |
+|--------------------------|-------------------------|---------------------------------------------------------------------------------------|
+| `parent_name`            | `apps`                  | The autokuma id of the parent group                                                   |
+| `notification_name_list` | `["matrix", "discord"]` | List of autokuma ids of enabled notification providers,                               |
+| `docker_host_name`       | `local_socket`          | The autokuma id of the docker socket for a docker monitor                             |
+| `create_paused`          | false                   | If true new monitors will be added in paused state, does not effect existing monitors |
 
+# `docker_host`
+| Property          | Example Value          |
+|-------------------|------------------------|
+| `connection_type` | `socket` or `tcp`      |
+| `docker_daemon`   | `/var/run/docker.sock` |
+
+# `notification`
+| Property     | Example Value                                                                                                                                                                     |
+|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `active`     | `true`                                                                                                                                                                            |
+| `is_default` | `true` (Note: this is only used by the WebUI, AutoKuma does not respect this setting for technical reasons)                                                                       |
+| `config`     | nested provider specific settings.  Too many to list here. I suggest creating a notification with your provider in the WebUI and then using the `kuma` CLI to inspect the options |
 
 # Monitor Types
 - [`dns`](#dns)
