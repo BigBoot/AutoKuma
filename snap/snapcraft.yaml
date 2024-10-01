@@ -67,7 +67,7 @@ apps:
 parts:
   kuma:
     plugin: rust
-    rust-channel: 1.79
+    rust-revision: 1.81
     source: .
     source-subdir: kuma-cli
     build-packages:
