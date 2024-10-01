@@ -12,6 +12,7 @@ mod entity;
 mod error;
 mod file_source;
 mod kuma;
+mod name;
 mod sync;
 mod util;
 

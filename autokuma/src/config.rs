@@ -80,6 +80,10 @@ pub struct Config {
     #[serde_inline_default("#42C0FB".to_owned())]
     pub tag_color: String,
 
+    /// Where to store application data
+    #[serde_inline_default("./".to_owned())]
+    pub data_path: String,
+
     /// Default settings applied to all generated Monitors.
     #[serde_inline_default("".to_owned())]
     pub default_settings: String,

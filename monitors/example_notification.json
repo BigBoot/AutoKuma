@@ -2,6 +2,7 @@
     "type": "notification",
     "active": true,
     "isDefault": true,
+    "name": "Matrix Notification",
     "config": {
         "accessToken": "XXXXXXXXXXXXXXXXXX",
         "homeserverUrl": "https://matrix.org",

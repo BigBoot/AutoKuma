@@ -7,3 +7,4 @@ docker.sock
 */logo.svg
 !/logo.svg
 *.snap
+/autokuma.db

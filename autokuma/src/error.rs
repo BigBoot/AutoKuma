@@ -1,6 +1,8 @@
 pub use kuma_client::error::Error as KumaError;
 use thiserror::Error;
 
+use crate::name::Name;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
@@ -8,6 +10,9 @@ pub enum Error {
 
     #[error(transparent)]
     Docker(#[from] bollard::errors::Error),
+
+    #[error(transparent)]
+    Database(#[from] sled::Error),
 
     #[error("Error while trying to parse labels: {0}")]
     LabelParseError(String),
@@ -20,6 +25,9 @@ pub enum Error {
 
     #[error("IO error: {0}")]
     IO(String),
+
+    #[error("No {} named {} could be found", .0.type_name(), .0.name())]
+    NameNotFound(Name),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

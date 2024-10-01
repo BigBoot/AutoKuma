@@ -57,3 +57,15 @@ impl From<Tag> for TagDefinition {
         }
     }
 }
+
+#[cfg(feature = "private-api")]
+#[skip_serializing_none]
+#[serde_as]
+#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize, Hash, Eq)]
+pub struct TagValue {
+    #[serde(rename = "name")]
+    pub name: String,
+
+    #[serde(rename = "value")]
+    pub value: Option<String>,
+}

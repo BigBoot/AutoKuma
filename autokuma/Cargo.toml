@@ -42,3 +42,4 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 toml = { workspace = true }
 unescaper = { workspace = true }
+sled = { workspace = true }

@@ -50,9 +50,13 @@ pub trait MonitorCommon {
     #[cfg(feature = "private-api")]
     fn create_paused_mut(&mut self) -> &mut Option<bool>;
     #[cfg(feature = "private-api")]
-    fn notification_name_list(&self) -> &Option<Vec<String>>;
+    fn notification_names(&self) -> &Option<Vec<String>>;
     #[cfg(feature = "private-api")]
-    fn notification_name_list_mut(&mut self) -> &mut Option<Vec<String>>;
+    fn notification_names_mut(&mut self) -> &mut Option<Vec<String>>;
+    #[cfg(feature = "private-api")]
+    fn tag_names(&self) -> &Option<Vec<super::tag::TagValue>>;
+    #[cfg(feature = "private-api")]
+    fn tag_names_mut(&mut self) -> &mut Option<Vec<super::tag::TagValue>>;
 }
 
 macro_rules! monitor_type {
@@ -143,7 +147,14 @@ macro_rules! monitor_type {
             #[derivative(PartialEq = "ignore")]
             #[derivative(Hash = "ignore")]
             #[serde_as(as = "Option<DeserializeVecLenient<String>>")]
-            pub notification_name_list: Option<Vec<String>>,
+            pub notification_names: Option<Vec<String>>,
+
+            #[cfg(feature = "private-api")]
+            #[serde(rename = "tag_names")]
+            #[derivative(PartialEq = "ignore")]
+            #[derivative(Hash = "ignore")]
+            #[serde_as(as = "Option<DeserializeVecLenient<super::tag::TagValue>>")]
+            pub tag_names: Option<Vec<super::tag::TagValue>>,
 
             $($field)*
         }
@@ -183,9 +194,13 @@ macro_rules! monitor_type {
             #[cfg(feature = "private-api")]
             fn create_paused_mut(&mut self) -> &mut Option<bool> { &mut self.create_paused }
             #[cfg(feature = "private-api")]
-            fn notification_name_list(&self) -> &Option<Vec<String>> { &self.notification_name_list }
+            fn notification_names(&self) -> &Option<Vec<String>> { &self.notification_names }
             #[cfg(feature = "private-api")]
-            fn notification_name_list_mut(&mut self) -> &mut Option<Vec<String>> { &mut self.notification_name_list }
+            fn notification_names_mut(&mut self) -> &mut Option<Vec<String>> { &mut self.notification_names }
+            #[cfg(feature = "private-api")]
+            fn tag_names(&self) -> &Option<Vec<super::tag::TagValue>> { &self.tag_names }
+            #[cfg(feature = "private-api")]
+            fn tag_names_mut(&mut self) -> &mut Option<Vec<super::tag::TagValue>> { &mut self.tag_names }
         }
 
         impl From<$struct_name> for Monitor {

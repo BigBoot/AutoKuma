@@ -1,5 +1,11 @@
 {
     "name": "Static Json Example",
     "type": "http",
-    "url": "https://example.com"
+    "url": "https://example.com",
+    "tag_names": [
+        {
+            "name": "example_tag",
+            "value": "Foobar"
+        }
+    ]
 }

@@ -6,20 +6,17 @@ use crate::docker_source::{
 use crate::entity::{merge_entities, Entity};
 use crate::file_source::get_entity_from_file;
 use crate::kuma::get_managed_entities;
+use crate::name::Name;
 use crate::{
     config::{Config, DeleteBehavior, DockerSource},
-    error::{Error, Result},
+    error::{Error, KumaError, Result},
     util::ResultLogger,
 };
 use bollard::Docker;
 use itertools::Itertools;
-use kuma_client::{
-    error::Error as KumaError,
-    monitor::MonitorType,
-    tag::{Tag, TagDefinition},
-    Client,
-};
-use log::{debug, info, warn};
+use kuma_client::Client;
+use log::{debug, error, info, warn};
+use std::collections::HashSet;
 use std::{collections::HashMap, env, sync::Arc, time::Duration};
 
 pub struct Sync {
@@ -33,56 +30,61 @@ impl Sync {
         })
     }
 
-    async fn get_autokuma_tag(&self, kuma: &Client) -> Result<TagDefinition> {
-        match kuma
-            .get_tags()
-            .await?
-            .into_iter()
-            .find(|tag| tag.name.as_deref() == Some(&self.app_state.config.tag_name))
-        {
-            Some(tag) => Ok(tag),
-            None => Ok(kuma
-                .add_tag(TagDefinition {
-                    name: Some(self.app_state.config.tag_name.clone()),
-                    color: Some(self.app_state.config.tag_color.clone()),
-                    ..Default::default()
-                })
-                .await?),
-        }
-    }
-
-    async fn create_entity(
-        &self,
-        kuma: &Client,
-        autokuma_tag: &TagDefinition,
-        id: &String,
-        entity: &Entity,
-    ) -> Result<()> {
+    async fn create_entity(&self, kuma: &Client, id: &String, entity: &Entity) -> Result<()> {
         info!("Creating new {}: {}", entity.entity_type(), id);
         match entity.clone() {
-            Entity::Monitor(mut monitor) => {
-                let mut tag = Tag::from(autokuma_tag.clone());
-
-                tag.value = Some(id.clone());
-                monitor.common_mut().tags_mut().push(tag);
-
+            Entity::Monitor(monitor) => {
                 match kuma.add_monitor(monitor).await {
-                    Ok(_) => Ok(()),
-                    Err(KumaError::GroupNotFound(group)) => {
-                        warn!(
-                            "Cannot create monitor {} because group {} does not exist",
-                            id, group
-                        );
+                    Ok(monitor) => {
+                        let db_id = monitor.common().id().ok_or_else(|| {
+                            KumaError::CommunicationError(
+                                "Did not receive an id from Uptime Kuma".to_owned(),
+                            )
+                        })?;
+
+                        self.app_state
+                            .db
+                            .store_id(Name::Monitor(id.clone()), db_id)?;
+
                         Ok(())
                     }
                     Err(err) => Err(err),
                 }?;
             }
             Entity::DockerHost(docker_host) => {
-                kuma.add_docker_host(docker_host).await?;
+                let db_id = kuma.add_docker_host(docker_host).await?.id.ok_or_else(|| {
+                    KumaError::CommunicationError(
+                        "Did not receive an id from Uptime Kuma".to_owned(),
+                    )
+                })?;
+
+                self.app_state
+                    .db
+                    .store_id(Name::DockerHost(id.clone()), db_id)?;
             }
             Entity::Notification(notification) => {
-                kuma.add_notification(notification).await?;
+                let db_id = kuma
+                    .add_notification(notification)
+                    .await?
+                    .id
+                    .ok_or_else(|| {
+                        KumaError::CommunicationError(
+                            "Did not receive an id from Uptime Kuma".to_owned(),
+                        )
+                    })?;
+
+                self.app_state
+                    .db
+                    .store_id(Name::Notification(id.clone()), db_id)?;
+            }
+            Entity::Tag(tag) => {
+                let db_id = kuma.add_tag(tag).await?.tag_id.ok_or_else(|| {
+                    KumaError::CommunicationError(
+                        "Did not receive an id from Uptime Kuma".to_owned(),
+                    )
+                })?;
+
+                self.app_state.db.store_id(Name::Tag(id.clone()), db_id)?;
             }
         }
 
@@ -93,18 +95,29 @@ impl Sync {
         info!("Deleting {}: {}", entity.entity_type(), id);
         match entity {
             Entity::Monitor(monitor) => {
-                if let Some(id) = monitor.common().id() {
-                    kuma.delete_monitor(*id).await?;
+                if let Some(db_id) = monitor.common().id() {
+                    kuma.delete_monitor(*db_id).await?;
+                    self.app_state.db.remove_id(Name::Monitor(id.clone()))?;
                 }
             }
             Entity::DockerHost(docker_host) => {
-                if let Some(id) = docker_host.id {
-                    kuma.delete_docker_host(id).await?;
+                if let Some(db_id) = docker_host.id {
+                    kuma.delete_docker_host(db_id).await?;
+                    self.app_state.db.remove_id(Name::DockerHost(id.clone()))?;
                 }
             }
             Entity::Notification(notification) => {
-                if let Some(id) = notification.id {
-                    kuma.delete_notification(id).await?;
+                if let Some(db_id) = notification.id {
+                    kuma.delete_notification(db_id).await?;
+                    self.app_state
+                        .db
+                        .remove_id(Name::Notification(id.clone()))?;
+                }
+            }
+            Entity::Tag(tag) => {
+                if let Some(db_id) = tag.tag_id {
+                    kuma.delete_tag(db_id).await?;
+                    self.app_state.db.remove_id(Name::Tag(id.clone()))?;
                 }
             }
         }
@@ -115,16 +128,11 @@ impl Sync {
     async fn update_entity(
         &self,
         kuma: &Client,
-        autokuma_tag: &TagDefinition,
-        groups: &HashMap<&i32, &String>,
         id: &String,
         current: &Entity,
         new: &Entity,
     ) -> Result<()> {
-        let mut tag = Tag::from(autokuma_tag.clone());
-        tag.value = Some(id.clone());
-
-        let merge = merge_entities(&current, &new, Some(vec![tag]));
+        let merge = merge_entities(&current, &new, None);
 
         if current != &merge {
             debug!(
@@ -141,21 +149,14 @@ impl Sync {
                     new.entity_type()
                 );
                 self.delete_entity(kuma, id, &current).await?;
-                self.create_entity(kuma, autokuma_tag, id, &new).await?;
+                self.create_entity(kuma, id, &new).await?;
                 return Ok(());
             }
 
             info!("Updating {}: {}", new.entity_type(), id);
 
             match (merge, current) {
-                (Entity::Monitor(merge), Entity::Monitor(current))
-                    if merge.common().parent_name().as_ref() != Some(id)
-                        && (merge.common().parent_name().is_some()
-                            != current.common().parent().is_some()
-                            || merge.common().parent_name().as_ref().is_some_and(|name| {
-                                Some(name) != current.common().parent().map(|id| groups[&id])
-                            })) =>
-                {
+                (Entity::Monitor(merge), Entity::Monitor(_)) => {
                     kuma.edit_monitor(merge).await?;
                 }
                 (Entity::DockerHost(merge), Entity::DockerHost(_)) => {
@@ -163,6 +164,9 @@ impl Sync {
                 }
                 (Entity::Notification(merge), Entity::Notification(_)) => {
                     kuma.edit_notification(merge).await?;
+                }
+                (Entity::Tag(merge), Entity::Tag(_)) => {
+                    kuma.edit_tag(merge).await?;
                 }
                 _ => {}
             }
@@ -172,13 +176,84 @@ impl Sync {
     }
 
     async fn do_sync(&self) -> Result<()> {
-        let kuma = Client::connect_with_tag_name(
-            self.app_state.config.kuma.clone(),
-            self.app_state.config.tag_name.clone(),
-        )
-        .await?;
+        let kuma = Client::connect(self.app_state.config.kuma.clone()).await?;
 
-        let autokuma_tag = self.get_autokuma_tag(&kuma).await?;
+        if self.app_state.db.get_version()? == 0 {
+            let autokuma_tag = kuma
+                .get_tags()
+                .await?
+                .iter()
+                .find(|x| {
+                    x.name
+                        .as_ref()
+                        .is_some_and(|name| name == &self.app_state.config.tag_name)
+                })
+                .map(|tag| tag.tag_id)
+                .flatten();
+
+            if let Some(autokuma_tag) = autokuma_tag {
+                if !env::var("AUTOKUMA__MIGRATE").is_ok_and(|x| x == "true") {
+                    error!(
+                        "Migration required, but AUTOKUMA__MIGRATE is not set to 'true', refusing to continue to avoid data loss. Please read <TODO> and then set AUTOKUMA__MIGRATE=true to continue."
+                    );
+                    return Ok(());
+                }
+
+                let entries = kuma
+                    .get_monitors()
+                    .await?
+                    .iter()
+                    .filter_map(|(_, monitor)| {
+                        monitor
+                            .common()
+                            .tags()
+                            .iter()
+                            .find(|x| x.tag_id == Some(autokuma_tag))
+                            .map(|tag| tag.value.clone())
+                            .flatten()
+                            .map(|name| (name, monitor.common().id().unwrap_or(-1)))
+                    })
+                    .collect_vec();
+
+                info!("Migrating {} monitors", entries.len());
+
+                for (name, id) in entries {
+                    self.app_state.db.store_id(Name::Monitor(name), id)?;
+                }
+
+                kuma.delete_tag(autokuma_tag).await?;
+            }
+
+            self.app_state.db.set_version(1)?
+        }
+
+        self.app_state.db.clean(
+            &kuma
+                .get_monitors()
+                .await?
+                .into_iter()
+                .filter_map(|(_, monitor)| monitor.common().id().clone())
+                .collect::<HashSet<_>>(),
+            &kuma
+                .get_notifications()
+                .await?
+                .into_iter()
+                .filter_map(|notification| notification.id)
+                .collect::<HashSet<_>>(),
+            &kuma
+                .get_docker_hosts()
+                .await?
+                .into_iter()
+                .filter_map(|docker_host| docker_host.id)
+                .collect::<HashSet<_>>(),
+            &kuma
+                .get_tags()
+                .await?
+                .into_iter()
+                .filter_map(|tag| tag.tag_id)
+                .collect::<HashSet<_>>(),
+        )?;
+
         let current_entities = get_managed_entities(&self.app_state, &kuma).await?;
 
         let mut new_entities: HashMap<String, Entity> = HashMap::new();
@@ -284,22 +359,6 @@ impl Sync {
             }
         }
 
-        let groups = current_entities
-            .iter()
-            .filter_map(|entity| match entity {
-                (id, Entity::Monitor(monitor)) => Some((id, monitor)),
-                _ => None,
-            })
-            .filter(|(_, monitor)| monitor.monitor_type() == MonitorType::Group)
-            .filter_map(|(id, monitor)| {
-                monitor
-                    .common()
-                    .id()
-                    .as_ref()
-                    .map(|parent_id| (parent_id, id))
-            })
-            .collect::<HashMap<_, _>>();
-
         let to_delete = current_entities
             .iter()
             .filter(|(id, _)| !new_entities.contains_key(*id))
@@ -321,12 +380,11 @@ impl Sync {
             .collect_vec();
 
         for (id, entity) in to_create {
-            self.create_entity(&kuma, &autokuma_tag, id, entity).await?;
+            self.create_entity(&kuma, id, entity).await?;
         }
 
         for (id, current, new) in to_update {
-            self.update_entity(&kuma, &autokuma_tag, &groups, id, current, new)
-                .await?;
+            self.update_entity(&kuma, id, current, new).await?;
         }
 
         if self.app_state.config.on_delete == DeleteBehavior::Delete {

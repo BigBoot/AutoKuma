@@ -67,7 +67,6 @@ impl Ready {
 struct Worker {
     config: Arc<Config>,
     #[allow(dead_code)]
-    tag_name: Option<String>,
     socket_io: Arc<Mutex<Option<SocketIO>>>,
     monitors: Arc<Mutex<MonitorList>>,
     notifications: Arc<Mutex<NotificationList>>,
@@ -82,7 +81,7 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(config: Config, tag_name: Option<String>) -> Result<Arc<Self>> {
+    fn new(config: Config) -> Result<Arc<Self>> {
         let custom_cert = config
             .tls
             .cert
@@ -129,7 +128,6 @@ impl Worker {
 
         Ok(Arc::new(Worker {
             config: Arc::new(config.clone()),
-            tag_name: tag_name.to_owned(),
             socket_io: Arc::new(Mutex::new(None)),
             monitors: Default::default(),
             notifications: Default::default(),
@@ -516,97 +514,6 @@ impl Worker {
         Ok(())
     }
 
-    #[cfg(feature = "private-api")]
-    async fn resolve_names(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
-        if let (Some(group_name), Some(tag_name)) =
-            (monitor.common().parent_name().clone(), &self.tag_name)
-        {
-            if Some(&group_name)
-                != monitor
-                    .common()
-                    .tags()
-                    .iter()
-                    .find(|tag| tag.name.as_ref().is_some_and(|tag| tag == tag_name))
-                    .and_then(|tag| tag.value.to_owned())
-                    .as_ref()
-            {
-                let group_id = self
-                    .monitors
-                    .lock()
-                    .await
-                    .iter()
-                    .find(|x| {
-                        x.1.monitor_type() == crate::monitor::MonitorType::Group
-                            && x.1.common().tags().iter().any(|tag| {
-                                tag.name.as_ref().is_some_and(|tag| tag == tag_name)
-                                    && tag
-                                        .value
-                                        .as_ref()
-                                        .is_some_and(|tag_value| tag_value == &group_name)
-                            })
-                    })
-                    .map(|x| *x.1.common().id())
-                    .flatten()
-                    .ok_or_else(|| Error::GroupNotFound(group_name))?;
-
-                *monitor.common_mut().parent_mut() = Some(group_id);
-            }
-        }
-
-        if let Some(notification_name_list) = monitor.common().notification_name_list() {
-            let notifications = self.notifications.lock().await;
-
-            let notification_id_list = notification_name_list
-                .iter()
-                .map(|notification_name| {
-                    notifications
-                        .iter()
-                        .find(|x| {
-                            x.name.as_ref().is_some_and(|name| {
-                                &format!("autokuma__{}", notification_name) == name
-                            })
-                        })
-                        .map(|x| x.id.map(|id| (id.to_string(), true)))
-                        .flatten()
-                        .ok_or_else(|| Error::NotificationNotFound(notification_name.clone()))
-                })
-                .collect::<Result<HashMap<String, bool>>>()?;
-
-            *monitor.common_mut().notification_id_list_mut() = Some(notification_id_list);
-        }
-
-        match monitor {
-            Monitor::Docker {
-                value: docker_monitor,
-            } => {
-                if let Some(docker_host_name) = &docker_monitor.docker_host_name {
-                    let docker_hosts = self.docker_hosts.lock().await;
-
-                    let docker_host_id = docker_hosts
-                        .iter()
-                        .find(|x| {
-                            x.name.as_ref().is_some_and(|name| {
-                                &format!("autokuma__{}", docker_host_name) == name
-                            })
-                        })
-                        .map(|x| x.id)
-                        .flatten()
-                        .ok_or_else(|| Error::DockerHostNotFound(docker_host_name.clone()))?;
-
-                    docker_monitor.docker_host = Some(docker_host_id);
-                }
-            }
-            _ => {}
-        }
-
-        return Ok(());
-    }
-
-    #[cfg(not(feature = "private-api"))]
-    async fn resolve_names(self: &Arc<Self>, _monitor: &mut Monitor) -> Result<()> {
-        Ok(())
-    }
-
     async fn update_monitor_tags(self: &Arc<Self>, monitor_id: i32, tags: &Vec<Tag>) -> Result<()> {
         let new_tags = tags
             .iter()
@@ -681,8 +588,6 @@ impl Worker {
     }
 
     pub async fn add_monitor(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
-        self.resolve_names(monitor).await?;
-
         let tags = mem::take(monitor.common_mut().tags_mut());
         let notifications = mem::take(monitor.common_mut().notification_id_list_mut());
 
@@ -691,7 +596,7 @@ impl Worker {
         #[cfg(feature = "private-api")]
         let create_paused = mem::take(monitor.common_mut().create_paused_mut());
         #[cfg(feature = "private-api")]
-        let notification_name_list = mem::take(monitor.common_mut().notification_name_list_mut());
+        let notification_names = mem::take(monitor.common_mut().notification_names_mut());
         #[cfg(feature = "private-api")]
         let docker_host_name = match monitor {
             Monitor::Docker {
@@ -699,6 +604,8 @@ impl Worker {
             } => mem::take(&mut docker_monitor.docker_host_name),
             _ => None,
         };
+        #[cfg(feature = "private-api")]
+        let tag_names = mem::take(monitor.common_mut().tag_names_mut());
 
         let id: i32 = self
             .clone()
@@ -718,13 +625,14 @@ impl Worker {
         {
             *monitor.common_mut().parent_name_mut() = parent_name;
             *monitor.common_mut().create_paused_mut() = create_paused;
-            *monitor.common_mut().notification_name_list_mut() = notification_name_list;
+            *monitor.common_mut().notification_names_mut() = notification_names;
             if let Monitor::Docker {
                 value: docker_monitor,
             } = monitor
             {
                 docker_monitor.docker_host_name = docker_host_name;
             }
+            *monitor.common_mut().tag_names_mut() = tag_names;
         }
 
         self.edit_monitor(monitor).await?;
@@ -759,8 +667,6 @@ impl Worker {
     }
 
     pub async fn edit_monitor(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
-        self.resolve_names(monitor).await?;
-
         let tags = mem::take(monitor.common_mut().tags_mut());
 
         #[cfg(feature = "private-api")]
@@ -1377,16 +1283,7 @@ pub struct Client {
 
 impl Client {
     pub async fn connect(config: Config) -> Result<Client> {
-        Client::connect_impl(config, None).await
-    }
-
-    #[cfg(feature = "private-api")]
-    pub async fn connect_with_tag_name(config: Config, tag_name: String) -> Result<Client> {
-        Client::connect_impl(config, Some(tag_name)).await
-    }
-
-    async fn connect_impl(config: Config, tag_name: Option<String>) -> Result<Client> {
-        let worker = Worker::new(config, tag_name)?;
+        let worker = Worker::new(config)?;
         match worker.connect().await {
             Ok(_) => Ok(Self { worker }),
             Err(e) => {
