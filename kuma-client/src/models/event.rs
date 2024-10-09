@@ -1,6 +1,6 @@
 use strum::EnumString;
 
-#[derive(Debug, EnumString)]
+#[derive(Debug, Clone, EnumString)]
 #[strum(serialize_all = "camelCase")]
 pub(crate) enum Event {
     ApiKeyList,

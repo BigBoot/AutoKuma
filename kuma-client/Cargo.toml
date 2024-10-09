@@ -37,6 +37,7 @@ tap = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true }
 tokio = { workspace = true }
+totp-rs = { workspace = true }
 url = { workspace = true }
 
 [build-dependencies]

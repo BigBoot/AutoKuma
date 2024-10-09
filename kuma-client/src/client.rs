@@ -1,6 +1,6 @@
 use crate::{
     docker_host::{DockerHost, DockerHostList},
-    error::{Error, Result},
+    error::{Error, Result, TotpResult},
     event::Event,
     maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage},
     monitor::{Monitor, MonitorList},
@@ -31,6 +31,7 @@ use std::{
 };
 use tap::prelude::*;
 use tokio::{runtime::Handle, sync::Mutex};
+use totp_rs::{Rfc6238, TOTP};
 
 struct Ready {
     pub monitor_list: bool,
@@ -142,6 +143,21 @@ impl Worker {
         }))
     }
 
+    fn get_mfa_token(self: &Arc<Self>) -> TotpResult<Option<String>> {
+        Ok(match &self.config.mfa_secret {
+            Some(secret) => {
+                let totp = match secret {
+                    url if url.starts_with("otpauth://") => TOTP::from_url(url)?,
+                    secret => TOTP::from_rfc6238(Rfc6238::with_defaults(
+                        totp_rs::Secret::Encoded(secret.clone()).to_bytes()?,
+                    )?)?,
+                };
+                Some(totp.generate_current()?)
+            }
+            None => self.config.mfa_secret.clone(),
+        })
+    }
+
     async fn on_monitor_list(self: &Arc<Self>, monitor_list: MonitorList) -> Result<()> {
         *self.monitors.lock().await = monitor_list;
         self.is_ready.lock().await.monitor_list = true;
@@ -189,8 +205,8 @@ impl Worker {
         if let (Some(username), Some(password), true) =
             (&self.config.username, &self.config.password, !logged_in)
         {
-            self.login(username, password, self.config.mfa_token.clone())
-                .await?;
+            let mfa_token = self.get_mfa_token()?;
+            return self.login(username, password, mfa_token).await;
         }
 
         Ok(())
@@ -341,12 +357,13 @@ impl Worker {
             .await;
 
         match result {
-            Ok(LoginResponse { ok: true, .. }) => {
+            Ok(LoginResponse::TokenRequired { .. }) => Err(Error::TokenRequired),
+            Ok(LoginResponse::Normal { ok: true, .. }) => {
                 debug!("Logged in as {}!", username.as_ref());
                 *self.is_logged_in.lock().await = true;
                 Ok(())
             }
-            Ok(LoginResponse {
+            Ok(LoginResponse::Normal {
                 ok: false,
                 msg: Some(msg),
                 ..
@@ -1110,7 +1127,7 @@ impl Worker {
                                             std::module_path!(),
                                             |e| {
                                                 format!(
-                                                    "Error while sending message event: {}",
+                                                    "Error while handling message event: {}",
                                                     e.to_string()
                                                 )
                                             },
@@ -1122,12 +1139,13 @@ impl Worker {
                                 if let Ok(e) = Event::from_str(&String::from(event)) {
                                     handle.clone().spawn(async move {
                                         _ = arc
-                                            .on_event(e, params.into_iter().next().unwrap())
+                                            .on_event(e.clone(), params.into_iter().next().unwrap())
                                             .await
-                                            .log_warn(std::module_path!(), |e| {
+                                            .log_warn(std::module_path!(), |err| {
                                                 format!(
-                                                    "Error while sending event: {}",
-                                                    e.to_string()
+                                                    "Error while handling '{:?}' event: {}",
+                                                    e,
+                                                    err.to_string()
                                                 )
                                             });
                                     });

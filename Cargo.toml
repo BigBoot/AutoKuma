@@ -51,4 +51,5 @@ thiserror = { version = "1.0.63" }
 time = { version = "0.3.36", features = ["serde"] }
 tokio = { version = "1.39.2", features = ["full"] }
 toml = { version = "0.8.19" }
+totp-rs = { version = "5.6.0", features = ["otpauth"] }
 url = { version = "2.5.2", features = ["serde"] }
