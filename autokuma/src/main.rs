@@ -7,12 +7,11 @@ use util::{ResultLogger, ResultOrDie};
 
 mod app_state;
 mod config;
-mod docker_source;
 mod entity;
 mod error;
-mod file_source;
 mod kuma;
 mod name;
+mod sources;
 mod sync;
 mod util;
 
@@ -121,7 +120,7 @@ async fn main() {
 
     println!("{}{:>70}", BANNER, SHORT_VERSION);
 
-    let sync = sync::Sync::new(config)
+    let mut sync = sync::Sync::new(config)
         .log_error(std::module_path!(), |e| format!("Invalid config: {}", e))
         .unwrap_or_die(1);
 

@@ -33,8 +33,9 @@ pub struct DockerHost {
 
     /// The docker host. Depending on the connection type, this could be a uri or a path to a socket.
     #[serde(rename = "dockerDaemon")]
-    #[serde(alias = "docker_daemon")]
-    pub docker_daemon: Option<String>,
+    #[serde(alias = "host")]
+    #[serde(alias = "path")]
+    pub host: Option<String>,
 
     /// The user identifier associated with the docker host.
     #[serde(rename = "userId")]

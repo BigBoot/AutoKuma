@@ -1,18 +1,21 @@
 # AutoKuma specific properties:
 
+tag_names: '[{"name": "mytag", "value": "A value (this is optional)" }]'
+
 AutoKuma adds a few special properties which are handled internally and aren't sent to Uptime Kuma:
-| Property                 | Example Value           | Description                                                                           |
-|--------------------------|-------------------------|---------------------------------------------------------------------------------------|
-| `parent_name`            | `apps`                  | The autokuma id of the parent group                                                   |
-| `notification_name_list` | `["matrix", "discord"]` | List of autokuma ids of enabled notification providers,                               |
-| `docker_host_name`       | `local_socket`          | The autokuma id of the docker socket for a docker monitor                             |
-| `create_paused`          | false                   | If true new monitors will be added in paused state, does not effect existing monitors |
+| Property             | Example Value                              | Description                                                                           |
+|----------------------|--------------------------------------------|---------------------------------------------------------------------------------------|
+| `parent_name`        | `apps`                                     | The autokuma id of the parent group                                                   |
+| `notification_names` | `["matrix", "discord"]`                    | List of autokuma ids of enabled notification providers,                               |
+| `tag_names`          | `[{"name": "mytag", "value": "A value" }]` | List of structs containing the id and optionally a values for labels,                 |
+| `docker_host_name`   | `local_socket`                             | The autokuma id of the docker socket for a docker monitor                             |
+| `create_paused`      | false                                      | If true new monitors will be added in paused state, does not effect existing monitors |
 
 # `docker_host`
 | Property          | Example Value          |
 |-------------------|------------------------|
 | `connection_type` | `socket` or `tcp`      |
-| `docker_daemon`   | `/var/run/docker.sock` |
+| `host` or `path`  | `/var/run/docker.sock` |
 
 # `notification`
 | Property     | Example Value                                                                                                                                                                     |

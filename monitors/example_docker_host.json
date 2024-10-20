@@ -1,5 +1,5 @@
 {
-    "dockerType": "socket",
-    "dockerDaemon": "/var/run/docker.sock",
+    "connection_type": "socket",
+    "path": "/var/run/docker.sock",
     "type": "docker_host"
 }

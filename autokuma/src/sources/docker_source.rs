@@ -1,9 +1,12 @@
 use crate::{
     app_state::AppState,
+    config,
     entity::{get_entities_from_labels, Entity},
     error::Result,
     kuma::get_kuma_labels,
+    sources::source::Source,
 };
+use async_trait::async_trait;
 use bollard::{
     container::ListContainersOptions,
     models::SystemInfo,
@@ -14,10 +17,7 @@ use itertools::Itertools;
 use kuma_client::util::ResultLogger;
 use std::{collections::HashMap, env};
 
-pub async fn get_kuma_containers(
-    state: &AppState,
-    docker: &Docker,
-) -> Result<Vec<ContainerSummary>> {
+async fn get_kuma_containers(state: &AppState, docker: &Docker) -> Result<Vec<ContainerSummary>> {
     Ok(docker
         .list_containers(Some(ListContainersOptions::<String> {
             all: true,
@@ -44,7 +44,7 @@ pub async fn get_kuma_containers(
         .collect::<Vec<_>>())
 }
 
-pub async fn get_kuma_services(state: &AppState, docker: &Docker) -> Result<Vec<Service>> {
+async fn get_kuma_services(state: &AppState, docker: &Docker) -> Result<Vec<Service>> {
     Ok(docker
         .list_services(Some(ListServicesOptions::<String> {
             ..Default::default()
@@ -75,7 +75,7 @@ pub async fn get_kuma_services(state: &AppState, docker: &Docker) -> Result<Vec<
         .collect::<Vec<_>>())
 }
 
-pub fn get_entities_from_containers(
+fn get_entities_from_containers(
     state: &AppState,
     system_info: &SystemInfo,
     containers: &Vec<ContainerSummary>,
@@ -106,7 +106,7 @@ pub fn get_entities_from_containers(
         .try_collect()
 }
 
-pub fn get_entities_from_services(
+fn get_entities_from_services(
     state: &AppState,
     system_info: &SystemInfo,
     services: &Vec<Service>,
@@ -128,4 +128,67 @@ pub fn get_entities_from_services(
         })
         .flatten_ok()
         .try_collect()
+}
+
+pub struct DockerSource {}
+
+#[async_trait]
+impl Source for DockerSource {
+    async fn get_entities(&mut self, state: &AppState) -> Result<Vec<(String, Entity)>> {
+        if !state.config.docker.enabled {
+            return Ok(vec![]);
+        }
+
+        let docker_hosts = state
+            .config
+            .docker
+            .hosts
+            .clone()
+            .map(|f| f.into_iter().map(Some).collect::<Vec<_>>())
+            .unwrap_or_else(|| {
+                vec![state
+                    .config
+                    .docker
+                    .socket_path
+                    .as_ref()
+                    .and_then(|path| Some(format!("unix://{}", path)))]
+            });
+
+        let mut entities = vec![];
+
+        for docker_host in docker_hosts {
+            if let Some(docker_host) = &docker_host {
+                env::set_var("DOCKER_HOST", docker_host);
+            }
+
+            let docker = Docker::connect_with_defaults().log_warn(std::module_path!(), |_| {
+                format!(
+                    "Using DOCKER_HOST={}",
+                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
+                )
+            })?;
+
+            let system_info: bollard::secret::SystemInfo = docker.info().await.unwrap_or_default();
+
+            if state.config.docker.source == config::DockerSource::Containers
+                || state.config.docker.source == config::DockerSource::Both
+            {
+                let containers = get_kuma_containers(&state, &docker).await?;
+                entities.extend(get_entities_from_containers(
+                    &state,
+                    &system_info,
+                    &containers,
+                )?);
+            }
+
+            if state.config.docker.source == config::DockerSource::Services
+                || state.config.docker.source == config::DockerSource::Both
+            {
+                let services = get_kuma_services(&state, &docker).await?;
+                entities.extend(get_entities_from_services(&state, &system_info, &services)?);
+            }
+        }
+
+        Ok(entities)
+    }
 }

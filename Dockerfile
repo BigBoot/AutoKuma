@@ -10,4 +10,5 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/autokuma /usr/local/bin/autokuma
 
+ENV AUTOKUMA_DOCKER=1
 CMD ["autokuma"]

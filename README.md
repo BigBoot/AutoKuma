@@ -93,6 +93,10 @@ services:
       
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - autokuma-data:/data
+
+volumes:
+  autokuma-data:
 ```
 
 ## Configuration 🔧
@@ -164,21 +168,50 @@ Take a look at [all available entity types](ENTITY_TYPES.md) and their correspon
 ### Groups
 To assign a monitor to a group set it's parent_name property to the autokuma id of the group, e.g.
 
-```plaintext
-kuma.mygroup.group.name: "This is a Group"
-kuma.mymonitor.http.name: "This is a Monitor assigned to a Group"
-kuma.mymonitor.http.parent_name: "mygroup"
-kuma.mymonitor.http.url: "https://example.com"
+```yaml
+kuma.mygroup.group.name: 'This is a Group'
+
+kuma.mymonitor.http.name: 'This is a Monitor assigned to a Group'
+kuma.mymonitor.http.parent_name: 'mygroup'
+kuma.mymonitor.http.url: 'https://example.com'
 ```
 
 ### Notifications
 **_WARNING:_** Defining Notifications is currently experimental and might change in the future.
-**TODO**
+```yaml
+kuma.mynotificationprovider.notification.name: 'This is a Matrix notification provider'
+kuma.mynotificationprovider.notification.active: 'true'
+kuma.mynotificationprovider.notification.config: '{"type": "matrix", "accessToken": "XXXXXXXXXXXXXXXXXX", "homeserverUrl": "https://matrix.org", "internalRoomId": "!xxxxxxxxxxxxxxxxxx:matrix.org"}'
+
+kuma.mymonitor.http.name: 'This is a Monitor with a notification provider'
+kuma.mymonitor.http.notification_names: '["mynotificationprovider"]'
+kuma.mymonitor.http.url: 'https://example.com'
+```
 
 
 ### Docker Hosts
 **_WARNING:_** Defining Docker Hosts is currently experimental and might change in the future.
-**TODO**
+```yaml
+kuma.mydocker.docker_host.name: 'My Docker Host'
+kuma.mydocker.docker_host.connection_type: 'socket'
+kuma.mydocker.docker_host.path: '/var/run/docker.sock'
+
+kuma.mymonitor.http.name: 'This is a Docker Monitor'
+kuma.mymonitor.http.docker_host_name: 'mydocker'
+kuma.mymonitor.http.url: 'https://example.com'
+```
+
+
+### Tags
+**_WARNING:_** Defining Tags is currently experimental and might change in the future.
+```yaml
+kuma.mytag.tag.name: 'A purple label'
+kuma.mytag.tag.color: '#FF00FF'
+
+kuma.mymonitor.http.name: 'This is a Monitor with a label'
+kuma.mymonitor.http.tag_names: '[{"name": "mytag", "value": "A value (this is optional)" }]'
+kuma.mymonitor.http.url: 'https://example.com'
+```
 
 ### Templating
 AutoKuma allows the usage of [Tera](https://keats.github.io/tera/) templates in labels and [Snippets](#snippets), the following variables are available:

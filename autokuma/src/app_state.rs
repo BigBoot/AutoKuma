@@ -176,7 +176,22 @@ impl AppState {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        let db = sled::open(format!("{}/autokuma.db", config.data_path))?;
+        let data_path =
+            config
+                .data_path
+                .clone()
+                .unwrap_or_else(|| match std::env::var_os("AUTOKUMA_DOCKER") {
+                    Some(_) => "/data".to_owned(),
+                    None => dirs::config_local_dir()
+                        .map(|dir| {
+                            dir.join("autokuma")
+                                .join("config")
+                                .to_string_lossy()
+                                .to_string()
+                        })
+                        .unwrap_or_else(|| "./".to_owned()),
+                });
+        let db = sled::open(format!("{}/autokuma.db", data_path))?;
         let app_db: Arc<AppDB> = Arc::new(AppDB {
             monitors: db.open_tree("monitors")?,
             notifications: db.open_tree("notifications")?,

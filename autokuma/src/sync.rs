@@ -1,18 +1,12 @@
 use crate::app_state::AppState;
-use crate::docker_source::{
-    get_entities_from_containers, get_entities_from_services, get_kuma_containers,
-    get_kuma_services,
-};
 use crate::entity::{merge_entities, Entity};
-use crate::file_source::get_entity_from_file;
 use crate::kuma::get_managed_entities;
 use crate::name::Name;
 use crate::{
-    config::{Config, DeleteBehavior, DockerSource},
-    error::{Error, KumaError, Result},
-    util::ResultLogger,
+    config::{Config, DeleteBehavior},
+    error::{KumaError, Result},
+    sources::source::Source,
 };
-use bollard::Docker;
 use itertools::Itertools;
 use kuma_client::Client;
 use log::{debug, error, info, warn};
@@ -21,12 +15,14 @@ use std::{collections::HashMap, env, sync::Arc, time::Duration};
 
 pub struct Sync {
     app_state: AppState,
+    sources: Vec<Box<dyn Source>>,
 }
 
 impl Sync {
     pub fn new(config: Arc<Config>) -> Result<Self> {
         Ok(Self {
             app_state: AppState::new(config)?,
+            sources: crate::sources::get_sources(),
         })
     }
 
@@ -175,7 +171,7 @@ impl Sync {
         Ok(())
     }
 
-    async fn do_sync(&self) -> Result<()> {
+    async fn do_sync(&mut self) -> Result<()> {
         let kuma = Client::connect(self.app_state.config.kuma.clone()).await?;
 
         if self.app_state.db.get_version()? == 0 {
@@ -194,7 +190,7 @@ impl Sync {
             if let Some(autokuma_tag) = autokuma_tag {
                 if !env::var("AUTOKUMA__MIGRATE").is_ok_and(|x| x == "true") {
                     error!(
-                        "Migration required, but AUTOKUMA__MIGRATE is not set to 'true', refusing to continue to avoid data loss. Please read <TODO> and then set AUTOKUMA__MIGRATE=true to continue."
+                        "Migration required, but AUTOKUMA__MIGRATE is not set to 'true', refusing to continue to avoid data loss. Please read the CHANGELOG and then set AUTOKUMA__MIGRATE=true to continue."
                     );
                     return Ok(());
                 }
@@ -258,105 +254,9 @@ impl Sync {
 
         let mut new_entities: HashMap<String, Entity> = HashMap::new();
 
-        if self.app_state.config.docker.enabled {
-            let docker_hosts = self
-                .app_state
-                .config
-                .docker
-                .hosts
-                .clone()
-                .map(|f| f.into_iter().map(Some).collect::<Vec<_>>())
-                .unwrap_or_else(|| {
-                    vec![self
-                        .app_state
-                        .config
-                        .docker
-                        .socket_path
-                        .as_ref()
-                        .and_then(|path| Some(format!("unix://{}", path)))]
-                });
-
-            for docker_host in docker_hosts {
-                if let Some(docker_host) = &docker_host {
-                    env::set_var("DOCKER_HOST", docker_host);
-                }
-
-                let docker =
-                    Docker::connect_with_defaults().log_warn(std::module_path!(), |_| {
-                        format!(
-                            "Using DOCKER_HOST={}",
-                            env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
-                        )
-                    })?;
-
-                let system_info: bollard::secret::SystemInfo =
-                    docker.info().await.unwrap_or_default();
-
-                if self.app_state.config.docker.source == DockerSource::Containers
-                    || self.app_state.config.docker.source == DockerSource::Both
-                {
-                    let containers = get_kuma_containers(&self.app_state, &docker).await?;
-                    new_entities.extend(get_entities_from_containers(
-                        &self.app_state,
-                        &system_info,
-                        &containers,
-                    )?);
-                }
-
-                if self.app_state.config.docker.source == DockerSource::Services
-                    || self.app_state.config.docker.source == DockerSource::Both
-                {
-                    let services = get_kuma_services(&self.app_state, &docker).await?;
-                    new_entities.extend(get_entities_from_services(
-                        &self.app_state,
-                        &system_info,
-                        &services,
-                    )?);
-                }
-            }
-        }
-
-        let static_monitor_path = self
-            .app_state
-            .config
-            .static_monitors
-            .clone()
-            .unwrap_or_else(|| {
-                dirs::config_local_dir()
-                    .map(|dir| {
-                        dir.join("autokuma")
-                            .join("static-monitors")
-                            .to_string_lossy()
-                            .to_string()
-                    })
-                    .unwrap_or_default()
-            })
-            .to_owned();
-
-        if tokio::fs::metadata(&static_monitor_path)
-            .await
-            .is_ok_and(|md| md.is_dir())
-        {
-            let mut dir = tokio::fs::read_dir(&static_monitor_path)
-                .await
-                .log_warn(std::module_path!(), |e| e.to_string());
-
-            if let Ok(dir) = &mut dir {
-                loop {
-                    if let Some(f) = dir
-                        .next_entry()
-                        .await
-                        .map_err(|e| Error::IO(e.to_string()))?
-                    {
-                        let (id, monitor) =
-                            get_entity_from_file(&self.app_state, f.path().to_string_lossy())
-                                .await?;
-                        new_entities.insert(id, monitor);
-                    } else {
-                        break;
-                    }
-                }
-            }
+        for source in &mut self.sources {
+            let entities = source.get_entities(&self.app_state).await?;
+            new_entities.extend(entities);
         }
 
         let to_delete = current_entities
@@ -396,7 +296,7 @@ impl Sync {
         Ok(())
     }
 
-    pub async fn run(&self) {
+    pub async fn run(&mut self) {
         loop {
             if let Err(err) = self.do_sync().await {
                 warn!("Encountered error during sync: {}", err);
