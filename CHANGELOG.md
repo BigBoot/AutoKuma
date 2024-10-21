@@ -15,13 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
   To prevent data loss, AutoKuma will refuse to run if it detects any old monitors with an AutoKuma label. After adding a persistent storage location, AutoKuma will need to be started once with the environment variable `AUTOKUMA__MIGRATE=true` set to take over any existing monitors. This environment variable can be removed afterward.
 
-
-
 ### Added
 - All CLI commands now support reading multiple files/ids/slugs at once, as well as parsing arrays of objects where applicable, [#74](https://github.com/BigBoot/AutoKuma/issues/74)
 - Access to `system_info` in templates, see [#2]
 - Ability to generate TOTP tokens from a TOTP secret
-- Support for creating Tags from Labels, see  [#40](https://github.com/BigBoot/AutoKuma/issues/40)
+- Support for creating Tags from Labels, see [#40](https://github.com/BigBoot/AutoKuma/issues/40)
+- File source now supports multiple entities per file, the ids will be named `<file_stem>[<index>]` accordingly, see [#86](https://github.com/BigBoot/AutoKuma/issues/86)
 
 ### Fixed
 - File source now skips unsupported files rather then interrupting the whole sync, see [#89](https://github.com/BigBoot/AutoKuma/issues/89)

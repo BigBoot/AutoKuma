@@ -8,3 +8,4 @@ docker.sock
 !/logo.svg
 *.snap
 /autokuma.db
+test_monitors

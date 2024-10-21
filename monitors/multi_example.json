@@ -1,0 +1,18 @@
+[
+    {
+        "name": "Multi Example Group",
+        "type": "group"
+    },
+    {
+        "name": "Multi Example Monitor #1",
+        "type": "http",
+        "parent_name": "multi_example[0]",
+        "url": "https://example.com"
+    },
+    {
+        "name": "Multi Example Monitor #2",
+        "type": "http",
+        "parent_name": "multi_example[0]",
+        "url": "https://example.com"
+    }
+]

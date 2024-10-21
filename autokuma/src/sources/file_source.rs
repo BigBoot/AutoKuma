@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
 use async_trait::async_trait;
+use futures_util::future::join_all;
 use itertools::Itertools;
+use serde_json::json;
 use walkdir::WalkDir;
 
 use crate::{
@@ -13,19 +15,35 @@ use crate::{
 };
 use kuma_client::util::ResultLogger;
 
-pub async fn get_entity_from_file(state: &AppState, file: &PathBuf) -> Result<(String, Entity)> {
-    let id = file
-        .ancestors()
-        .collect::<Vec<_>>()
-        .into_iter()
-        .rev()
-        .filter_map(|p| match p == file {
-            true => p.file_stem().map(|s| s.to_string_lossy()),
-            false => p.file_name().map(|s| s.to_string_lossy()),
-        })
-        .skip(1)
-        .join("/");
+async fn get_entity_from_value(
+    state: &AppState,
+    id: String,
+    file: &PathBuf,
+    value: serde_json::Value,
+    context: tera::Context,
+) -> Result<(String, Entity)> {
+    let values = value.flatten()?;
 
+    let entity_type = values
+        .iter()
+        .find(|(key, _)| key == "type")
+        .and_then(|(_, value)| value.as_str().map(|s| s.to_owned()))
+        .ok_or_else(|| {
+            Error::DeserializeError(format!(
+                "Static monitor {} is missing `type`",
+                file.display()
+            ))
+        })?;
+
+    let entity = get_entity_from_settings(state, &id, &entity_type, values, &context)?;
+
+    Ok((id, entity))
+}
+
+pub async fn get_entities_from_file(
+    state: &AppState,
+    file: &PathBuf,
+) -> Result<Vec<(String, Entity)>> {
     let value: Option<serde_json::Value> = if file.extension().is_some_and(|ext| ext == "json") {
         let content: String = tokio::fs::read_to_string(file)
             .await
@@ -42,30 +60,59 @@ pub async fn get_entity_from_file(state: &AppState, file: &PathBuf) -> Result<(S
         None
     };
 
-    let values = value
-        .ok_or_else(|| {
-            Error::DeserializeError(format!(
-                "Unsupported static monitor file type: {}, supported: .json, .toml",
-                file.display()
-            ))
+    let file_id: String = file
+        .ancestors()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .filter_map(|p| match p == file {
+            true => p.file_stem().map(|s| s.to_string_lossy()),
+            false => p.file_name().map(|s| s.to_string_lossy()),
         })
-        .and_then(|v| v.flatten())?;
+        .skip(1)
+        .join("/");
 
-    let entity_type = values
-        .iter()
-        .find(|(key, _)| key == "type")
-        .and_then(|(_, value)| value.as_str().map(|s| s.to_owned()))
-        .ok_or_else(|| {
-            Error::DeserializeError(format!(
-                "Static monitor {} is missing `type`",
-                file.display()
-            ))
-        })?;
+    let value = value.ok_or_else(|| {
+        Error::DeserializeError(format!(
+            "Unsupported static monitor file type: {}, supported: .json, .toml",
+            file.display()
+        ))
+    })?;
 
-    let context = tera::Context::new();
-    let entity = get_entity_from_settings(state, &id, &entity_type, values, &context)?;
+    let values = match value {
+        serde_json::Value::Array(entities) => entities
+            .into_iter()
+            .enumerate()
+            .map(|(i, value)| {
+                (
+                    format!("{}[{}]", file_id, i),
+                    value,
+                    tera::Context::from_value(json!({
+                        "file_index": i,
+                    }))
+                    .unwrap(),
+                )
+            })
+            .collect(),
+        _ => vec![(file_id, value, tera::Context::new())],
+    };
 
-    Ok((id, entity))
+    let entities = join_all(
+        values
+            .into_iter()
+            .map(|(id, value, context)| get_entity_from_value(state, id, &file, value, context)),
+    )
+    .await
+    .into_iter()
+    .filter_map(|r| {
+        r.log_warn(std::module_path!(), |e| {
+            format!("[{}] {}", file.display(), e)
+        })
+        .ok()
+    })
+    .collect();
+
+    return Ok(entities);
 }
 
 pub struct FileSource {}
@@ -101,13 +148,14 @@ impl Source for FileSource {
                 .filter(|e| e.file_type().is_file());
 
             for file in files {
-                if let Ok(entity) = get_entity_from_file(&state, &file.path().to_path_buf())
-                    .await
-                    .log_warn(std::module_path!(), |e| {
-                        format!("[{}] {}", file.path().display(), e)
-                    })
+                if let Ok(file_entities) =
+                    get_entities_from_file(&state, &file.path().to_path_buf())
+                        .await
+                        .log_warn(std::module_path!(), |e| {
+                            format!("[{}] {}", file.path().display(), e)
+                        })
                 {
-                    entities.push(entity);
+                    entities.extend(file_entities);
                 }
             }
         }
