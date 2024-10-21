@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to generate TOTP tokens from a TOTP secret
 - Support for creating Tags from Labels, see [#40](https://github.com/BigBoot/AutoKuma/issues/40)
 - File source now supports multiple entities per file, the ids will be named `<file_stem>[<index>]` accordingly, see [#86](https://github.com/BigBoot/AutoKuma/issues/86)
+- Kubernetes integration, see [#58](https://github.com/BigBoot/AutoKuma/issues/58)
 
 ### Fixed
 - File source now skips unsupported files rather then interrupting the whole sync, see [#89](https://github.com/BigBoot/AutoKuma/issues/89)

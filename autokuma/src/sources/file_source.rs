@@ -1,11 +1,3 @@
-use std::path::PathBuf;
-
-use async_trait::async_trait;
-use futures_util::future::join_all;
-use itertools::Itertools;
-use serde_json::json;
-use walkdir::WalkDir;
-
 use crate::{
     app_state::AppState,
     entity::{get_entity_from_settings, Entity},
@@ -13,10 +5,15 @@ use crate::{
     sources::source::Source,
     util::FlattenValue,
 };
+use async_trait::async_trait;
+use itertools::Itertools;
 use kuma_client::util::ResultLogger;
+use serde_json::json;
+use std::{path::PathBuf, sync::Arc};
+use walkdir::WalkDir;
 
-async fn get_entity_from_value(
-    state: &AppState,
+fn get_entity_from_value(
+    state: Arc<AppState>,
     id: String,
     file: &PathBuf,
     value: serde_json::Value,
@@ -41,7 +38,7 @@ async fn get_entity_from_value(
 }
 
 pub async fn get_entities_from_file(
-    state: &AppState,
+    state: Arc<AppState>,
     file: &PathBuf,
 ) -> Result<Vec<(String, Entity)>> {
     let value: Option<serde_json::Value> = if file.extension().is_some_and(|ext| ext == "json") {
@@ -97,32 +94,44 @@ pub async fn get_entities_from_file(
         _ => vec![(file_id, value, tera::Context::new())],
     };
 
-    let entities = join_all(
-        values
-            .into_iter()
-            .map(|(id, value, context)| get_entity_from_value(state, id, &file, value, context)),
-    )
-    .await
-    .into_iter()
-    .filter_map(|r| {
-        r.log_warn(std::module_path!(), |e| {
-            format!("[{}] {}", file.display(), e)
+    let entities = values
+        .into_iter()
+        .map(|(id, value, context)| get_entity_from_value(state.clone(), id, &file, value, context))
+        .into_iter()
+        .filter_map(|r| {
+            r.log_warn(std::module_path!(), |e| {
+                format!("[{}] {}", file.display(), e)
+            })
+            .ok()
         })
-        .ok()
-    })
-    .collect();
+        .collect();
 
     return Ok(entities);
 }
 
-pub struct FileSource {}
+pub struct FileSource {
+    state: Arc<AppState>,
+}
 
 #[async_trait]
 impl Source for FileSource {
-    async fn get_entities(&mut self, state: &AppState) -> Result<Vec<(String, Entity)>> {
+    fn name(&self) -> &'static str {
+        "File"
+    }
+
+    async fn init(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    async fn shutdown(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    async fn get_entities(&mut self) -> Result<Vec<(String, Entity)>> {
         let mut entities = vec![];
 
-        let static_monitor_path = state
+        let static_monitor_path = self
+            .state
             .config
             .static_monitors
             .clone()
@@ -149,7 +158,7 @@ impl Source for FileSource {
 
             for file in files {
                 if let Ok(file_entities) =
-                    get_entities_from_file(&state, &file.path().to_path_buf())
+                    get_entities_from_file(self.state.clone(), &file.path().to_path_buf())
                         .await
                         .log_warn(std::module_path!(), |e| {
                             format!("[{}] {}", file.path().display(), e)
@@ -161,5 +170,11 @@ impl Source for FileSource {
         }
 
         Ok(entities)
+    }
+}
+
+impl FileSource {
+    pub fn new(state: Arc<AppState>) -> Self {
+        Self { state }
     }
 }

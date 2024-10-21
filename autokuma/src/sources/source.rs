@@ -1,8 +1,11 @@
 use async_trait::async_trait;
 
-use crate::{app_state::AppState, entity::Entity, error::Result};
+use crate::{entity::Entity, error::Result};
 
 #[async_trait]
 pub trait Source {
-    async fn get_entities(&mut self, state: &AppState) -> Result<Vec<(String, Entity)>>;
+    fn name(&self) -> &'static str;
+    async fn init(&mut self) -> Result<()>;
+    async fn get_entities(&mut self) -> Result<Vec<(String, Entity)>>;
+    async fn shutdown(&mut self) -> Result<()>;
 }

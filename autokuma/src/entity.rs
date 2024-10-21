@@ -15,7 +15,7 @@ use kuma_client::{
 use log::warn;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 use strum::Display;
 use unescaper::unescape;
 
@@ -139,7 +139,7 @@ impl From<Entity> for EntityWrapper {
 }
 
 pub fn get_entities_from_labels(
-    state: &AppState,
+    state: Arc<AppState>,
     labels: Vec<(String, String)>,
     template_values: &tera::Context,
 ) -> Result<Vec<(String, Entity)>> {
@@ -202,11 +202,12 @@ pub fn get_entities_from_labels(
         .into_iter()
         .map(|(key, value)| (key, group_by_prefix(value, ".")))
         .flat_map(|(id, entities)| {
+            let state = state.clone();
             entities
                 .into_iter()
                 .filter_map(move |(entity_type, settings)| {
                     let result = get_entity_from_settings(
-                        state,
+                        state.clone(),
                         &id,
                         &entity_type,
                         settings
@@ -234,7 +235,7 @@ pub fn get_entities_from_labels(
         .collect()
 }
 
-fn resolve_names(state: &AppState, monitor: &mut Monitor) -> Result<()> {
+fn resolve_names(state: Arc<AppState>, monitor: &mut Monitor) -> Result<()> {
     if let Some(group_name) = monitor.common().parent_name().clone() {
         let name = Name::Monitor(group_name.clone());
         let group_id = state
@@ -316,8 +317,27 @@ fn resolve_names(state: &AppState, monitor: &mut Monitor) -> Result<()> {
     return Ok(());
 }
 
+pub fn get_entity_from_value(
+    state: Arc<AppState>,
+    id: &str,
+    value: serde_json::Value,
+) -> Result<Entity> {
+    let mut entity = serde_json::from_value::<Entity>(value)
+        .log_warn(std::module_path!(), |e| {
+            format!("Error while parsing {}: {}!", id, e.to_string())
+        })
+        .map_err(|e| Error::LabelParseError(e.to_string()))?;
+
+    if let Entity::Monitor(monitor) = &mut entity {
+        monitor.validate(id)?;
+        resolve_names(state, monitor)?;
+    }
+
+    Ok(entity)
+}
+
 pub fn get_entity_from_settings(
-    state: &AppState,
+    state: Arc<AppState>,
     id: &str,
     entity_type: &str,
     settings: Vec<(String, serde_json::Value)>,
@@ -340,19 +360,7 @@ pub fn get_entity_from_settings(
     let toml = toml::from_str::<serde_json::Value>(&config)
         .map_err(|e| Error::LabelParseError(e.to_string()))?;
 
-    let mut entity = serde_json::from_value::<Entity>(toml)
-        .log_warn(std::module_path!(), |e| {
-            format!("Error while parsing {}: {}!", id, e.to_string())
-        })
-        .map_err(|e| Error::LabelParseError(e.to_string()))?;
-
-    if let Entity::Monitor(monitor) = &mut entity {
-        monitor.validate(id)?;
-
-        resolve_names(state, monitor)?;
-    }
-
-    Ok(entity)
+    get_entity_from_value(state, id, toml)
 }
 
 pub fn merge_entities(current: &Entity, new: &Entity, addition_tags: Option<Vec<Tag>>) -> Entity {

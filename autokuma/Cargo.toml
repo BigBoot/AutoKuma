@@ -10,8 +10,14 @@ readme = "README.md"
 categories = ["command-line-utilities"]
 keywords = ["uptime-kuma", "docker", "automation", "monitoring"]
 
+[[bin]]
+name = "crdgen"
+path = "src/crdgen.rs"
+required-features = ["kubernetes"]
+
 [features]
-default = []
+default = ["kubernetes"]
+kubernetes = ["dep:kube", "dep:k8s-openapi", "dep:schemars", "dep:serde_yaml"]
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 
 [dependencies]
@@ -45,3 +51,9 @@ toml = { workspace = true }
 unescaper = { workspace = true }
 sled = { workspace = true }
 walkdir = { workspace = true }
+
+# kubernetes
+kube = { workspace = true, optional = true }
+k8s-openapi = { workspace = true, optional = true }
+schemars = { workspace = true, optional = true }
+serde_yaml = { workspace = true, optional = true }

@@ -27,6 +27,8 @@ inkjet = { version = "0.11.1", default-features = false, features = [
     "language-json",
 ] }
 itertools = { version = "0.13.0" }
+kube = { version = "0.96.0", features = ["runtime", "derive", "aws-lc-rs"] }
+k8s-openapi = { version = "0.23.0", features = ["earliest"] }
 log = { version = "0.4.22" }
 native-tls = { version = "0.2.12" }
 owo-colors = { version = "4.0.0" }
@@ -41,6 +43,7 @@ serde_repr = { version = "0.1.19" }
 serde_with = { version = "3.9.0", features = ["time_0_3"] }
 serde-inline-default = { version = "0.2.0" }
 serde_yaml = { version = "0.9.34" }
+schemars = { version = "0.8.21" }
 sled = { version = "0.34.7" }
 unescaper = { version = "0.1.5" }
 shadow-rs = { version = "0.35.0" }

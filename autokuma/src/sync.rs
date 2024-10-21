@@ -7,22 +7,24 @@ use crate::{
     error::{KumaError, Result},
     sources::source::Source,
 };
+use futures_util::FutureExt;
 use itertools::Itertools;
-use kuma_client::Client;
-use log::{debug, error, info, warn};
+use kuma_client::{util::ResultLogger, Client};
+use log::{debug, error, info, trace, warn};
 use std::collections::HashSet;
 use std::{collections::HashMap, env, sync::Arc, time::Duration};
 
 pub struct Sync {
-    app_state: AppState,
+    app_state: Arc<AppState>,
     sources: Vec<Box<dyn Source>>,
 }
 
 impl Sync {
     pub fn new(config: Arc<Config>) -> Result<Self> {
+        let state = Arc::new(AppState::new(config)?);
         Ok(Self {
-            app_state: AppState::new(config)?,
-            sources: crate::sources::get_sources(),
+            app_state: state.clone(),
+            sources: crate::sources::get_sources(state),
         })
     }
 
@@ -255,7 +257,9 @@ impl Sync {
         let mut new_entities: HashMap<String, Entity> = HashMap::new();
 
         for source in &mut self.sources {
-            let entities = source.get_entities(&self.app_state).await?;
+            trace!("Querying source: {}", source.name());
+            let entities = source.get_entities().await?;
+            trace!("Got {} entities from source", entities.len());
             new_entities.extend(entities);
         }
 
@@ -296,12 +300,57 @@ impl Sync {
         Ok(())
     }
 
+    async fn init(&mut self) -> Result<()> {
+        for source in &mut self.sources {
+            source.init().await?;
+        }
+
+        Ok(())
+    }
+
     pub async fn run(&mut self) {
+        if let Err(err) = self.init().await {
+            error!("Encountered error during init: {}", err);
+            return;
+        }
+
+        async fn shutdown_signal() {
+            futures_util::future::select(
+                tokio::signal::ctrl_c().map(|_| ()).boxed(),
+                #[cfg(unix)]
+                tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+                    .unwrap()
+                    .recv()
+                    .map(|_| ())
+                    .boxed(),
+                #[cfg(not(unix))]
+                futures_util::future::pending::<()>(),
+            )
+            .await;
+        }
+
         loop {
             if let Err(err) = self.do_sync().await {
                 warn!("Encountered error during sync: {}", err);
             }
-            tokio::time::sleep(Duration::from_secs_f64(self.app_state.config.sync_interval)).await;
+
+            match futures_util::future::select(
+                tokio::time::sleep(Duration::from_secs_f64(self.app_state.config.sync_interval))
+                    .boxed(),
+                shutdown_signal().boxed(),
+            )
+            .await
+            {
+                futures_util::future::Either::Left(_) => {}
+                futures_util::future::Either::Right(_) => break,
+            }
+        }
+
+        log::info!("Shutting down...");
+        for source in &mut self.sources {
+            _ = source.shutdown().await.log_error(std::module_path!(), |e| {
+                format!("Failed to gracefully shutdown source: {}", e)
+            });
         }
     }
 }

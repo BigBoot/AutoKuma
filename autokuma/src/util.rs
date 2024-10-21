@@ -1,5 +1,4 @@
 use crate::error::{Error, Result};
-pub use kuma_client::util::ResultLogger;
 use serde_json::json;
 use std::{collections::BTreeMap, error::Error as _};
 use tera::Tera;

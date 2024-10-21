@@ -44,6 +44,16 @@ pub struct DockerConfig {
     pub label_prefix: String,
 }
 
+#[serde_alias(ScreamingSnakeCase)]
+#[serde_inline_default]
+#[serde_as]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KubernetesConfig {
+    /// Whether kubernetes integration should be enabled or not.
+    #[serde_inline_default(false)]
+    pub enabled: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeleteBehavior {
     #[serde(alias = "delete")]
@@ -59,6 +69,8 @@ pub struct Config {
     pub kuma: kuma_client::Config,
 
     pub docker: DockerConfig,
+
+    pub kubernetes: KubernetesConfig,
 
     /// The interval in between syncs.
     #[serde_inline_default(5.0)]

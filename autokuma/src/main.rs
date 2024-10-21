@@ -1,19 +1,12 @@
+use crate::util::ResultOrDie;
 use ::config::{Config, Environment, File, FileFormat};
 use flexi_logger::{Cleanup, Criterion, Duplicate, FileSpec, Logger, LoggerHandle, Naming};
 use kuma_client::build::SHORT_VERSION;
+use kuma_client::util::ResultLogger;
 use serde_json::json;
 use std::sync::Arc;
-use util::{ResultLogger, ResultOrDie};
 
-mod app_state;
-mod config;
-mod entity;
-mod error;
-mod kuma;
-mod name;
-mod sources;
-mod sync;
-mod util;
+include!("mod.rs");
 
 const BANNER: &str = r"                                                        
                 .:::.                                      .:::.                
@@ -55,7 +48,7 @@ const BANNER: &str = r"
 ";
 
 fn create_logger(config: &Arc<crate::config::Config>) -> LoggerHandle {
-    let mut builder = Logger::try_with_env_or_str("info").unwrap();
+    let mut builder = Logger::try_with_env_or_str("info, kube_runtime=error").unwrap();
 
     if let Some(log_dir) = config.log_dir.as_ref() {
         builder = builder
@@ -87,7 +80,10 @@ async fn main() {
     let config: Arc<crate::config::Config> = Arc::new(
         Config::builder()
             .add_source(File::from_str(
-                &serde_json::to_string(&json!({"kuma": {"tls": {}}, "docker": {}})).unwrap(),
+                &serde_json::to_string(
+                    &json!({"kuma": {"tls": {}}, "docker": {}, "kubernetes": {}}),
+                )
+                .unwrap(),
                 FileFormat::Json,
             ))
             .add_source(
