@@ -1,7 +1,5 @@
 # AutoKuma specific properties:
 
-tag_names: '[{"name": "mytag", "value": "A value (this is optional)" }]'
-
 AutoKuma adds a few special properties which are handled internally and aren't sent to Uptime Kuma:
 | Property             | Example Value                              | Description                                                                           |
 |----------------------|--------------------------------------------|---------------------------------------------------------------------------------------|
