@@ -97,6 +97,7 @@ macro_rules! monitor_type {
             pub max_retries: Option<i32>,
 
             #[serde(rename = "retryInterval")]
+            #[serde(alias = "retry_interval")]
             #[serde_inline_default(Some(60))]
             #[serde_as(as = "Option<DeserializeNumberLenient>")]
             pub retry_interval: Option<i32>,

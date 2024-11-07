@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - File source now skips unsupported files rather then interrupting the whole sync, see [#89](https://github.com/BigBoot/AutoKuma/issues/89)
 - File source now supports nested folders, the ids will be in the format `<folder>/<filename>` without the file extension, see [#28](https://github.com/BigBoot/AutoKuma/issues/28)
+- Add missing retry_interval alias, see [#96](https://github.com/BigBoot/AutoKuma/issues/96)
 
 ## [0.8.0] - 2024-08-22
 ### Added
