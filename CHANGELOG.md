@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
   To prevent data loss, AutoKuma will refuse to run if it detects any old monitors with an AutoKuma label. After adding a persistent storage location, AutoKuma will need to be started once with the environment variable `AUTOKUMA__MIGRATE=true` set to take over any existing monitors. This environment variable can be removed afterward.
 - Access to environment variables in templates restricted to variables starting with `AUTOKUMA__ENV__`, see [#97](https://github.com/BigBoot/AutoKuma/issues/97)
+- Changed Monitor::proxy_id to Option<i32>, parsing now supports both numbers and strings, see [#95](https://github.com/BigBoot/AutoKuma/issues/95)
 
 ### Added
 - All CLI commands now support reading multiple files/ids/slugs at once, as well as parsing arrays of objects where applicable, [#74](https://github.com/BigBoot/AutoKuma/issues/74)

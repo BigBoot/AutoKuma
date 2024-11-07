@@ -637,7 +637,8 @@ monitor_type! {
 
         #[serde(rename = "proxyId")]
         #[serde(alias = "proxy_id")]
-        pub proxy_id: Option<String>,
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub proxy_id: Option<i32>,
 
         #[serde(rename = "method")]
         #[serde_inline_default(Some(HttpMethod::GET))]
