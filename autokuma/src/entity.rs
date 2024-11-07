@@ -2,13 +2,14 @@ use crate::{
     app_state::AppState,
     error::{Error, Result},
     name::Name,
-    util::{fill_templates, group_by_prefix},
+    util::{fill_templates, group_by_prefix, FlattenValue},
 };
 use itertools::Itertools;
 use kuma_client::{
     docker_host::DockerHost,
     monitor::{Monitor, MonitorType},
     notification::Notification,
+    status_page::StatusPage,
     tag::{Tag, TagDefinition},
     util::ResultLogger,
 };
@@ -26,6 +27,7 @@ pub enum Entity {
     Notification(Notification),
     Monitor(Monitor),
     Tag(TagDefinition),
+    StatusPage(StatusPage),
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Display)]
@@ -34,6 +36,7 @@ pub enum EntityType {
     Notification,
     Monitor(MonitorType),
     Tag,
+    StatusPage,
 }
 
 impl Entity {
@@ -43,6 +46,7 @@ impl Entity {
             Entity::Notification(_) => EntityType::Notification,
             Entity::Monitor(monitor) => EntityType::Monitor(monitor.monitor_type()),
             Entity::Tag(_) => EntityType::Tag,
+            Entity::StatusPage(_) => EntityType::StatusPage,
         }
     }
 }
@@ -65,6 +69,10 @@ enum EntityWrapper {
     Monitor {
         #[serde(flatten)]
         monitor: Monitor,
+    },
+    StatusPage {
+        #[serde(flatten)]
+        status_page: StatusPageTagged,
     },
 }
 
@@ -98,6 +106,16 @@ enum TagTagged {
     },
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+enum StatusPageTagged {
+    #[serde(rename = "status_page")]
+    StatusPage {
+        #[serde(flatten)]
+        status_page: StatusPage,
+    },
+}
+
 impl From<EntityWrapper> for Entity {
     fn from(wrapper: EntityWrapper) -> Self {
         match wrapper {
@@ -112,6 +130,10 @@ impl From<EntityWrapper> for Entity {
             EntityWrapper::Tag {
                 tag: TagTagged::Tag { tag },
             } => Entity::Tag(tag),
+
+            EntityWrapper::StatusPage {
+                status_page: StatusPageTagged::StatusPage { status_page },
+            } => Entity::StatusPage(status_page),
 
             EntityWrapper::Monitor { monitor } => Entity::Monitor(monitor),
         }
@@ -131,6 +153,10 @@ impl From<Entity> for EntityWrapper {
 
             Entity::Tag(tag) => EntityWrapper::Tag {
                 tag: TagTagged::Tag { tag },
+            },
+
+            Entity::StatusPage(status_page) => EntityWrapper::StatusPage {
+                status_page: StatusPageTagged::StatusPage { status_page },
             },
 
             Entity::Monitor(monitor) => EntityWrapper::Monitor { monitor },
@@ -255,7 +281,7 @@ fn resolve_names(state: Arc<AppState>, monitor: &mut Monitor) -> Result<()> {
                 let name = Name::Notification(notification_name.clone());
                 let id = state
                     .db
-                    .get_id(name.clone())
+                    .get_id::<i32>(name.clone())
                     .ok()
                     .flatten()
                     .ok_or_else(|| Error::NameNotFound(name))?;
@@ -319,19 +345,19 @@ fn resolve_names(state: Arc<AppState>, monitor: &mut Monitor) -> Result<()> {
 
 pub fn get_entity_from_value(
     state: Arc<AppState>,
-    id: &str,
+    id: String,
     value: serde_json::Value,
+    context: tera::Context,
 ) -> Result<Entity> {
-    let mut entity = serde_json::from_value::<Entity>(value)
-        .log_warn(std::module_path!(), |e| {
-            format!("Error while parsing {}: {}!", id, e.to_string())
-        })
-        .map_err(|e| Error::LabelParseError(e.to_string()))?;
+    let values = value.flatten()?;
 
-    if let Entity::Monitor(monitor) = &mut entity {
-        monitor.validate(id)?;
-        resolve_names(state, monitor)?;
-    }
+    let entity_type = values
+        .iter()
+        .find(|(key, _)| key == "type")
+        .and_then(|(_, value)| value.as_str().map(|s| s.to_owned()))
+        .ok_or_else(|| Error::DeserializeError(format!("Monitor {} is missing `type`", id)))?;
+
+    let entity = get_entity_from_settings(state, &id, &entity_type, values, &context)?;
 
     Ok(entity)
 }
@@ -341,7 +367,7 @@ pub fn get_entity_from_settings(
     id: &str,
     entity_type: &str,
     settings: Vec<(String, serde_json::Value)>,
-    template_values: &tera::Context,
+    context: &tera::Context,
 ) -> Result<Entity> {
     let defaults = state.get_defaults(entity_type);
 
@@ -354,13 +380,24 @@ pub fn get_entity_from_settings(
             .unique_by(|(key, _)| key.to_owned())
             .map(|(key, value)| format!("{} = {}", key, value))
             .join("\n"),
-        template_values,
+        context,
     )?;
 
     let toml = toml::from_str::<serde_json::Value>(&config)
         .map_err(|e| Error::LabelParseError(e.to_string()))?;
 
-    get_entity_from_value(state, id, toml)
+    let mut entity = serde_json::from_value::<Entity>(toml)
+        .log_warn(std::module_path!(), |e| {
+            format!("Error while parsing {}: {}!", id, e.to_string())
+        })
+        .map_err(|e| Error::LabelParseError(e.to_string()))?;
+
+    if let Entity::Monitor(monitor) = &mut entity {
+        monitor.validate(id)?;
+        resolve_names(state, monitor)?;
+    }
+
+    Ok(entity)
 }
 
 pub fn merge_entities(current: &Entity, new: &Entity, addition_tags: Option<Vec<Tag>>) -> Entity {

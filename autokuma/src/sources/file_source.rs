@@ -1,9 +1,8 @@
 use crate::{
     app_state::AppState,
-    entity::{get_entity_from_settings, Entity},
+    entity::{get_entity_from_value, Entity},
     error::{Error, Result},
     sources::source::Source,
-    util::FlattenValue,
 };
 use async_trait::async_trait;
 use itertools::Itertools;
@@ -11,31 +10,6 @@ use kuma_client::util::ResultLogger;
 use serde_json::json;
 use std::{path::PathBuf, sync::Arc};
 use walkdir::WalkDir;
-
-fn get_entity_from_value(
-    state: Arc<AppState>,
-    id: String,
-    file: &PathBuf,
-    value: serde_json::Value,
-    context: tera::Context,
-) -> Result<(String, Entity)> {
-    let values = value.flatten()?;
-
-    let entity_type = values
-        .iter()
-        .find(|(key, _)| key == "type")
-        .and_then(|(_, value)| value.as_str().map(|s| s.to_owned()))
-        .ok_or_else(|| {
-            Error::DeserializeError(format!(
-                "Static monitor {} is missing `type`",
-                file.display()
-            ))
-        })?;
-
-    let entity = get_entity_from_settings(state, &id, &entity_type, values, &context)?;
-
-    Ok((id, entity))
-}
 
 pub async fn get_entities_from_file(
     state: Arc<AppState>,
@@ -96,7 +70,9 @@ pub async fn get_entities_from_file(
 
     let entities = values
         .into_iter()
-        .map(|(id, value, context)| get_entity_from_value(state.clone(), id, &file, value, context))
+        .map(|(id, value, context)| {
+            get_entity_from_value(state.clone(), id.clone(), value, context).map(|e| (id, e))
+        })
         .into_iter()
         .filter_map(|r| {
             r.log_warn(std::module_path!(), |e| {

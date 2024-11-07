@@ -75,6 +75,21 @@ impl Sync {
                     .db
                     .store_id(Name::Notification(id.clone()), db_id)?;
             }
+            Entity::StatusPage(status_page) => {
+                let db_id = kuma
+                    .add_status_page(status_page)
+                    .await?
+                    .slug
+                    .ok_or_else(|| {
+                        KumaError::CommunicationError(
+                            "Did not receive an id from Uptime Kuma".to_owned(),
+                        )
+                    })?;
+
+                self.app_state
+                    .db
+                    .store_id(Name::StatusPage(id.clone()), db_id)?;
+            }
             Entity::Tag(tag) => {
                 let db_id = kuma.add_tag(tag).await?.tag_id.ok_or_else(|| {
                     KumaError::CommunicationError(
@@ -110,6 +125,12 @@ impl Sync {
                     self.app_state
                         .db
                         .remove_id(Name::Notification(id.clone()))?;
+                }
+            }
+            Entity::StatusPage(status_page) => {
+                if let Some(slug) = &status_page.slug {
+                    kuma.delete_status_page(slug).await?;
+                    self.app_state.db.remove_id(Name::StatusPage(id.clone()))?;
                 }
             }
             Entity::Tag(tag) => {
@@ -249,6 +270,12 @@ impl Sync {
                 .await?
                 .into_iter()
                 .filter_map(|tag| tag.tag_id)
+                .collect::<HashSet<_>>(),
+            &kuma
+                .get_status_pages()
+                .await?
+                .into_iter()
+                .filter_map(|(_, status_page)| status_page.slug)
                 .collect::<HashSet<_>>(),
         )?;
 

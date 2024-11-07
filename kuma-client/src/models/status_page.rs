@@ -1,9 +1,10 @@
 //! Models related to Uptime Kuma status pages
 
 use crate::{
-    deserialize::{DeserializeBoolLenient, DeserializeNumberLenient},
+    deserialize::{DeserializeBoolLenient, DeserializeNumberLenient, DeserializeVecLenient},
     monitor::MonitorType,
 };
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 use serde_with::{serde_as, skip_serializing_none};
@@ -12,13 +13,16 @@ use std::collections::HashMap;
 #[serde_inline_default]
 #[skip_serializing_none]
 #[serde_as]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Derivative, Serialize, Deserialize)]
+#[derivative(PartialEq)]
 pub struct PublicGroupMonitor {
     #[serde(rename = "id")]
     #[serde_as(as = "Option<DeserializeNumberLenient>")]
     pub id: Option<i32>,
 
     #[serde(rename = "name")]
+    #[derivative(PartialEq = "ignore")]
+    #[derivative(Hash = "ignore")]
     pub name: Option<String>,
 
     #[serde(rename = "weight")]
@@ -26,6 +30,8 @@ pub struct PublicGroupMonitor {
     pub weight: Option<bool>,
 
     #[serde(rename = "type")]
+    #[derivative(PartialEq = "ignore")]
+    #[derivative(Hash = "ignore")]
     pub monitor_type: Option<MonitorType>,
 }
 crate::default_from_serde!(PublicGroupMonitor);
@@ -33,9 +39,12 @@ crate::default_from_serde!(PublicGroupMonitor);
 #[serde_inline_default]
 #[skip_serializing_none]
 #[serde_as]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Derivative, Serialize, Deserialize)]
+#[derivative(PartialEq)]
 pub struct PublicGroup {
     #[serde(rename = "id")]
+    #[derivative(PartialEq = "ignore")]
+    #[derivative(Hash = "ignore")]
     #[serde_as(as = "Option<DeserializeNumberLenient>")]
     pub id: Option<i32>,
 
@@ -96,6 +105,7 @@ pub struct StatusPage {
     pub show_tags: Option<bool>,
 
     #[serde(rename = "domainNameList", default)]
+    #[serde_as(as = "DeserializeVecLenient<String>")]
     pub domain_name_list: Vec<String>,
 
     #[serde(rename = "customCSS")]
@@ -117,6 +127,7 @@ pub struct StatusPage {
     pub show_certificate_expiry: Option<bool>,
 
     #[serde(rename = "publicGroupList")]
+    #[serde_as(as = "Option<DeserializeVecLenient<PublicGroup>>")]
     pub public_group_list: Option<PublicGroupList>,
 }
 crate::default_from_serde!(StatusPage);

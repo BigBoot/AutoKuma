@@ -1472,8 +1472,8 @@ impl Client {
     }
 
     /// Retrieves information about a specific status page identified by its slug.
-    pub async fn get_status_page(&self, slug: &str) -> Result<StatusPage> {
-        self.worker.get_status_page(slug).await
+    pub async fn get_status_page<T: AsRef<str>>(&self, slug: T) -> Result<StatusPage> {
+        self.worker.get_status_page(slug.as_ref()).await
     }
 
     /// Adds a new status page to Uptime Kuma.
@@ -1489,8 +1489,8 @@ impl Client {
     }
 
     /// Deletes a status page from Uptime Kuma based on its slug.
-    pub async fn delete_status_page(&self, slug: &str) -> Result<()> {
-        self.worker.delete_status_page(slug).await
+    pub async fn delete_status_page<T: AsRef<str>>(&self, slug: T) -> Result<()> {
+        self.worker.delete_status_page(slug.as_ref()).await
     }
 
     /// Retrieves a list of status pages from Uptime Kuma.

@@ -6,6 +6,7 @@ pub enum Name {
     Notification(String),
     DockerHost(String),
     Tag(String),
+    StatusPage(String),
 }
 
 impl Name {
@@ -15,6 +16,7 @@ impl Name {
             Name::Notification(name) => name,
             Name::DockerHost(name) => name,
             Name::Tag(name) => name,
+            Name::StatusPage(name) => name,
         }
     }
 
@@ -24,6 +26,7 @@ impl Name {
             Name::Notification(_) => "notification",
             Name::DockerHost(_) => "docker host",
             Name::Tag(_) => "tag",
+            Name::StatusPage(_) => "status page",
         }
     }
 }

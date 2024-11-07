@@ -1,7 +1,8 @@
 use crate::{app_state::AppState, entity::Entity, error::Result, util::fill_templates};
+use futures_util::future::join_all;
 use kuma_client::{
-    docker_host::DockerHost, monitor::Monitor, notification::Notification, tag::TagDefinition,
-    Client,
+    docker_host::DockerHost, monitor::Monitor, notification::Notification, status_page::StatusPage,
+    tag::TagDefinition, Client,
 };
 use std::collections::HashMap;
 
@@ -96,6 +97,34 @@ async fn get_managed_tags(
         .collect::<HashMap<_, _>>())
 }
 
+async fn get_managed_status_pages(
+    state: &AppState,
+    kuma: &Client,
+) -> Result<HashMap<String, StatusPage>> {
+    let map = state
+        .db
+        .get_status_pages()?
+        .into_iter()
+        .map(|(key, value)| (value, key))
+        .collect::<HashMap<_, _>>();
+
+    Ok(join_all(
+        kuma.get_status_pages()
+            .await?
+            .into_iter()
+            .filter_map(|(_, status_page)| status_page.slug)
+            .map(|slug| kuma.get_status_page(slug)),
+    )
+    .await
+    .into_iter()
+    .flatten()
+    .filter_map(|status_page| {
+        map.get(&status_page.slug.clone().unwrap_or_default())
+            .map(|id| (id.to_owned(), status_page))
+    })
+    .collect::<HashMap<_, _>>())
+}
+
 async fn get_managed_monitors(state: &AppState, kuma: &Client) -> Result<HashMap<String, Monitor>> {
     let map = state
         .db
@@ -140,6 +169,12 @@ pub async fn get_managed_entities(
                 .await?
                 .into_iter()
                 .map(|(id, tag)| (id, Entity::Tag(tag))),
+        )
+        .chain(
+            get_managed_status_pages(&state, &kuma)
+                .await?
+                .into_iter()
+                .map(|(id, status_page)| (id, Entity::StatusPage(status_page))),
         )
         .collect::<HashMap<_, _>>())
 }

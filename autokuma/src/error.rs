@@ -32,6 +32,9 @@ pub enum Error {
 
     #[error("No {} named {} could be found", .0.type_name(), .0.name())]
     NameNotFound(Name),
+
+    #[error("{0}")]
+    InternalError(String),
 }
 
 #[cfg(feature = "kubernetes")]

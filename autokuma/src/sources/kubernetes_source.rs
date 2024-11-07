@@ -65,12 +65,16 @@ fn error_policy(_entity: Arc<KumaEntity>, error: &Error, _ctx: Arc<Context>) -> 
 
 impl KumaEntity {
     async fn reconcile(&self, ctx: Arc<Context>) -> Result<Action> {
-        let name = self.name_any();
-        let entity =
-            get_entity_from_value(ctx.state.clone(), &name, self.spec.config.clone().into())?;
+        let id = self.name_any();
+        let entity = get_entity_from_value(
+            ctx.state.clone(),
+            id.clone(),
+            self.spec.config.clone().into(),
+            tera::Context::new(),
+        )?;
 
         let mut entities = ctx.entities.lock().await;
-        entities.insert(name, entity);
+        entities.insert(id, entity);
 
         Ok(Action::requeue(Duration::from_secs(5 * 60)))
     }
