@@ -21,6 +21,7 @@ pub fn get_kuma_labels(
                 })
                 .map(|(key, value)| {
                     fill_templates(
+                        state.config.clone(),
                         key.trim_start_matches(&format!("{}.", state.config.docker.label_prefix)),
                         &template_values,
                     )

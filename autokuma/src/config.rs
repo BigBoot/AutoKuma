@@ -107,4 +107,8 @@ pub struct Config {
     /// A directory where log files should be stored
     #[serde_inline_default(None)]
     pub log_dir: Option<String>,
+
+    /// Allow access to all env variables in templates, by default only variables starting with AUTOKUMA__ENV__ can be accessed.
+    #[serde_inline_default(false)]
+    pub insecure_env_access: bool,
 }

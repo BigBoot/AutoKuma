@@ -191,10 +191,11 @@ pub fn get_entities_from_labels(
                     let mut template_values = template_values.clone();
                     template_values.insert("args", &args);
 
-                    if let Ok(snippet) = fill_templates(snippet, &template_values)
-                        .log_warn(std::module_path!(), |e| {
-                            format!("Error while parsing snippet: {}", e.to_string())
-                        })
+                    if let Ok(snippet) =
+                        fill_templates(state.config.clone(), snippet, &template_values)
+                            .log_warn(std::module_path!(), |e| {
+                                format!("Error while parsing snippet: {}", e.to_string())
+                            })
                     {
                         snippet
                             .lines()
@@ -372,6 +373,7 @@ pub fn get_entity_from_settings(
     let defaults = state.get_defaults(entity_type);
 
     let config = fill_templates(
+        state.config.clone(),
         vec![("type".to_owned(), json!(entity_type.to_owned()))]
             .into_iter()
             .chain(settings.into_iter())

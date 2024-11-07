@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   For a Docker Compose setup, you can use a named volume. Please refer to the [example docker-compose.yml](https://github.com/BigBoot/AutoKuma#example-docker-compose-) for guidance.  
   
   To prevent data loss, AutoKuma will refuse to run if it detects any old monitors with an AutoKuma label. After adding a persistent storage location, AutoKuma will need to be started once with the environment variable `AUTOKUMA__MIGRATE=true` set to take over any existing monitors. This environment variable can be removed afterward.
+- Access to environment variables in templates restricted to variables starting with `AUTOKUMA__ENV__`, see [#97](https://github.com/BigBoot/AutoKuma/issues/97)
 
 ### Added
 - All CLI commands now support reading multiple files/ids/slugs at once, as well as parsing arrays of objects where applicable, [#74](https://github.com/BigBoot/AutoKuma/issues/74)

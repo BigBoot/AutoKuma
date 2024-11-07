@@ -1,6 +1,9 @@
-use crate::error::{Error, Result};
+use crate::{
+    config::Config,
+    error::{Error, Result},
+};
 use serde_json::json;
-use std::{collections::BTreeMap, error::Error as _};
+use std::{collections::BTreeMap, error::Error as _, sync::Arc};
 use tera::Tera;
 
 pub fn group_by_prefix<A, B, I>(v: I, delimiter: &str) -> BTreeMap<String, Vec<(String, String)>>
@@ -75,15 +78,67 @@ fn insert_object(
     Ok(())
 }
 
+struct GetEnvFunction {
+    config: Arc<Config>,
+}
+
+impl tera::Function for GetEnvFunction {
+    fn call(
+        &self,
+        args: &std::collections::HashMap<String, tera::Value>,
+    ) -> tera::Result<tera::Value> {
+        let name = match args.get("name") {
+            Some(val) => match tera::from_value::<String>(val.clone()) {
+                Ok(v) => v,
+                Err(_) => {
+                    return Err(tera::Error::msg(format!(
+                        "Function `get_env` received name={} but `name` can only be a string",
+                        val
+                    )));
+                }
+            },
+            None => {
+                return Err(tera::Error::msg(
+                    "Function `get_env` didn't receive a `name` argument",
+                ))
+            }
+        };
+
+        if !self.config.insecure_env_access && !name.starts_with("AUTOKUMA__ENV__") {
+            return Err(tera::Error::msg(format!(
+                "Access to environment variable `{}` is not allowed",
+                &name
+            )));
+        }
+
+        match std::env::var(&name).ok() {
+            Some(res) => Ok(tera::Value::String(res)),
+            None => match args.get("default") {
+                Some(default) => Ok(default.clone()),
+                None => Err(tera::Error::msg(format!(
+                    "Environment variable `{}` not found",
+                    &name
+                ))),
+            },
+        }
+    }
+}
+
 pub fn fill_templates(
-    config: impl Into<String>,
+    config: Arc<Config>,
+    template: impl Into<String>,
     template_values: &tera::Context,
 ) -> Result<String> {
-    let config = config.into();
+    let template = template.into();
     let mut tera = Tera::default();
+    let get_env = GetEnvFunction {
+        config: config.clone(),
+    };
 
-    tera.add_raw_template(&config, &config)
-        .and_then(|_| tera.render(&config, template_values))
+    tera.register_function("get_env", get_env);
+
+    tera.add_raw_template(&template, &template)
+        .and_then(|_| tera.render(&template, template_values))
         .map_err(|e| {
             Error::LabelParseError(format!(
                 "{}\nContext: {:?}",

@@ -103,27 +103,28 @@ volumes:
 
 AutoKuma can be configured using the following environment variables/config keys:
 
-| Env Variable                      | Config Key             | Description                                                                                                |
-|-----------------------------------|------------------------|------------------------------------------------------------------------------------------------------------|
-| `AUTOKUMA__STATIC_MONITORS`       | `static_monitors`      | The path to the folder in which AutoKuma will search for static Monitor definitions                        |
-| `AUTOKUMA__TAG_NAME`              | `tag_name`             | The name of the AutoKuma tag, used to track managed containers                                             |
-| `AUTOKUMA__TAG_COLOR`             | `tag_color`            | The color of the AutoKuma tag                                                                              |
-| `AUTOKUMA__DEFAULT_SETTINGS`      | `default_settings`     | Default settings applied to all generated Monitors, see the example above for the syntax                   |
-| `AUTOKUMA__LOG_DIR`               | `log_dir`              | Path to a directory where log files will be stored                                                         |
-| `AUTOKUMA__ON_DELETE`             | `on_delete`            | Specify what should happen to a monitor if the autokuma id is not found anymore, either `delete` or `keep` |
-| `AUTOKUMA__SNIPPETS__<SNIPPET>`   | `snippets.<snippet>`   | Define a snippet named `<snippet>`, see [Snippets](#snippets) for details                                  |
-| `AUTOKUMA__KUMA__URL`             | `kuma.url`             | The URL AutoKuma should use to connect to Uptime Kuma                                                      |
-| `AUTOKUMA__KUMA__USERNAME`        | `kuma.username`        | The username for logging into Uptime Kuma (required unless auth is disabled)                               |
-| `AUTOKUMA__KUMA__PASSWORD`        | `kuma.password`        | The password for logging into Uptime Kuma (required unless auth is disabled)                               |
-| `AUTOKUMA__KUMA__MFA_TOKEN`       | `kuma.mfa_token`       | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                    |
-| `AUTOKUMA__KUMA__HEADERS`         | `kuma.headers`         | List of HTTP headers to send when connecting to Uptime Kuma                                                |
-| `AUTOKUMA__KUMA__CONNECT_TIMEOUT` | `kuma.connect_timeout` | The timeout for the initial connection to Uptime Kuma                                                      |
-| `AUTOKUMA__KUMA__CALL_TIMEOUT`    | `kuma.call_timeout`    | The timeout for executing calls to the Uptime Kuma server                                                  |
-| `AUTOKUMA__DOCKER__HOSTS`         | `docker.hosts`         | List of Docker hosts.  Use a semicolon separated string when setting using an env variable.                |
-| `AUTOKUMA__DOCKER__LABEL_PREFIX`  | `docker.label_prefix`  | Prefix used when scanning for container labels                                                             |
-| `AUTOKUMA__DOCKER__SOURCE`        | `docker.source`        | Whether monitors should be created from `Containers` or `Services` labels (or `Both`).                     |
-| `AUTOKUMA__DOCKER__TLS__VERIFY`   | `docker.tls.verify`    | Whether to verify the TLS certificate or not.                                                              |
-| `AUTOKUMA__DOCKER__TLS__CERT`     | `docker.tls.cert`      | The path to a custom tls certificate in PEM format.                                                        |
+| Env Variable                      | Config Key             | Description                                                                                                              |
+|-----------------------------------|------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `AUTOKUMA__STATIC_MONITORS`       | `static_monitors`      | The path to the folder in which AutoKuma will search for static Monitor definitions                                      |
+| `AUTOKUMA__TAG_NAME`              | `tag_name`             | The name of the AutoKuma tag, used to track managed containers                                                           |
+| `AUTOKUMA__TAG_COLOR`             | `tag_color`            | The color of the AutoKuma tag                                                                                            |
+| `AUTOKUMA__DEFAULT_SETTINGS`      | `default_settings`     | Default settings applied to all generated Monitors, see the example above for the syntax                                 |
+| `AUTOKUMA__LOG_DIR`               | `log_dir`              | Path to a directory where log files will be stored                                                                       |
+| `AUTOKUMA__ON_DELETE`             | `on_delete`            | Specify what should happen to a monitor if the autokuma id is not found anymore, either `delete` or `keep`               |
+| `AUTOKUMA__INSECURE_ENV_ACCESS`   | `insecure_env_access`  | Allow access to all env variables in templates, by default only variables starting with AUTOKUMA__ENV__ can be accessed. |
+| `AUTOKUMA__SNIPPETS__<SNIPPET>`   | `snippets.<snippet>`   | Define a snippet named `<snippet>`, see [Snippets](#snippets) for details                                                |
+| `AUTOKUMA__KUMA__URL`             | `kuma.url`             | The URL AutoKuma should use to connect to Uptime Kuma                                                                    |
+| `AUTOKUMA__KUMA__USERNAME`        | `kuma.username`        | The username for logging into Uptime Kuma (required unless auth is disabled)                                             |
+| `AUTOKUMA__KUMA__PASSWORD`        | `kuma.password`        | The password for logging into Uptime Kuma (required unless auth is disabled)                                             |
+| `AUTOKUMA__KUMA__MFA_TOKEN`       | `kuma.mfa_token`       | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                                  |
+| `AUTOKUMA__KUMA__HEADERS`         | `kuma.headers`         | List of HTTP headers to send when connecting to Uptime Kuma                                                              |
+| `AUTOKUMA__KUMA__CONNECT_TIMEOUT` | `kuma.connect_timeout` | The timeout for the initial connection to Uptime Kuma                                                                    |
+| `AUTOKUMA__KUMA__CALL_TIMEOUT`    | `kuma.call_timeout`    | The timeout for executing calls to the Uptime Kuma server                                                                |
+| `AUTOKUMA__DOCKER__HOSTS`         | `docker.hosts`         | List of Docker hosts.  Use a semicolon separated string when setting using an env variable.                              |
+| `AUTOKUMA__DOCKER__LABEL_PREFIX`  | `docker.label_prefix`  | Prefix used when scanning for container labels                                                                           |
+| `AUTOKUMA__DOCKER__SOURCE`        | `docker.source`        | Whether monitors should be created from `Containers` or `Services` labels (or `Both`).                                   |
+| `AUTOKUMA__DOCKER__TLS__VERIFY`   | `docker.tls.verify`    | Whether to verify the TLS certificate or not.                                                                            |
+| `AUTOKUMA__DOCKER__TLS__CERT`     | `docker.tls.cert`      | The path to a custom tls certificate in PEM format.                                                                      |
 
 AutoKuma will read configuration from a file named `autokuma.{toml,yaml,json}` in the current directory and in the following locations:
 
