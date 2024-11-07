@@ -8,21 +8,29 @@ use async_trait::async_trait;
 use itertools::Itertools;
 use kuma_client::util::ResultLogger;
 use serde_json::json;
-use std::{path::PathBuf, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use walkdir::WalkDir;
 
-pub async fn get_entities_from_file(
+async fn get_entities_from_file<P1: AsRef<Path>, P2: AsRef<Path>>(
     state: Arc<AppState>,
-    file: &PathBuf,
+    base_path: P1,
+    file: P2,
 ) -> Result<Vec<(String, Entity)>> {
+    let base_path = base_path.as_ref();
+    let file = file.as_ref();
+    let file_path = base_path.join(file);
+
     let value: Option<serde_json::Value> = if file.extension().is_some_and(|ext| ext == "json") {
-        let content: String = tokio::fs::read_to_string(file)
+        let content: String = tokio::fs::read_to_string(file_path)
             .await
             .map_err(|e| Error::IO(e.to_string()))?;
 
         Some(serde_json::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?)
     } else if file.extension().is_some_and(|ext| ext == "toml") {
-        let content = tokio::fs::read_to_string(file)
+        let content = tokio::fs::read_to_string(file_path)
             .await
             .map_err(|e| Error::IO(e.to_string()))?;
 
@@ -40,7 +48,6 @@ pub async fn get_entities_from_file(
             true => p.file_stem().map(|s| s.to_string_lossy()),
             false => p.file_name().map(|s| s.to_string_lossy()),
         })
-        .skip(1)
         .join("/");
 
     let value = value.ok_or_else(|| {
@@ -123,6 +130,7 @@ impl Source for FileSource {
             })
             .to_owned();
 
+        let static_monitor_path = PathBuf::from(&static_monitor_path);
         if tokio::fs::metadata(&static_monitor_path)
             .await
             .is_ok_and(|md| md.is_dir())
@@ -133,8 +141,10 @@ impl Source for FileSource {
                 .filter(|e| e.file_type().is_file());
 
             for file in files {
+                let file_path = file.path().strip_prefix(&static_monitor_path).unwrap();
+
                 if let Ok(file_entities) =
-                    get_entities_from_file(self.state.clone(), &file.path().to_path_buf())
+                    get_entities_from_file(self.state.clone(), &static_monitor_path, file_path)
                         .await
                         .log_warn(std::module_path!(), |e| {
                             format!("[{}] {}", file.path().display(), e)
