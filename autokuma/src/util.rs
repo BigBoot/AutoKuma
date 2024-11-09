@@ -3,8 +3,21 @@ use crate::{
     error::{Error, Result},
 };
 use serde_json::json;
-use std::{collections::BTreeMap, error::Error as _, sync::Arc};
+use std::error::Error as StdError;
+use std::{collections::BTreeMap, sync::Arc};
 use tera::Tera;
+
+pub fn print_error_chain(error: &dyn StdError) -> String {
+    let mut result = "\n".to_owned();
+    let mut current_error = Some(error);
+
+    while let Some(err) = current_error {
+        result.push_str(&format!("Caused by: {}\n", err));
+        current_error = err.source();
+    }
+
+    result
+}
 
 pub fn group_by_prefix<A, B, I>(v: I, delimiter: &str) -> BTreeMap<String, Vec<(String, String)>>
 where
@@ -139,11 +152,5 @@ pub fn fill_templates(
 
     tera.add_raw_template(&template, &template)
         .and_then(|_| tera.render(&template, template_values))
-        .map_err(|e| {
-            Error::LabelParseError(format!(
-                "{}\nContext: {:?}",
-                e.source().unwrap(),
-                &template_values.get("container")
-            ))
-        })
+        .map_err(|e| Error::LabelParseError(print_error_chain(&e)))
 }
