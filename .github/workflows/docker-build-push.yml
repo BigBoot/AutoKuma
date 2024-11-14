@@ -82,7 +82,7 @@ jobs:
             {
               "cache": {
                  "target": "/cache",
-                 "id": "cache-${{ matrix.name }}-${{ matrix.features }}",
+                 "id": "cache-${{ matrix.name }}-${{ matrix.features }}"
               }
             }
           skip-extraction: ${{ steps.cache.outputs.cache-hit }}
