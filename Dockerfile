@@ -4,7 +4,8 @@ FROM rust:1.81 AS builder
 ARG FEATURES
 WORKDIR /usr/src/autokuma
 COPY . .
-RUN cargo install --features "${FEATURES}" --path ./autokuma
+RUN --mount=type=cache,target=/cache,sharing=locked \
+    cargo install --features "${FEATURES}" --locked --target-dir /cache --path ./autokuma 
  
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \
