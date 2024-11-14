@@ -73,7 +73,7 @@ jobs:
         with:
           path: |
             cache
-          key: cache-${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cache-${{ runner.os }}-${{ runner.arch }}-cargo-${{ matrix.name }}-${{ matrix.tag_prefix }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: inject cache into docker
         uses: reproducible-containers/buildkit-cache-dance@v3.1.0
