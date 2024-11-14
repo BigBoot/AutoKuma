@@ -14,6 +14,9 @@ keywords = ["uptime-kuma", "api", "automation", "monitoring", "socketio"]
 name = "kuma"
 path = "src/main.rs"
 
+[features]
+uptime-kuma-v2 = ["kuma-client/uptime-kuma-v2"]
+
 [dependencies]
 kuma-client = { path = "../kuma-client", version = "0.0.0" }
 

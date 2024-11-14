@@ -1,7 +1,10 @@
-FROM rust:1.81 as builder
+ARG FEATURES=
+
+FROM rust:1.81 AS builder
+ARG FEATURES
 WORKDIR /usr/src/autokuma
 COPY . .
-RUN cargo install --path ./autokuma
+RUN cargo install --features "${FEATURES}" --path ./autokuma
  
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \

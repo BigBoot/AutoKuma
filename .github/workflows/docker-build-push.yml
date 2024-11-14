@@ -16,8 +16,20 @@ jobs:
         include:
           - name: "ghcr.io/bigboot/autokuma"
             dockerfile: Dockerfile
+            build_args: ""
+            tag_prefix: ""
           - name: "ghcr.io/bigboot/kuma"
             dockerfile: Dockerfile.cli
+            build_args: ""
+            tag_prefix: ""
+          - name: "ghcr.io/bigboot/autokuma"
+            dockerfile: Dockerfile
+            build_args: "FEATURES=uptime-kuma-v2"
+            tag_prefix: "uptime-kuma-v2-"
+          - name: "ghcr.io/bigboot/kuma"
+            dockerfile: Dockerfile.cli
+            build_args: "FEATURES=uptime-kuma-v2"
+            tag_prefix: "uptime-kuma-v2-"
 
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +49,10 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha
+          flavor: |
+            latest=auto
+            prefix=${{ matrix.tag_prefix }},onlatest=true
+            suffix=
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -56,7 +72,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ contains(github.ref, 'tags/') && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          platforms: ${{ 'linux/amd64,linux/arm64' }}
           file: ${{ matrix.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}

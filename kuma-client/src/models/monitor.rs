@@ -157,6 +157,13 @@ macro_rules! monitor_type {
             #[serde_as(as = "Option<DeserializeVecLenient<super::tag::TagValue>>")]
             pub tag_names: Option<Vec<super::tag::TagValue>>,
 
+
+            #[cfg(feature = "uptime-kuma-v2")]
+            #[serde(rename = "conditions")]
+            #[serde_as(as = "Option<DeserializeVecLenient<MonitorCondition>>")]
+            #[serde_inline_default(Some(vec![]))]
+            pub conditions: Option<Vec<MonitorCondition>>,
+
             $($field)*
         }
 
@@ -281,6 +288,14 @@ pub enum MonitorType {
 
     #[serde(rename = "tailscale-ping")]
     TailscalePing,
+
+    #[cfg(feature = "uptime-kuma-v2")]
+    #[serde(rename = "snmp")]
+    SNMP,
+
+    #[cfg(feature = "uptime-kuma-v2")]
+    #[serde(rename = "rabbitmq")]
+    RabbitMQ,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -444,6 +459,114 @@ pub enum HttpAuth {
     },
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MonitorConditionOperator {
+    #[serde(rename = "equals")]
+    Equals,
+    #[serde(rename = "not_equals")]
+    NotEquals,
+    #[serde(rename = "contains")]
+    Contains,
+    #[serde(rename = "not_contains")]
+    NotContains,
+    #[serde(rename = "starts_with")]
+    StartsWith,
+    #[serde(rename = "not_starts_with")]
+    NotStartsWith,
+    #[serde(rename = "ends_with")]
+    EndsWith,
+    #[serde(rename = "not_ends_with")]
+    NotEndsWith,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MonitorConditionConjunction {
+    #[serde(rename = "and")]
+    And,
+    #[serde(rename = "or")]
+    Or,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum MonitorCondition {
+    #[serde(rename = "expression")]
+    Expression {
+        #[serde(rename = "variable")]
+        variable: Option<String>,
+        #[serde(rename = "operator")]
+        operator: Option<MonitorConditionOperator>,
+        #[serde(rename = "value")]
+        value: Option<String>,
+        #[serde(rename = "andOr")]
+        conjunction: Option<MonitorConditionConjunction>,
+    },
+
+    #[serde(rename = "group")]
+    Group {
+        #[serde(rename = "children")]
+        children: Option<Vec<MonitorCondition>>,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SNMPVersion {
+    #[serde(rename = "1")]
+    SNMPv1,
+
+    #[serde(rename = "2c")]
+    SNMPv2c,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub enum HttpBodyEncoding {
+    #[default]
+    #[serde(rename = "json")]
+    Json,
+
+    #[cfg(feature = "uptime-kuma-v2")]
+    #[serde(rename = "form")]
+    Form,
+
+    #[serde(rename = "xml")]
+    Xml,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub enum MqttCheckType {
+    #[default]
+    #[serde(rename = "keyword")]
+    Keyword,
+
+    #[serde(rename = "json-query")]
+    JsonQuery,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub enum JsonPathOperator {
+    #[serde(rename = ">")]
+    Greater,
+
+    #[serde(rename = ">=")]
+    GreaterEqual,
+
+    #[serde(rename = "<")]
+    Less,
+
+    #[serde(rename = "<=")]
+    LessEqual,
+
+    #[serde(rename = "!=")]
+    NotEqual,
+
+    #[default]
+    #[serde(rename = "==")]
+    Equal,
+
+    #[serde(rename = "contains")]
+    Contains,
+}
+
 monitor_type! {
     MonitorGroup Group {
 
@@ -479,6 +602,21 @@ monitor_type! {
         #[serde(rename = "databaseConnectionString")]
         #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "databaseQuery")]
+        #[serde(alias = "command")]
+        pub command: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "jsonPath")]
+        #[serde(alias = "json_path")]
+        pub json_path: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "expectedValue")]
+        #[serde(alias = "expected_value")]
+        pub expected_value: Option<String>,
     }
 }
 
@@ -503,6 +641,12 @@ monitor_type! {
         #[serde(rename = "databaseConnectionString")]
         #[serde(alias = "database_connection_string")]
         pub database_connection_string: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "ignoreTls")]
+        #[serde(alias = "ignore_tls")]
+        #[serde_as(as = "Option<DeserializeBoolLenient>")]
+        pub ignore_tls: Option<bool>,
     }
 }
 
@@ -603,6 +747,12 @@ monitor_type! {
         #[serde(rename = "grpcMetadata")]
         #[serde(alias = "grpc_metadata")]
         pub grpc_metadata: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "grpcMetadata")]
+        #[serde(alias = "grpc_metadata")]
+        #[serde_as(as = "Option<DeserializeBoolLenient>")]
+        pub cache_bust: Option<bool>,
     }
 }
 
@@ -647,7 +797,7 @@ monitor_type! {
 
         #[serde(rename = "httpBodyEncoding")]
         #[serde(alias = "http_body_encoding")]
-        pub http_body_encoding: Option<String>,
+        pub http_body_encoding: Option<HttpBodyEncoding>,
 
         #[serde(rename = "body")]
         pub body: Option<String>,
@@ -657,6 +807,12 @@ monitor_type! {
 
         #[serde(flatten)]
         pub auth: Option<HttpAuth>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "cacheBust")]
+        #[serde(alias = "cache_bust")]
+        #[serde_as(as = "Option<DeserializeBoolLenient>")]
+        pub cache_bust: Option<bool>,
     }
 }
 
@@ -665,6 +821,11 @@ monitor_type! {
         #[serde(rename = "jsonPath")]
         #[serde(alias = "json_path")]
         pub json_path: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "jsonPathOperator")]
+        #[serde(alias = "json_path_operator")]
+        pub json_path_operator: Option<JsonPathOperator>,
 
         #[serde(rename = "expectedValue")]
         #[serde(alias = "expected_value")]
@@ -708,7 +869,7 @@ monitor_type! {
 
         #[serde(rename = "httpBodyEncoding")]
         #[serde(alias = "http_body_encoding")]
-        pub http_body_encoding: Option<String>,
+        pub http_body_encoding: Option<HttpBodyEncoding>,
 
         #[serde(rename = "body")]
         pub body: Option<String>,
@@ -718,6 +879,12 @@ monitor_type! {
 
         #[serde(flatten)]
         pub auth: Option<HttpAuth>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "grpcMetadata")]
+        #[serde(alias = "grpc_metadata")]
+        #[serde_as(as = "Option<DeserializeBoolLenient>")]
+        pub cache_bust: Option<bool>,
     }
 }
 
@@ -800,7 +967,7 @@ monitor_type! {
 
         #[serde(rename = "httpBodyEncoding")]
         #[serde(alias = "http_body_encoding")]
-        pub http_body_encoding: Option<String>,
+        pub http_body_encoding: Option<HttpBodyEncoding>,
 
         #[serde(rename = "body")]
         pub body: Option<String>,
@@ -836,11 +1003,25 @@ monitor_type! {
 
         #[serde(rename = "mqttCheckType")]
         #[serde(alias = "mqtt_check_type")]
-        pub mqtt_check_type: Option<String>,
+        pub mqtt_check_type: Option<MqttCheckType>,
 
         #[serde(rename = "mqttSuccessMessage")]
         #[serde(alias = "mqtt_success_message")]
         pub mqtt_success_message: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "jsonPath")]
+        #[serde(alias = "json_path")]
+        pub json_path: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "jsonPathOperator")]
+        #[serde(alias = "json_path_operator")]
+        pub json_path_operator: Option<JsonPathOperator>,
+
+        #[serde(rename = "expectedValue")]
+        #[serde(alias = "expected_value")]
+        pub expected_value: Option<String>,
     }
 }
 
@@ -937,6 +1118,61 @@ monitor_type! {
     MonitorTailscalePing TailscalePing {
         #[serde(rename = "hostname")]
         hostname: Option<String>,
+    }
+}
+
+#[cfg(feature = "uptime-kuma-v2")]
+monitor_type! {
+    MonitorSNMP SNMP {
+        #[serde(rename = "hostname")]
+        pub hostname: Option<String>,
+
+        #[serde(rename = "port")]
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub port: Option<u16>,
+
+        #[serde(rename = "radiusPassword")]
+        #[serde(alias = "radius_password")]
+        pub password: Option<String>,
+
+        #[serde(rename = "snmpOid")]
+        #[serde(alias = "oid")]
+        pub oid: Option<String>,
+
+        #[serde(rename = "snmp_version")]
+        #[serde(alias = "version")]
+        pub version: Option<SNMPVersion>,
+
+        #[serde(rename = "jsonPath")]
+        #[serde(alias = "json_path")]
+        pub json_path: Option<String>,
+
+        #[cfg(feature = "uptime-kuma-v2")]
+        #[serde(rename = "jsonPathOperator")]
+        #[serde(alias = "json_path_operator")]
+        pub json_path_operator: Option<JsonPathOperator>,
+
+        #[serde(rename = "expectedValue")]
+        #[serde(alias = "expected_value")]
+        pub expected_value: Option<String>,
+    }
+}
+
+#[cfg(feature = "uptime-kuma-v2")]
+monitor_type! {
+    MonitorRabbitMQ RabbitMQ {
+        #[serde(rename = "rabbitmqNodes")]
+        #[serde_as(as = "DeserializeVecLenient<String>")]
+        #[serde_inline_default(vec![])]
+        pub nodes: Vec<String>,
+
+        #[serde(rename = "rabbitmqUsername")]
+        #[serde(alias = "username")]
+        pub username: Option<String>,
+
+        #[serde(rename = "rabbitmqUsername")]
+        #[serde(alias = "password")]
+        pub password: Option<String>,
     }
 }
 
@@ -1074,6 +1310,18 @@ pub enum Monitor {
         #[serde(flatten)]
         value: MonitorTailscalePing,
     },
+    #[cfg(feature = "uptime-kuma-v2")]
+    #[serde(rename = "snmp")]
+    SNMP {
+        #[serde(flatten)]
+        value: MonitorSNMP,
+    },
+    #[cfg(feature = "uptime-kuma-v2")]
+    #[serde(rename = "rabbitmq")]
+    RabbitMQ {
+        #[serde(flatten)]
+        value: MonitorRabbitMQ,
+    },
 }
 
 impl Monitor {
@@ -1101,6 +1349,10 @@ impl Monitor {
             Monitor::Radius { .. } => MonitorType::Radius,
             Monitor::Redis { .. } => MonitorType::Redis,
             Monitor::TailscalePing { .. } => MonitorType::TailscalePing,
+            #[cfg(feature = "uptime-kuma-v2")]
+            Monitor::SNMP { .. } => MonitorType::SNMP,
+            #[cfg(feature = "uptime-kuma-v2")]
+            Monitor::RabbitMQ { .. } => MonitorType::RabbitMQ,
         }
     }
 
@@ -1128,6 +1380,10 @@ impl Monitor {
             Monitor::Radius { value } => Box::new(value),
             Monitor::Redis { value } => Box::new(value),
             Monitor::TailscalePing { value } => Box::new(value),
+            #[cfg(feature = "uptime-kuma-v2")]
+            Monitor::SNMP { value } => Box::new(value),
+            #[cfg(feature = "uptime-kuma-v2")]
+            Monitor::RabbitMQ { value } => Box::new(value),
         }
     }
 
@@ -1155,6 +1411,10 @@ impl Monitor {
             Monitor::Radius { value } => Box::new(value),
             Monitor::Redis { value } => Box::new(value),
             Monitor::TailscalePing { value } => Box::new(value),
+            #[cfg(feature = "uptime-kuma-v2")]
+            Monitor::SNMP { value } => Box::new(value),
+            #[cfg(feature = "uptime-kuma-v2")]
+            Monitor::RabbitMQ { value } => Box::new(value),
         }
     }
 

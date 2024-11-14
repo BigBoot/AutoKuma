@@ -12,6 +12,7 @@ keywords = ["uptime-kuma", "api", "monitoring"]
 
 [features]
 private-api = []
+uptime-kuma-v2 = []
 
 [dependencies]
 config = { workspace = true }
