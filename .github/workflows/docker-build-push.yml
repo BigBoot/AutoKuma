@@ -16,19 +16,19 @@ jobs:
         include:
           - name: "ghcr.io/bigboot/autokuma"
             dockerfile: Dockerfile
-            build_args: ""
+            features: ""
             tag_prefix: ""
           - name: "ghcr.io/bigboot/kuma"
             dockerfile: Dockerfile.cli
-            build_args: ""
+            features: ""
             tag_prefix: ""
           - name: "ghcr.io/bigboot/autokuma"
             dockerfile: Dockerfile
-            build_args: "FEATURES=uptime-kuma-v2"
+            features: "uptime-kuma-v2"
             tag_prefix: "uptime-kuma-v2-"
           - name: "ghcr.io/bigboot/kuma"
             dockerfile: Dockerfile.cli
-            build_args: "FEATURES=uptime-kuma-v2"
+            features: "uptime-kuma-v2"
             tag_prefix: "uptime-kuma-v2-"
 
     steps:
@@ -73,14 +73,17 @@ jobs:
         with:
           path: |
             cache
-          key: cache-${{ runner.os }}-${{ runner.arch }}-cargo-${{ matrix.name }}-${{ matrix.tag_prefix }}-${{ hashFiles('**/Cargo.lock') }}
+          key: cache-${{ runner.os }}-cargo-${{ matrix.name }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: inject cache into docker
         uses: reproducible-containers/buildkit-cache-dance@v3.1.0
         with:
           cache-map: |
             {
-              "cache": "/cache"
+              "cache": {
+                 "target": "/cache",
+                 "id": "cache-${{ matrix.name }}-${{ matrix.features }}",
+              }
             }
           skip-extraction: ${{ steps.cache.outputs.cache-hit }}
 
@@ -94,7 +97,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: ${{ matrix.build_args }}
+          build-args: "FEATURES=${{ matrix.features }}"
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
