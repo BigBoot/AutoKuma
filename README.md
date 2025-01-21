@@ -311,6 +311,23 @@ Keyword monitor with custom status_codes:
 kuma.__web: '{ "name": "Example HTTP", "url": "https://example.com", "keyword": "Example Domain", "status_codes": ["200"] }'
 ```
 
+#### !Snippets
+There's a special case for snippets starting with a `!`, these snippets will apply to labels without requiring the prefix (i.e. `kuma.__`). The purpose of these is to be able to reuse existing labels from other tools. (Note: Due to this !Snippets will always receive a single string argument containing the label value instead of a structured list). 
+
+For example you could create a snippet to reuse traefik labels by defining a snippet called `!traefik.enable`:
+```jinja
+{# Only apply if value is "true" #}
+{% if args[0] == "true" %}
+    {# Extract some information from existing labels, note that this will likely not fit your setup and you will need to adjust this to get the required data #}
+    {% set traefik_service = container_name %}
+    {% set domain = container_name + ".example.com" %}
+    {% set port = container["Labels"]["traefik.http.services." + traefik_service + ".loadbalancer.server.port"] %}
+
+    {{ container_name }}_http.http.name: {{ container_name }}
+    {{ container_name }}_http.http.url: https://{{ domain }}:{{ port }}
+{% endif %}
+```
+
 
 ### Static Monitors 📊
 In addition to reading Monitors from Docker labels, AutoKuma can create Monitors from files. This can be usefull if you have want AutoKuma to manage monitors which aren't directly related to a container.

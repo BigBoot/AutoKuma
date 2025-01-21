@@ -181,11 +181,15 @@ pub fn get_entities_from_labels(
                         format!("Snippet '{}' not found!", key)
                     });
 
-                let args = serde_json::from_str::<Vec<serde_json::Value>>(&format!("[{}]", value))
-                    .log_warn(std::module_path!(), |e| {
-                        format!("Error while parsing snippet arguments: {}", e.to_string())
-                    })
-                    .ok();
+                let args = if key.starts_with("__!") {
+                    Some(vec![serde_json::Value::String(value.to_owned())])
+                } else {
+                    serde_json::from_str::<Vec<serde_json::Value>>(&format!("[{}]", value))
+                        .log_warn(std::module_path!(), |e| {
+                            format!("Error while parsing snippet arguments: {}", e.to_string())
+                        })
+                        .ok()
+                };
 
                 if let (Some(snippet), Some(args)) = (snippet, args) {
                     let mut template_values = template_values.clone();
@@ -248,7 +252,7 @@ pub fn get_entities_from_labels(
                     match result {
                         Err(Error::NameNotFound(name)) => {
                             warn!(
-                                "Cannot create monitor {} because referenced {} with {} is not found",
+                                "Cannot create monitor {} because referenced {} with name {} is not found",
                                 id,
                                 name.type_name(),
                                 name.name()

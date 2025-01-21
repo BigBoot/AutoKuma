@@ -40,6 +40,7 @@ async fn get_kuma_containers(
                 |labels| {
                     labels.keys().any(|key| {
                         key.starts_with(&format!("{}.", state.config.docker.label_prefix))
+                            || state.config.snippets.contains_key(&format!("!{}", key))
                     })
                 },
             )
@@ -69,6 +70,7 @@ async fn get_kuma_services(state: Arc<AppState>, docker: &Docker) -> Result<Vec<
                         |labels| {
                             labels.keys().any(|key| {
                                 key.starts_with(&format!("{}.", state.config.docker.label_prefix))
+                                    || state.config.snippets.contains_key(&format!("!{}", key))
                             })
                         },
                     )
