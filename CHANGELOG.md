@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   To prevent data loss, AutoKuma will refuse to run if it detects any old monitors with an AutoKuma label. After adding a persistent storage location, AutoKuma will need to be started once with the environment variable `AUTOKUMA__MIGRATE=true` set to take over any existing monitors. This environment variable can be removed afterward.
 - Access to environment variables in templates restricted to variables starting with `AUTOKUMA__ENV__`, see [#97](https://github.com/BigBoot/AutoKuma/issues/97)
 - Changed Monitor::proxy_id to Option<i32>, parsing now supports both numbers and strings, see [#95](https://github.com/BigBoot/AutoKuma/issues/95)
+- File source now skips hidden files 
 
 ### Added
 - All CLI commands now support reading multiple files/ids/slugs at once, as well as parsing arrays of objects where applicable, [#74](https://github.com/BigBoot/AutoKuma/issues/74)
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for creating Tags from Labels, see [#40](https://github.com/BigBoot/AutoKuma/issues/40)
 - File source now supports multiple entities per file, the ids will be named `<file_stem>[<index>]` accordingly, see [#86](https://github.com/BigBoot/AutoKuma/issues/86)
 - Kubernetes integration, see [#58](https://github.com/BigBoot/AutoKuma/issues/58)
+- File source can now follow symlinks (configurable, disabled by default)
 
 ### Fixed
 - File source now skips unsupported files rather then interrupting the whole sync, see [#89](https://github.com/BigBoot/AutoKuma/issues/89)

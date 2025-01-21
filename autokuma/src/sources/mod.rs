@@ -10,8 +10,11 @@ pub mod source;
 pub mod kubernetes_source;
 
 pub fn get_sources(state: Arc<AppState>) -> Vec<Box<dyn source::Source>> {
-    let mut sources: Vec<Box<dyn source::Source>> =
-        vec![Box::new(file_source::FileSource::new(state.clone()))];
+    let mut sources: Vec<Box<dyn source::Source>> = vec![];
+
+    if state.config.files.enabled {
+        sources.push(Box::new(file_source::FileSource::new(state.clone())));
+    }
 
     if state.config.docker.enabled {
         sources.push(Box::new(docker_source::DockerSource::new(state.clone())));

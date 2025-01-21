@@ -136,9 +136,19 @@ impl Source for FileSource {
             .is_ok_and(|md| md.is_dir())
         {
             let files = WalkDir::new(&static_monitor_path)
+                .follow_links(self.state.config.files.follow_symlinks)
                 .into_iter()
+                .filter_entry(|e| {
+                    e.file_name()
+                        .to_str()
+                        .map(|s| !s.starts_with('.'))
+                        .unwrap_or(false)
+                })
                 .filter_map(|e| e.log_warn(std::module_path!(), |e| e.to_string()).ok())
-                .filter(|e| e.file_type().is_file());
+                .filter(|e| {
+                    e.file_type().is_file()
+                        || (self.state.config.files.follow_symlinks && e.file_type().is_symlink())
+                });
 
             for file in files {
                 let file_path = file.path().strip_prefix(&static_monitor_path).unwrap();

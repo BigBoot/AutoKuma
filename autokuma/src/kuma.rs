@@ -27,6 +27,12 @@ pub fn get_kuma_labels(
                     )
                     .map(|key| (key, value.to_owned()))
                 })
+                .chain(
+                    labels
+                        .iter()
+                        .filter(|(key, _)| state.config.snippets.contains_key(&format!("!{}", key)))
+                        .map(|(key, value)| Ok((format!("__!{}", key), value.to_owned()))),
+                )
                 .collect::<Result<Vec<_>>>()
         },
     )

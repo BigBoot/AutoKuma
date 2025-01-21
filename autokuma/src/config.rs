@@ -54,6 +54,20 @@ pub struct KubernetesConfig {
     pub enabled: bool,
 }
 
+#[serde_alias(ScreamingSnakeCase)]
+#[serde_inline_default]
+#[serde_as]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FilesConfig {
+    /// Whether files source should be enabled or not.
+    #[serde_inline_default(true)]
+    pub enabled: bool,
+
+    /// Whether the files source should follow symlinks or not.
+    #[serde_inline_default(false)]
+    pub follow_symlinks: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeleteBehavior {
     #[serde(alias = "delete")]
@@ -71,6 +85,8 @@ pub struct Config {
     pub docker: DockerConfig,
 
     pub kubernetes: KubernetesConfig,
+
+    pub files: FilesConfig,
 
     /// The interval in between syncs.
     #[serde_inline_default(5.0)]
