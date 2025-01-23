@@ -125,7 +125,7 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__DOCKER__SOURCE`         | `docker.source`         | Whether monitors should be created from `Containers` or `Services` labels (or `Both`).                                   |
 | `AUTOKUMA__DOCKER__TLS__VERIFY`    | `docker.tls.verify`     | Whether to verify the TLS certificate or not.                                                                            |
 | `AUTOKUMA__DOCKER__TLS__CERT`      | `docker.tls.cert`       | The path to a custom tls certificate in PEM format.                                                                      |
-| `AUTOKUMA__FILES__FOLLOW_SYMLINKS` | `files.follow_symlinks` | Wether AutoKuma should follow symlinks when looking for "static monitors" (Defaults to false)                            |
+| `AUTOKUMA__FILES__FOLLOW_SYMLINKS` | `files.follow_symlinks` | Whether AutoKuma should follow symlinks when looking for "static monitors" (Defaults to false)                           |
 
 AutoKuma will read configuration from a file named `autokuma.{toml,yaml,json}` in the current directory and in the following locations:
 

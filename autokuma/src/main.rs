@@ -81,7 +81,7 @@ async fn main() {
         Config::builder()
             .add_source(File::from_str(
                 &serde_json::to_string(
-                    &json!({"kuma": {"tls": {}}, "docker": {}, "kubernetes": {}}),
+                    &json!({"kuma": {"tls": {}}, "docker": {}, "files": {}, "kubernetes": {}}),
                 )
                 .unwrap(),
                 FileFormat::Json,
