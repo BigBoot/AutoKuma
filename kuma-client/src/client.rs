@@ -154,7 +154,7 @@ impl Worker {
                 };
                 Some(totp.generate_current()?)
             }
-            None => self.config.mfa_secret.clone(),
+            None => self.config.mfa_token.clone(),
         })
     }
 

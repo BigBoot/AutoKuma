@@ -26,6 +26,10 @@ pub(crate) struct Cli {
     #[arg(long, global = true)]
     pub mfa_token: Option<String>,
 
+    /// The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single use mfa_token).
+    #[arg(long, global = true)]
+    pub mfa_secret: Option<String>,
+
     /// Add a HTTP header when connecting to Uptime Kuma.
     #[arg(long = "header", value_name = "KEY=VALUE", global = true)]
     pub headers: Vec<String>,
@@ -80,6 +84,7 @@ impl From<Cli> for Config {
             .set_override_option("username", value.username.clone()).unwrap()
             .set_override_option("password", value.password.clone()).unwrap()
             .set_override_option("mfa_token", value.mfa_token.clone()).unwrap()
+            .set_override_option("mfa_secret", value.mfa_secret.clone()).unwrap()
             .set_override_option(
                 "headers",
                 match value.headers.is_empty() {

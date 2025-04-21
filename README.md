@@ -74,6 +74,7 @@ services:
       # AUTOKUMA__KUMA__USERNAME: <username> 
       # AUTOKUMA__KUMA__PASSWORD: <password>
       # AUTOKUMA__KUMA__MFA_TOKEN: <token>
+      # AUTOKUMA__KUMA__MFA_SECRET: <secret>
       # AUTOKUMA__KUMA__HEADERS: "<header1_key>=<header1_value>,<header2_key>=<header2_value>,..."
       # AUTOKUMA__KUMA__CALL_TIMEOUT: 5
       # AUTOKUMA__KUMA__CONNECT_TIMEOUT: 5
@@ -117,6 +118,7 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__KUMA__USERNAME`         | `kuma.username`         | The username for logging into Uptime Kuma (required unless auth is disabled)                                             |
 | `AUTOKUMA__KUMA__PASSWORD`         | `kuma.password`         | The password for logging into Uptime Kuma (required unless auth is disabled)                                             |
 | `AUTOKUMA__KUMA__MFA_TOKEN`        | `kuma.mfa_token`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                                  |
+| `AUTOKUMA__KUMA__MFA_SECRET`       | `kuma.mfa_secret`       | The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single_use mfa_token)           |
 | `AUTOKUMA__KUMA__HEADERS`          | `kuma.headers`          | List of HTTP headers to send when connecting to Uptime Kuma                                                              |
 | `AUTOKUMA__KUMA__CONNECT_TIMEOUT`  | `kuma.connect_timeout`  | The timeout for the initial connection to Uptime Kuma                                                                    |
 | `AUTOKUMA__KUMA__CALL_TIMEOUT`     | `kuma.call_timeout`     | The timeout for executing calls to the Uptime Kuma server                                                                |
