@@ -92,10 +92,10 @@ fn generate_timezones() {
     println!("cargo:rerun-if-changed=timezones.rs");
 }
 
-fn main() -> shadow_rs::SdResult<()> {
+fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
     generate_timezones();
 
-    shadow_rs::new()
+    shadow_rs::ShadowBuilder::builder().build().unwrap();
 }
