@@ -111,13 +111,14 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__DEFAULT_SETTINGS`       | `default_settings`      | Default settings applied to all generated Monitors, see the example above for the syntax                                 |
 | `AUTOKUMA__LOG_DIR`                | `log_dir`               | Path to a directory where log files will be stored                                                                       |
 | `AUTOKUMA__ON_DELETE`              | `on_delete`             | Specify what should happen to a monitor if the autokuma id is not found anymore, either `delete` or `keep`               |
+| `AUTOKUMA__DELETE_GRACE_PERIOD`    | `delete_grace_period`   | How long to wait in seconds before deleting the entity if the autokuma is not not found anymore                          |
 | `AUTOKUMA__INSECURE_ENV_ACCESS`    | `insecure_env_access`   | Allow access to all env variables in templates, by default only variables starting with AUTOKUMA__ENV__ can be accessed. |
 | `AUTOKUMA__SNIPPETS__<SNIPPET>`    | `snippets.<snippet>`    | Define a snippet named `<snippet>`, see [Snippets](#snippets) for details                                                |
 | `AUTOKUMA__KUMA__URL`              | `kuma.url`              | The URL AutoKuma should use to connect to Uptime Kuma                                                                    |
 | `AUTOKUMA__KUMA__USERNAME`         | `kuma.username`         | The username for logging into Uptime Kuma (required unless auth is disabled)                                             |
 | `AUTOKUMA__KUMA__PASSWORD`         | `kuma.password`         | The password for logging into Uptime Kuma (required unless auth is disabled)                                             |
-| `AUTOKUMA__KUMA__MFA_TOKEN`        | `kuma.mfa_token`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                                  |      |
-| `AUTOKUMA__KUMA__MFA_SECRET`       | `kuma.mfa_secret`       | The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single_use mfa_token)     
+| `AUTOKUMA__KUMA__MFA_TOKEN`        | `kuma.mfa_token`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                                  |      
+| `AUTOKUMA__KUMA__MFA_SECRET`       | `kuma.mfa_secret`       | The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single_use mfa_token)           |
 | `AUTOKUMA__KUMA__HEADERS`          | `kuma.headers`          | List of HTTP headers to send when connecting to Uptime Kuma                                                              |
 | `AUTOKUMA__KUMA__CONNECT_TIMEOUT`  | `kuma.connect_timeout`  | The timeout for the initial connection to Uptime Kuma                                                                    |
 | `AUTOKUMA__KUMA__CALL_TIMEOUT`     | `kuma.call_timeout`     | The timeout for executing calls to the Uptime Kuma server                                                                |

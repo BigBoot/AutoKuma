@@ -1,11 +1,13 @@
+use chrono::{self, DateTime};
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sled::IVec;
 
 use crate::{
     config::Config,
     error::{Error, Result},
-    name::Name,
+    name::{EntitySelector, Name},
     util::group_by_prefix,
 };
 use core::str;
@@ -16,7 +18,7 @@ use std::{
     sync::Arc,
 };
 
-fn read_i32(value: &IVec) -> Result<i32> {
+fn decode_i32(value: &IVec) -> Result<i32> {
     value
         .as_ref()
         .try_into()
@@ -24,27 +26,56 @@ fn read_i32(value: &IVec) -> Result<i32> {
         .map_err(|e| Error::InternalError(format!("Unable to read i32 from db: {}", e)))
 }
 
-fn store_i32(id: i32) -> Result<IVec> {
+fn encode_i32(id: i32) -> Result<IVec> {
     Ok(id.to_le_bytes().to_vec().into())
 }
 
-fn read_string(value: &IVec) -> Result<String> {
+fn decode_string(value: &IVec) -> Result<String> {
     Ok(str::from_utf8(&value)
         .map_err(|e| Error::InternalError(format!("Unable to deserialize string from db: {}", e)))?
         .to_owned())
 }
 
-fn store_string(id: String) -> Result<IVec> {
+fn encode_string(id: String) -> Result<IVec> {
     Ok(id.as_bytes().to_vec().into())
+}
+
+fn encode_value<V>(value: V) -> Result<IVec>
+where
+    V: serde::Serialize,
+{
+    Ok(
+        bincode::serde::encode_to_vec(value, bincode::config::standard())
+            .map_err(|e| Error::InternalError(format!("Unable to decode db entry: {}", e)))?
+            .into(),
+    )
+}
+
+fn decode_value<'de, V>(value: IVec) -> Result<V>
+where
+    V: serde::de::DeserializeOwned,
+{
+    Ok(
+        bincode::serde::decode_from_slice(&value, bincode::config::standard())
+            .map(|(key, _)| key)
+            .map_err(|e| Error::InternalError(format!("Unable to decode db entry: {}", e)))?,
+    )
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeleteEntry {
+    pub delete_at: chrono::DateTime<chrono::Utc>,
+    pub entity: EntitySelector,
 }
 
 pub struct AppDB {
     db: sled::Db,
-    monitors: DBTable<i32>,
-    notifications: DBTable<i32>,
-    docker_hosts: DBTable<i32>,
-    tags: DBTable<i32>,
-    status_pages: DBTable<String>,
+    monitors: DBTable<String, i32>,
+    to_delete: DBTable<IVec, DeleteEntry>,
+    notifications: DBTable<String, i32>,
+    docker_hosts: DBTable<String, i32>,
+    tags: DBTable<String, i32>,
+    status_pages: DBTable<String, String>,
 }
 
 trait IDTable<T> {
@@ -53,27 +84,46 @@ trait IDTable<T> {
     fn tree(&self) -> &sled::Tree;
 }
 
-struct DBTable<T> {
-    tree: sled::Tree,
-    _t: std::marker::PhantomData<T>,
+trait ValueTable<V> {
+    fn encode_value(value: V) -> Result<IVec>;
+    fn decode_value(value: IVec) -> Result<V>;
 }
 
-impl<T> DBTable<T> {
+#[allow(dead_code)]
+trait KeyTable<K> {
+    fn encode_key(key: K) -> Result<IVec>;
+    fn decode_key(key: IVec) -> Result<K>;
+}
+
+#[allow(dead_code)]
+trait KeyValueTable<K, V> {
+    fn read_value(&self, key: K) -> Result<Option<V>>;
+    fn store_value(&self, key: K, value: V) -> Result<()>;
+}
+
+struct DBTable<K, V> {
+    tree: sled::Tree,
+    _k: std::marker::PhantomData<K>,
+    _v: std::marker::PhantomData<V>,
+}
+
+impl<K, V> DBTable<K, V> {
     fn new(db: &sled::Db, name: &str) -> Result<Self> {
         Ok(DBTable {
             tree: db.open_tree(name)?,
-            _t: PhantomData,
+            _k: PhantomData,
+            _v: PhantomData,
         })
     }
 }
 
-impl IDTable<i32> for DBTable<i32> {
+impl IDTable<i32> for DBTable<String, i32> {
     fn read_id(&self, value: &IVec) -> Result<i32> {
-        read_i32(value)
+        decode_i32(value)
     }
 
     fn store_id(&self, id: i32) -> Result<IVec> {
-        store_i32(id)
+        encode_i32(id)
     }
 
     fn tree(&self) -> &sled::Tree {
@@ -81,17 +131,97 @@ impl IDTable<i32> for DBTable<i32> {
     }
 }
 
-impl IDTable<String> for DBTable<String> {
+impl IDTable<String> for DBTable<String, String> {
     fn read_id(&self, value: &IVec) -> Result<String> {
-        read_string(value)
+        decode_string(value)
     }
 
     fn store_id(&self, id: String) -> Result<IVec> {
-        store_string(id)
+        encode_string(id)
     }
 
     fn tree(&self) -> &sled::Tree {
         &self.tree
+    }
+}
+
+impl<V> KeyTable<String> for DBTable<String, V> {
+    fn encode_key(key: String) -> Result<IVec> {
+        encode_string(key)
+    }
+
+    fn decode_key(key: IVec) -> Result<String> {
+        decode_string(&key)
+    }
+}
+
+impl<V> KeyTable<i32> for DBTable<i32, V> {
+    fn encode_key(key: i32) -> Result<IVec> {
+        encode_i32(key)
+    }
+
+    fn decode_key(key: IVec) -> Result<i32> {
+        decode_i32(&key)
+    }
+}
+
+impl<V> KeyTable<IVec> for DBTable<IVec, V> {
+    fn encode_key(key: IVec) -> Result<IVec> {
+        Ok(key)
+    }
+
+    fn decode_key(key: IVec) -> Result<IVec> {
+        Ok(key)
+    }
+}
+
+impl<'de, K, V> ValueTable<V> for DBTable<K, V>
+where
+    V: serde::Serialize + serde::de::DeserializeOwned,
+{
+    fn encode_value(value: V) -> Result<IVec> {
+        encode_value(value)
+    }
+
+    fn decode_value(value: IVec) -> Result<V> {
+        decode_value(value)
+    }
+}
+
+impl<K, V> KeyValueTable<K, V> for DBTable<K, V>
+where
+    Self: KeyTable<K> + ValueTable<V>,
+{
+    fn read_value(&self, key: K) -> Result<Option<V>> {
+        Ok(self
+            .tree
+            .get(Self::encode_key(key)?)?
+            .map(Self::decode_value)
+            .transpose()?)
+    }
+
+    fn store_value(&self, key: K, value: V) -> Result<()> {
+        self.tree
+            .insert(Self::encode_key(key)?, Self::encode_value(value)?)?;
+
+        Ok(())
+    }
+}
+
+impl<K, V> DBTable<K, V>
+where
+    K: 'static,
+    V: 'static + serde::Serialize + serde::de::DeserializeOwned,
+    Self: KeyTable<K> + ValueTable<V>,
+{
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = (K, V)> + 'a> {
+        Box::new(self.tree.iter().flat_map(|entry| match entry {
+            Ok((key, value)) => match (Self::decode_key(key), Self::decode_value(value)) {
+                (Ok(key), Ok(value)) => Some((key, value)),
+                _ => None,
+            },
+            _ => None,
+        }))
     }
 }
 
@@ -143,20 +273,13 @@ impl AppDB {
         let db = sled::open(format!("{}/autokuma.db", data_path))?;
         Ok(AppDB {
             monitors: DBTable::new(&db, "monitors")?,
+            to_delete: DBTable::new(&db, "to_delete")?,
             notifications: DBTable::new(&db, "notifications")?,
             docker_hosts: DBTable::new(&db, "docker_hosts")?,
             tags: DBTable::new(&db, "tags")?,
             status_pages: DBTable::new(&db, "status_pages")?,
             db: db,
         })
-    }
-
-    fn read_string(value: &IVec) -> Result<String> {
-        Ok(str::from_utf8(&value)
-            .map_err(|e| {
-                Error::DeserializeError(format!("Unable to deserialize string from db: {}", e))
-            })?
-            .to_owned())
     }
 
     fn get_value<T>(table: &impl IDTable<T>, name: &str) -> Result<Option<DatabaseId>>
@@ -229,13 +352,13 @@ impl AppDB {
             .iter()
             .map(|entry| {
                 let (name, value) = entry?;
-                Ok((Self::read_string(&name)?, table.read_id(&value)?))
+                Ok((decode_string(&name)?, table.read_id(&value)?))
             })
             .collect::<Result<Vec<_>>>()?)
     }
 
     pub fn remove_id(&self, name: Name) -> Result<()> {
-        let (tree, name) = match name {
+        let (tree, key) = match &name {
             Name::Monitor(name) => (&self.monitors.tree(), name),
             Name::Notification(name) => (&self.notifications.tree(), name),
             Name::DockerHost(name) => (&self.docker_hosts.tree(), name),
@@ -243,11 +366,14 @@ impl AppDB {
             Name::StatusPage(name) => (&self.status_pages.tree(), name),
         };
 
-        tree.remove(name)?;
+        tree.remove(key)?;
+
+        self.to_delete.tree.remove(encode_value(name)?)?;
+
         Ok(())
     }
 
-    fn clean_table<T: Eq + Hash>(table: &impl IDTable<T>, ids: &HashSet<T>) -> Result<()> {
+    fn clean_table<T: Eq + Hash>(&self, table: &impl IDTable<T>, ids: &HashSet<T>) -> Result<()> {
         let to_delete = table
             .tree()
             .iter()
@@ -262,6 +388,7 @@ impl AppDB {
         }
 
         table.tree().apply_batch(batch)?;
+
         Ok(())
     }
 
@@ -273,17 +400,54 @@ impl AppDB {
         tags: &HashSet<i32>,
         status_pages: &HashSet<String>,
     ) -> Result<()> {
-        Self::clean_table(&self.monitors, monitors)?;
-        Self::clean_table(&self.notifications, notifications)?;
-        Self::clean_table(&self.docker_hosts, docker_hosts)?;
-        Self::clean_table(&self.tags, tags)?;
-        Self::clean_table(&self.status_pages, status_pages)?;
+        self.clean_table(&self.monitors, monitors)?;
+        self.clean_table(&self.notifications, notifications)?;
+        self.clean_table(&self.docker_hosts, docker_hosts)?;
+        self.clean_table(&self.tags, tags)?;
+        self.clean_table(&self.status_pages, status_pages)?;
 
         Ok(())
     }
 
     pub fn get_monitors(&self) -> Result<Vec<(String, i32)>> {
         Self::get_entries(&self.monitors)
+    }
+
+    pub fn request_to_delete(
+        &self,
+        entity: EntitySelector,
+        delete_at: DateTime<chrono::Utc>,
+    ) -> Result<()> {
+        _ = self.to_delete.tree.compare_and_swap(
+            encode_value(entity.clone())?,
+            None as Option<&[u8]>,
+            Some(DBTable::<String, DeleteEntry>::encode_value(DeleteEntry {
+                delete_at,
+                entity,
+            })?),
+        );
+
+        Ok(())
+    }
+
+    pub fn get_entities_to_delete(&self) -> Result<Vec<EntitySelector>> {
+        let now = chrono::Utc::now();
+        let to_delete = self
+            .to_delete
+            .iter()
+            .filter(|(_, entry)| entry.delete_at < now)
+            .collect::<Vec<_>>();
+
+        let mut batch = sled::Batch::default();
+        for (key, _) in to_delete.iter() {
+            batch.remove(key);
+        }
+        self.to_delete.tree.apply_batch(batch)?;
+
+        Ok(to_delete
+            .into_iter()
+            .map(|(_, entry)| entry.entity)
+            .collect())
     }
 
     pub fn get_notifications(&self) -> Result<Vec<(String, i32)>> {
@@ -306,7 +470,7 @@ impl AppDB {
         Ok(self
             .db
             .get("version")?
-            .map(|value| read_i32(&value))
+            .map(|value| decode_i32(&value))
             .transpose()?
             .unwrap_or(0))
     }

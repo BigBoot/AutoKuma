@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Kuma CLI now has a `login` command which allows manually obtaining a jwt token
   - Kuma CLI now has a `--auth_token` option to allow authenticating with a jwt token
   - Kuma CLI now has a `--store-auth` option which will store the token after a succesfull login (e.g. using `kuma login --store-auth [username]`)
+- Added grace period before removing entities when the definitions vanish (e.g. when updating a container)
 
 ### Fixed
 - File source now skips unsupported files rather then interrupting the whole sync, see [#89](https://github.com/BigBoot/AutoKuma/issues/89)

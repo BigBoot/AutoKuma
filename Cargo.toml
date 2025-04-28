@@ -11,7 +11,12 @@ repository = "https://github.com/BigBoot/AutoKuma"
 
 [workspace.dependencies]
 async-trait = { version = "0.1.83" }
+bincode = { version = "2.0.1", default-features = false, features = [
+    "std",
+    "serde",
+] }
 bollard = { version = "0.18.0", features = ["ssl"] }
+chrono = { version = "0.4.40" }
 clap = { version = "4.5.21", features = ["derive"] }
 config = { version = "0.14.1" }
 const-str = { version = "0.5.7", features = ["proc"] }
@@ -36,6 +41,7 @@ regex = { version = "1.11.1" }
 reqwest = { version = "0.12.9", features = ["json"] }
 rust_socketio = { version = "0.6.0", features = ["async"] }
 rpassword = { version = "7.4.0" }
+seq-macro = { version = "0.3.6" }
 serde = { version = "1.0.215", features = ["derive"] }
 serde_alias = { version = "0.0.2" }
 serde_json = { version = "1.0.132" }

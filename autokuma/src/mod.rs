@@ -3,6 +3,7 @@ mod config;
 mod entity;
 mod error;
 mod kuma;
+mod migrations;
 mod name;
 mod sources;
 mod sync;

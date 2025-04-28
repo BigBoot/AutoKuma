@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
 use crate::entity::{merge_entities, Entity};
 use crate::kuma::get_managed_entities;
-use crate::name::Name;
+use crate::name::{EntitySelector, Name};
 use crate::{
     config::{Config, DeleteBehavior},
     error::{KumaError, Result},
@@ -12,7 +12,7 @@ use itertools::Itertools;
 use kuma_client::{util::ResultLogger, Client};
 use log::{debug, error, info, trace, warn};
 use std::collections::HashSet;
-use std::{collections::HashMap, env, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 pub struct Sync {
     app_state: Arc<AppState>,
@@ -106,42 +106,25 @@ impl Sync {
         Ok(())
     }
 
-    async fn delete_entity(&self, kuma: &Client, id: &String, entity: &Entity) -> Result<()> {
-        info!("Deleting {}: {}", entity.entity_type(), id);
-        match entity {
-            Entity::Monitor(monitor) => {
-                if let Some(db_id) = monitor.common().id() {
-                    kuma.delete_monitor(*db_id).await?;
-                    self.app_state.db.remove_id(Name::Monitor(id.clone()))?;
-                }
-            }
-            Entity::DockerHost(docker_host) => {
-                if let Some(db_id) = docker_host.id {
-                    kuma.delete_docker_host(db_id).await?;
-                    self.app_state.db.remove_id(Name::DockerHost(id.clone()))?;
-                }
-            }
-            Entity::Notification(notification) => {
-                if let Some(db_id) = notification.id {
-                    kuma.delete_notification(db_id).await?;
-                    self.app_state
-                        .db
-                        .remove_id(Name::Notification(id.clone()))?;
-                }
-            }
-            Entity::StatusPage(status_page) => {
-                if let Some(slug) = &status_page.slug {
-                    kuma.delete_status_page(slug).await?;
-                    self.app_state.db.remove_id(Name::StatusPage(id.clone()))?;
-                }
-            }
-            Entity::Tag(tag) => {
-                if let Some(db_id) = tag.tag_id {
-                    kuma.delete_tag(db_id).await?;
-                    self.app_state.db.remove_id(Name::Tag(id.clone()))?;
-                }
-            }
+    async fn delete_entity(&self, kuma: &Client, name: &str, entity: &Entity) -> Result<()> {
+        if let Some(selector) = Self::create_entity_selector(name.to_owned(), entity)? {
+            self.delete_entity_by_id(kuma, selector).await?;
         }
+
+        Ok(())
+    }
+
+    async fn delete_entity_by_id(&self, kuma: &Client, entity: EntitySelector) -> Result<()> {
+        info!("Deleting {}: {}", entity.type_name(), entity.name());
+        match &entity {
+            EntitySelector::Monitor(_, id) => kuma.delete_monitor(*id).await?,
+            EntitySelector::Notification(_, id) => kuma.delete_notification(*id).await?,
+            EntitySelector::DockerHost(_, id) => kuma.delete_docker_host(*id).await?,
+            EntitySelector::Tag(_, id) => kuma.delete_tag(*id).await?,
+            EntitySelector::StatusPage(_, id) => kuma.delete_status_page(id).await?,
+        }
+
+        self.app_state.db.remove_id(entity.into())?;
 
         Ok(())
     }
@@ -196,6 +179,26 @@ impl Sync {
         Ok(())
     }
 
+    fn create_entity_selector(name: String, entity: &Entity) -> Result<Option<EntitySelector>> {
+        Ok(match entity {
+            Entity::Monitor(monitor) => monitor
+                .common()
+                .id()
+                .map(|id| EntitySelector::Monitor(name, id)),
+            Entity::DockerHost(docker_host) => docker_host
+                .id
+                .map(|id| EntitySelector::DockerHost(name, id)),
+            Entity::Notification(notification) => notification
+                .id
+                .map(|id| EntitySelector::Notification(name, id)),
+            Entity::Tag(tag) => tag.tag_id.map(|id| EntitySelector::Tag(name, id)),
+            Entity::StatusPage(status_page) => status_page
+                .slug
+                .as_ref()
+                .map(|id| EntitySelector::StatusPage(name, id.clone())),
+        })
+    }
+
     async fn do_sync(&mut self) -> Result<()> {
         let kuma_config = kuma_client::Config {
             auth_token: self.auth_token.clone(),
@@ -203,54 +206,7 @@ impl Sync {
         };
         let kuma = Client::connect(kuma_config).await?;
 
-        if self.app_state.db.get_version()? == 0 {
-            let autokuma_tag = kuma
-                .get_tags()
-                .await?
-                .iter()
-                .find(|x| {
-                    x.name
-                        .as_ref()
-                        .is_some_and(|name| name == &self.app_state.config.tag_name)
-                })
-                .map(|tag| tag.tag_id)
-                .flatten();
-
-            if let Some(autokuma_tag) = autokuma_tag {
-                if !env::var("AUTOKUMA__MIGRATE").is_ok_and(|x| x == "true") {
-                    error!(
-                        "Migration required, but AUTOKUMA__MIGRATE is not set to 'true', refusing to continue to avoid data loss. Please read the CHANGELOG and then set AUTOKUMA__MIGRATE=true to continue."
-                    );
-                    return Ok(());
-                }
-
-                let entries = kuma
-                    .get_monitors()
-                    .await?
-                    .iter()
-                    .filter_map(|(_, monitor)| {
-                        monitor
-                            .common()
-                            .tags()
-                            .iter()
-                            .find(|x| x.tag_id == Some(autokuma_tag))
-                            .map(|tag| tag.value.clone())
-                            .flatten()
-                            .map(|name| (name, monitor.common().id().unwrap_or(-1)))
-                    })
-                    .collect_vec();
-
-                info!("Migrating {} monitors", entries.len());
-
-                for (name, id) in entries {
-                    self.app_state.db.store_id(Name::Monitor(name), id)?;
-                }
-
-                kuma.delete_tag(autokuma_tag).await?;
-            }
-
-            self.app_state.db.set_version(1)?
-        }
+        crate::migrations::migrate(&self.app_state, &kuma).await?;
 
         self.app_state.db.clean(
             &kuma
@@ -329,9 +285,34 @@ impl Sync {
         }
 
         if self.app_state.config.on_delete == DeleteBehavior::Delete {
-            for (id, monitor) in to_delete {
-                self.delete_entity(&kuma, id, monitor).await?;
+            let delete_at = chrono::Utc::now()
+                + chrono::Duration::seconds(self.app_state.config.delete_grace_period as i64);
+
+            for selector in to_delete.iter().flat_map(|(name, entity)| {
+                Self::create_entity_selector((*name).to_owned(), entity)
+                    .ok()
+                    .flatten()
+            }) {
+                self.app_state
+                    .db
+                    .request_to_delete(selector.clone(), delete_at)
+                    .log_warn(std::module_path!(), |e| {
+                        format!(
+                            "Failed to enqueue deletion of {} {}: {}",
+                            selector.type_name(),
+                            selector.name(),
+                            e
+                        )
+                    })?;
             }
+        }
+
+        for entity in self.app_state.db.get_entities_to_delete()? {
+            // Entity reappeared, do not delete
+            if !to_delete.iter().any(|(name, _)| *name == entity.name()) {
+                continue;
+            }
+            self.delete_entity_by_id(&kuma, entity).await?;
         }
 
         Ok(())

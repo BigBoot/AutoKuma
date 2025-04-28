@@ -100,6 +100,10 @@ pub struct Config {
     #[serde_inline_default(DeleteBehavior::Delete)]
     pub on_delete: DeleteBehavior,
 
+    /// The grace period in seconds before a missing entity is deleted.
+    #[serde_inline_default(60.0)]
+    pub delete_grace_period: f64,
+
     /// The name of the AutoKuma tag, used to track managed containers
     #[serde_inline_default("AutoKuma".to_owned())]
     pub tag_name: String,
