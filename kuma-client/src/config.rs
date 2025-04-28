@@ -54,6 +54,9 @@ pub struct Config {
     /// The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single_use mfa_token).
     pub mfa_secret: Option<String>,
 
+    /// JWT Auth token received after a succesfull login, can be used to as an alternative to username/password.
+    pub auth_token: Option<String>,
+
     /// List of HTTP headers to send when connecting to Uptime Kuma.
     #[serde_as(
         as = "PickFirst<(DeserializeVecLenient<String>, StringWithSeparator::<CommaSeparator, String>)>"
@@ -81,6 +84,7 @@ impl Default for Config {
             password: None,
             mfa_token: None,
             mfa_secret: None,
+            auth_token: None,
             headers: Vec::new(),
             connect_timeout: 30.0,
             call_timeout: 30.0,

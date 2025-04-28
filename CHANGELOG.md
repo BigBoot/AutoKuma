@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File source now supports multiple entities per file, the ids will be named `<file_stem>[<index>]` accordingly, see [#86](https://github.com/BigBoot/AutoKuma/issues/86)
 - Kubernetes integration, see [#58](https://github.com/BigBoot/AutoKuma/issues/58)
 - File source can now follow symlinks (configurable, disabled by default)
+- Add `--mfa-secret` to kuma CLI
+- Add authentication using a jwt token:
+  - AutoKuma will store a jwt token after the initial login and use this for subsequent logins, alternatively a token can be supplied manually in the config
+  - Kuma CLI now has a `login` command which allows manually obtaining a jwt token
+  - Kuma CLI now has a `--auth_token` option to allow authenticating with a jwt token
+  - Kuma CLI now has a `--store-auth` option which will store the token after a succesfull login (e.g. using `kuma login --store-auth [username]`)
 
 ### Fixed
 - File source now skips unsupported files rather then interrupting the whole sync, see [#89](https://github.com/BigBoot/AutoKuma/issues/89)

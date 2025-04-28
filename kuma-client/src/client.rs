@@ -77,6 +77,7 @@ struct Worker {
     is_connected: Arc<Mutex<bool>>,
     is_ready: Arc<Mutex<Ready>>,
     is_logged_in: Arc<Mutex<bool>>,
+    auth_token: Arc<Mutex<Option<String>>>,
     reqwest: Arc<Mutex<reqwest::Client>>,
     custom_cert: Option<(String, Certificate)>,
 }
@@ -138,6 +139,7 @@ impl Worker {
             is_connected: Arc::new(Mutex::new(false)),
             is_ready: Arc::new(Mutex::new(Ready::new())),
             is_logged_in: Arc::new(Mutex::new(false)),
+            auth_token: Arc::new(Mutex::new(config.auth_token)),
             reqwest: Arc::new(Mutex::new(reqwest_builder.build().unwrap())),
             custom_cert: custom_cert,
         }))
@@ -154,7 +156,7 @@ impl Worker {
                 };
                 Some(totp.generate_current()?)
             }
-            None => self.config.mfa_secret.clone(),
+            None => self.config.mfa_token.clone(),
         })
     }
 
@@ -202,13 +204,28 @@ impl Worker {
     async fn on_info(self: &Arc<Self>) -> Result<()> {
         *self.is_connected.lock().await = true;
         let logged_in = *self.is_logged_in.lock().await;
-        if let (Some(username), Some(password), true) =
-            (&self.config.username, &self.config.password, !logged_in)
-        {
-            let mfa_token = self.get_mfa_token()?;
-            return self.login(username, password, mfa_token).await;
+
+        if !logged_in {
+            let auth_token = self.auth_token.lock().await.clone();
+
+            // Try logging in with a token if available
+            if let Some(auth_token) = auth_token {
+                if self.login_by_token(auth_token).await.is_ok() {
+                    return Ok(());
+                }
+            }
+
+            if let (Some(username), Some(password)) = (&self.config.username, &self.config.password)
+            {
+                let mfa_token = self.get_mfa_token()?;
+                self.login(username, password, mfa_token).await?;
+            }
         }
 
+        Ok(())
+    }
+
+    async fn on_login_required(self: &Arc<Self>) -> Result<()> {
         Ok(())
     }
 
@@ -242,6 +259,7 @@ impl Worker {
             }
             Event::Info => self.on_info().await?,
             Event::AutoLogin => self.on_auto_login().await?,
+            Event::LoginRequired => self.on_login_required().await?,
             _ => {}
         }
 
@@ -358,8 +376,42 @@ impl Worker {
 
         match result {
             Ok(LoginResponse::TokenRequired { .. }) => Err(Error::TokenRequired),
-            Ok(LoginResponse::Normal { ok: true, .. }) => {
+            Ok(LoginResponse::Normal {
+                ok: true,
+                token: Some(auth_token),
+                ..
+            }) => {
                 debug!("Logged in as {}!", username.as_ref());
+                *self.is_logged_in.lock().await = true;
+                *self.auth_token.lock().await = Some(auth_token);
+                Ok(())
+            }
+            Ok(LoginResponse::Normal {
+                ok: false,
+                msg: Some(msg),
+                ..
+            }) => Err(Error::LoginError(msg)),
+            Err(e) => {
+                *self.is_logged_in.lock().await = false;
+                Err(e)
+            }
+            _ => {
+                *self.is_logged_in.lock().await = false;
+                Err(Error::LoginError("Unexpect login response".to_owned()))
+            }
+        }
+        .log_warn(std::module_path!(), |e| e.to_string())
+    }
+
+    pub async fn login_by_token(self: &Arc<Self>, auth_token: impl AsRef<str>) -> Result<()> {
+        let result: Result<LoginResponse> = self
+            .call("loginByToken", vec![json!(auth_token.as_ref())], "", false)
+            .await;
+
+        match result {
+            Ok(LoginResponse::TokenRequired { .. }) => Err(Error::TokenRequired),
+            Ok(LoginResponse::Normal { ok: true, .. }) => {
+                debug!("Logged in using auth_token!");
                 *self.is_logged_in.lock().await = true;
                 Ok(())
             }
@@ -1539,6 +1591,11 @@ impl Client {
     /// Disconnects the client from Uptime Kuma.
     pub async fn disconnect(&self) -> Result<()> {
         self.worker.disconnect().await
+    }
+
+    /// Get the auth token from this client if available.
+    pub async fn get_auth_token(&self) -> Option<String> {
+        self.worker.auth_token.lock().await.clone()
     }
 }
 

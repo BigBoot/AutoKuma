@@ -16,6 +16,7 @@ use std::{collections::HashMap, env, sync::Arc, time::Duration};
 
 pub struct Sync {
     app_state: Arc<AppState>,
+    auth_token: Option<String>,
     sources: Vec<Box<dyn Source>>,
 }
 
@@ -24,6 +25,7 @@ impl Sync {
         let state = Arc::new(AppState::new(config)?);
         Ok(Self {
             app_state: state.clone(),
+            auth_token: state.config.kuma.auth_token.clone(),
             sources: crate::sources::get_sources(state),
         })
     }
@@ -195,7 +197,11 @@ impl Sync {
     }
 
     async fn do_sync(&mut self) -> Result<()> {
-        let kuma = Client::connect(self.app_state.config.kuma.clone()).await?;
+        let kuma_config = kuma_client::Config {
+            auth_token: self.auth_token.clone(),
+            ..self.app_state.config.kuma.clone()
+        };
+        let kuma = Client::connect(kuma_config).await?;
 
         if self.app_state.db.get_version()? == 0 {
             let autokuma_tag = kuma
@@ -278,6 +284,10 @@ impl Sync {
                 .filter_map(|(_, status_page)| status_page.slug)
                 .collect::<HashSet<_>>(),
         )?;
+
+        if let Some(auth_token) = kuma.get_auth_token().await {
+            self.auth_token = Some(auth_token);
+        }
 
         let current_entities = get_managed_entities(&self.app_state, &kuma).await?;
 

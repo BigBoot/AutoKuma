@@ -21,4 +21,5 @@ pub(crate) enum Event {
     ProxyList,
     StatusPageList,
     Uptime,
+    LoginRequired,
 }
