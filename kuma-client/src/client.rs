@@ -1132,7 +1132,7 @@ impl Worker {
         let mut builder = ClientBuilder::new(
             self.config
                 .url
-                .join("/socket.io/")
+                .join("socket.io/")
                 .map_err(|e| Error::InvalidUrl(e.to_string()))?,
         )
         .tls_config(tls_config.build().map_err(|e| {
