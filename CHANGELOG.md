@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Access to environment variables in templates restricted to variables starting with `AUTOKUMA__ENV__`, see [#97](https://github.com/BigBoot/AutoKuma/issues/97)
 - Changed Monitor::proxy_id to Option<i32>, parsing now supports both numbers and strings, see [#95](https://github.com/BigBoot/AutoKuma/issues/95)
 - File source now skips hidden files 
+- File source now skips unsupported file types, see [#127](https://github.com/BigBoot/AutoKuma/issues/127)
 
 ### Added
 - All CLI commands now support reading multiple files/ids/slugs at once, as well as parsing arrays of objects where applicable, [#74](https://github.com/BigBoot/AutoKuma/issues/74)

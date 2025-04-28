@@ -23,20 +23,20 @@ async fn get_entities_from_file<P1: AsRef<Path>, P2: AsRef<Path>>(
     let file = file.as_ref();
     let file_path = base_path.join(file);
 
-    let value: Option<serde_json::Value> = if file.extension().is_some_and(|ext| ext == "json") {
+    let value: serde_json::Value = if file.extension().is_some_and(|ext| ext == "json") {
         let content: String = tokio::fs::read_to_string(file_path)
             .await
             .map_err(|e| Error::IO(e.to_string()))?;
 
-        Some(serde_json::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?)
+        serde_json::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?
     } else if file.extension().is_some_and(|ext| ext == "toml") {
         let content = tokio::fs::read_to_string(file_path)
             .await
             .map_err(|e| Error::IO(e.to_string()))?;
 
-        Some(toml::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?)
+        toml::from_str(&content).map_err(|e| Error::DeserializeError(e.to_string()))?
     } else {
-        None
+        return Ok(vec![]);
     };
 
     let file_id: String = file
@@ -49,13 +49,6 @@ async fn get_entities_from_file<P1: AsRef<Path>, P2: AsRef<Path>>(
             false => p.file_name().map(|s| s.to_string_lossy()),
         })
         .join("/");
-
-    let value = value.ok_or_else(|| {
-        Error::DeserializeError(format!(
-            "Unsupported static monitor file type: {}, supported: .json, .toml",
-            file.display()
-        ))
-    })?;
 
     let values = match value {
         serde_json::Value::Array(entities) => entities
