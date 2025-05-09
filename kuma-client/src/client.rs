@@ -971,7 +971,7 @@ impl Worker {
             .get(
                 self.config
                     .url
-                    .join(&format!("/api/status-page/{}", slug))
+                    .join(&format!("api/status-page/{}", slug))
                     .map_err(|e| Error::InvalidUrl(e.to_string()))?,
             )
             .send()
