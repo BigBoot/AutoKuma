@@ -28,17 +28,30 @@ AutoKuma is a utility that automates the creation of Uptime Kuma monitors based 
 
 
 
+## Supported sources
+AutoKuma initially supported sourcing monitor configurations from docker labels, over the time a few other methods were added, here is an overview of the available sources:
+
+| Source       | Description                                                                                                                                                                 | Support |
+|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| Docker       | Monitors are sourced from container labels                                                                                                                                  | ✅       |
+| Files        | Monitors are sourced from .json/.toml files                                                                                                                                 | ✅       |
+| Docker Swarm | Monitors can be sourced from service and/or container labels                                                                                                                | ⚠️*     |
+| Kubernetes   | Monitors are sourced from CR, see the CRDs in `autokuma/kubernetes/crds-autokuma.yml`. Additionally the `Files` and `Docker` provider might be used depending on your setup | ⚠️*     |
+
+*These sources are supported on an as-is basis as I'm currently not running any of them (They are basically looking for a maintainer, please get in contact if you'd like to adopt one or add support for another source).
+
+
 ## How to Install 📦
 
 ### Supported Platforms 
-| Platform | Architecture | Docker Images | Prebuild Binaries | Notes                            |
-|----------|--------------|---------------|-------------------|----------------------------------|
-| Windows  | x64          | ⛔︎            | ✅                 |                                  |
-| Windows  | arm64        | ⛔︎            | ⛔︎                |                                  |
-| Linux    | x64          | ✅             | ✅*                | CLI Snaps Experimental           |
-| Linux    | arm64        | ⚠️*           | ⛔︎                | Experimental/Only release builds |
-| Mac      | x64          | ⛔︎            | ⛔︎                |                                  |
-| Mac      | arm64        | ⛔︎            | ⚠️*               | Experimental                     |
+| Platform | Architecture | Docker Images | Prebuild Binaries | Notes                  |
+|----------|--------------|---------------|-------------------|------------------------|
+| Windows  | x64          | ⛔︎            | ✅                 |                        |
+| Windows  | arm64        | ⛔︎            | ⛔︎                |                        |
+| Linux    | x64          | ✅             | ✅*                | CLI Snaps Experimental |
+| Linux    | arm64        | ⚠️*           | ⛔︎                | Experimental           |
+| Mac      | x64          | ⛔︎            | ⛔︎                |                        |
+| Mac      | arm64        | ⛔︎            | ⚠️*               | Experimental           |
 
 
 Binaries for windows linux and mac are provided for [GitHub Releases](https://github.com/BigBoot/AutoKuma/releases/latest), additionally AutoKuma is available as a Docker container on [GitHub Container Registry (GHCR)](https://github.com/BigBoot/AutoKuma/pkgs/container/autokuma). To install, simply pull the container using:
@@ -117,7 +130,7 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__KUMA__URL`              | `kuma.url`              | The URL AutoKuma should use to connect to Uptime Kuma                                                                    |
 | `AUTOKUMA__KUMA__USERNAME`         | `kuma.username`         | The username for logging into Uptime Kuma (required unless auth is disabled)                                             |
 | `AUTOKUMA__KUMA__PASSWORD`         | `kuma.password`         | The password for logging into Uptime Kuma (required unless auth is disabled)                                             |
-| `AUTOKUMA__KUMA__MFA_TOKEN`        | `kuma.mfa_token`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                                  |      
+| `AUTOKUMA__KUMA__MFA_TOKEN`        | `kuma.mfa_token`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                                  |
 | `AUTOKUMA__KUMA__MFA_SECRET`       | `kuma.mfa_secret`       | The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single_use mfa_token)           |
 | `AUTOKUMA__KUMA__HEADERS`          | `kuma.headers`          | List of HTTP headers to send when connecting to Uptime Kuma                                                              |
 | `AUTOKUMA__KUMA__CONNECT_TIMEOUT`  | `kuma.connect_timeout`  | The timeout for the initial connection to Uptime Kuma                                                                    |
