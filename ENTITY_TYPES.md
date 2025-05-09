@@ -141,7 +141,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `authMethod`           |                     |
 | `auth_workstation`     |                     |
 | `basic_auth_user`      |                     |
-| `basic_auth_password`  |                     |
+| `basic_auth_pass`      |                     |
 | `body`                 |                     |
 | `description`          | A Monitor           |
 | `expiry_notification`  | true                |
@@ -177,7 +177,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `authMethod`           |                     |
 | `auth_workstation`     |                     |
 | `basic_auth_user`      |                     |
-| `basic_auth_password`  |                     |
+| `basic_auth_pass`      |                     |
 | `body`                 |                     |
 | `description`          | A Monitor           |
 | `expected_value`       |                     |
@@ -240,7 +240,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `authMethod`           |                     |
 | `auth_workstation`     |                     |
 | `basic_auth_user`      |                     |
-| `basic_auth_password`  |                     |
+| `basic_auth_pass`      |                     |
 | `body`                 |                     |
 | `description`          | A Monitor           |
 | `expiry_notification`  | true                |
