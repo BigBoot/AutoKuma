@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.0] - 2025-05-09
 ### Changed
 - ⚠️ BREAKING CHANGE ⚠️ AutoKuma now requires persistent storage:  
   AutoKuma previously relied on using an Uptime Kuma label on monitors to store internal data, allowing it to operate statelessly without requiring storage.  
