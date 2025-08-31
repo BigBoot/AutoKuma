@@ -1,5 +1,6 @@
 use chrono::{self, DateTime};
 use itertools::Itertools;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sled::IVec;
@@ -485,6 +486,7 @@ pub struct AppState {
     pub config: Arc<Config>,
     pub db: Arc<AppDB>,
     defaults: BTreeMap<String, Vec<(String, String)>>,
+    pub compiled_exclusion_patterns: Vec<Regex>,
 }
 
 impl AppState {
@@ -517,10 +519,34 @@ impl AppState {
                         .unwrap_or_else(|| "./".to_owned()),
                 });
 
+        // Compile exclusion patterns at startup
+        let compiled_exclusion_patterns = config
+            .docker
+            .exclude_container_patterns
+            .as_ref()
+            .map(|patterns| {
+                patterns
+                    .iter()
+                    .filter_map(|pattern| match Regex::new(pattern) {
+                        Ok(regex) => Some(regex),
+                        Err(e) => {
+                            log::error!(
+                                "Invalid container exclusion pattern '{}': {}. Pattern will be ignored.",
+                                pattern,
+                                e
+                            );
+                            None
+                        }
+                    })
+                    .collect()
+            })
+            .unwrap_or_else(Vec::new);
+
         Ok(Self {
             db: Arc::new(AppDB::new(&data_path)?),
-            config: config.clone(),
+            config,
             defaults: group_by_prefix(defaults, "."),
+            compiled_exclusion_patterns,
         })
     }
 

@@ -42,6 +42,13 @@ pub struct DockerConfig {
     /// Prefix used when scanning for container labels.
     #[serde_inline_default("kuma".to_owned())]
     pub label_prefix: String,
+
+    /// Regex patterns to exclude containers by name (semicolon-separated).
+    #[serde_as(
+        as = "Option<PickFirst<(DeserializeVecLenient<String>, StringWithSeparator::<SemicolonSeparator, String>)>>"
+    )]
+    #[serde(default)]
+    pub exclude_container_patterns: Option<Vec<String>>,
 }
 
 #[serde_alias(ScreamingSnakeCase)]

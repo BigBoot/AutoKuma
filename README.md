@@ -103,6 +103,7 @@ services:
       #    {{container_name}}_docker.docker.docker_container: {{container_name}}
       # AUTOKUMA__DOCKER__HOSTS: unix:///var/run/docker.sock
       # AUTOKUMA__DOCKER__LABEL_PREFIX: kuma
+      # AUTOKUMA__DOCKER__EXCLUDE_CONTAINER_PATTERNS: "^[a-f0-9]{12}_.*_"  # Exclude Docker Compose temporary containers
       
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -138,6 +139,7 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__DOCKER__HOSTS`          | `docker.hosts`          | List of Docker hosts.  Use a semicolon separated string when setting using an env variable.                              |
 | `AUTOKUMA__DOCKER__LABEL_PREFIX`   | `docker.label_prefix`   | Prefix used when scanning for container labels                                                                           |
 | `AUTOKUMA__DOCKER__SOURCE`         | `docker.source`         | Whether monitors should be created from `Containers` or `Services` labels (or `Both`).                                   |
+| `AUTOKUMA__DOCKER__EXCLUDE_CONTAINER_PATTERNS` | `docker.exclude_container_patterns` | Regex patterns to exclude containers by name (semicolon-separated)                                          |
 | `AUTOKUMA__DOCKER__TLS__VERIFY`    | `docker.tls.verify`     | Whether to verify the TLS certificate or not.                                                                            |
 | `AUTOKUMA__DOCKER__TLS__CERT`      | `docker.tls.cert`       | The path to a custom tls certificate in PEM format.                                                                      |
 | `AUTOKUMA__FILES__FOLLOW_SYMLINKS` | `files.follow_symlinks` | Whether AutoKuma should follow symlinks when looking for "static monitors" (Defaults to false)                           |
@@ -218,6 +220,21 @@ kuma.mymonitor.http.docker_host_name: 'mydocker'
 kuma.mymonitor.http.url: 'https://example.com'
 ```
 
+### Container Exclusion Patterns
+AutoKuma supports excluding containers from monitoring based on regex patterns matching their names. This is particularly useful for filtering out temporary containers created during Docker Compose stack updates.
+
+```yaml
+# Example: Exclude Docker Compose temporary containers with random hex prefixes
+environment:
+  AUTOKUMA__DOCKER__EXCLUDE_CONTAINER_PATTERNS: "^[a-f0-9]{12}_.*_"
+```
+
+**Common use cases:**
+- **Docker Compose temporary containers**: `^[a-f0-9]{12}_.*_` - Excludes containers like `d35d88496ce8_stack_service`
+- **Test containers**: `_test$|test_` - Excludes containers with "test" in the name
+- **Multiple patterns**: `^temp_;^[a-f0-9]{12}_.*_` - Multiple patterns separated by semicolons
+
+**Note**: Container exclusion is applied after label filtering, so only containers with AutoKuma labels that would otherwise be monitored are checked against exclusion patterns.
 
 ### Tags
 **_WARNING:_** Defining Tags is currently experimental and might change in the future.

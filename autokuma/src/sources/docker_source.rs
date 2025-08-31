@@ -15,7 +15,31 @@ use bollard::{
 };
 use itertools::Itertools;
 use kuma_client::util::ResultLogger;
+use regex::Regex;
 use std::{collections::HashMap, env, sync::Arc};
+
+// Helper function to extract container name, flattening the Option chain
+fn get_container_name(container: &ContainerSummary) -> Option<&str> {
+    container
+        .names
+        .as_ref()?
+        .first()
+        .map(|name| name.trim_start_matches("/"))
+}
+
+// Helper function to check if container should be excluded using pre-compiled regexes
+fn is_excluded_by_patterns(container_name: &str, compiled_patterns: &[Regex]) -> bool {
+    for regex in compiled_patterns {
+        if regex.is_match(container_name) {
+            log::debug!(
+                "Excluding container '{}' due to exclusion pattern",
+                container_name
+            );
+            return true;
+        }
+    }
+    false
+}
 
 async fn get_kuma_containers(
     state: Arc<AppState>,
@@ -34,8 +58,9 @@ async fn get_kuma_containers(
             )
         })?
         .into_iter()
-        .filter(|c| {
-            c.labels.as_ref().map_or_else(
+        .filter(|container| {
+            // Check if container has required labels
+            let has_kuma_labels = container.labels.as_ref().map_or_else(
                 || false,
                 |labels| {
                     labels.keys().any(|key| {
@@ -43,7 +68,22 @@ async fn get_kuma_containers(
                             || state.config.snippets.contains_key(&format!("!{}", key))
                     })
                 },
-            )
+            );
+
+            if !has_kuma_labels {
+                return false;
+            }
+
+            // Check if container should be excluded using pre-compiled regexes
+            if !state.compiled_exclusion_patterns.is_empty() {
+                if let Some(container_name) = get_container_name(container) {
+                    if is_excluded_by_patterns(container_name, &state.compiled_exclusion_patterns) {
+                        return false;
+                    }
+                }
+            }
+
+            true
         })
         .collect::<Vec<_>>())
 }

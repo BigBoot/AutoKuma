@@ -39,6 +39,7 @@ flexi_logger = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
+regex = { workspace = true }
 rust_socketio = { workspace = true }
 seq-macro = { workspace = true }
 serde = { workspace = true }
