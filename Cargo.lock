@@ -204,6 +204,7 @@ dependencies = [
  "kube",
  "kuma-client",
  "log",
+ "regex",
  "rust_socketio",
  "schemars",
  "seq-macro",
