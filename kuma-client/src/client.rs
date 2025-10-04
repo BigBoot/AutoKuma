@@ -1116,6 +1116,16 @@ impl Worker {
         Ok(msg)
     }
 
+    pub async fn get_database_size(self: &Arc<Self>) -> Result<u64> {
+        let size: u64 = self.call("getDatabaseSize", vec![], "/size", true).await?;
+        Ok(size)
+    }
+
+    pub async fn shrink_database(self: &Arc<Self>) -> Result<()> {
+        let _: bool = self.call("shrinkDatabase", vec![], "/ok", true).await?;
+        Ok(())
+    }
+
     pub async fn connect(self: &Arc<Self>) -> Result<()> {
         let mut tls_config = TlsConnector::builder();
 
@@ -1586,6 +1596,16 @@ impl Client {
         docker_host: T,
     ) -> Result<String> {
         self.worker.test_docker_host(docker_host.borrow()).await
+    }
+
+    /// Get the size of the monitor database (SQLite only)
+    pub async fn get_database_size(&self) -> Result<u64> {
+        self.worker.get_database_size().await
+    }
+
+    /// Trigger database VACUUM for the monitor database (SQLite only)
+    pub async fn shrink_database(&self) -> Result<()> {
+        self.worker.shrink_database().await
     }
 
     /// Disconnects the client from Uptime Kuma.

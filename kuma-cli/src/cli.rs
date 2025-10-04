@@ -147,6 +147,11 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: Option<crate::docker_host::Command>,
     },
+    /// Manage Statistics Database (SQLite only)
+    Database {
+        #[command(subcommand)]
+        command: Option<crate::database::Command>,
+    },
     /// Authenticate with the uptime kuma server
     Login {
         #[command(flatten)]
