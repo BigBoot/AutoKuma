@@ -4,6 +4,7 @@ use flexi_logger::Logger;
 use kuma_client::Config;
 
 mod cli;
+mod database;
 mod docker_host;
 mod login;
 mod maintenance;
@@ -34,6 +35,7 @@ async fn main() {
         }
         Some(Commands::StatusPage { command }) => status_page::handle(command, &config, &cli).await,
         Some(Commands::DockerHost { command }) => docker_host::handle(command, &config, &cli).await,
+        Some(Commands::Database { command }) => database::handle(command, &config, &cli).await,
         Some(Commands::Login { command }) => login::handle(command, &config, &cli).await,
         None if cli.shadow => kuma_client::build::print_build_in(),
         None => {}
