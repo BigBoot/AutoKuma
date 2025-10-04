@@ -107,7 +107,7 @@ services:
       #    *.max_retries: 3
       # AUTOKUMA__SNIPPETS__WEB: |- 
       #    {{container_name}}_http.http.name: {{container_name}} HTTP
-      #    {{container_name}}_http.http.url: https://{{@0}}:{{@1}}
+      #    {{container_name}}_http.http.url: https://{{ args[0] }}:{{ args[1] }}
       #    {{container_name}}_docker.docker.name: {{container_name}} Docker
       #    {{container_name}}_docker.docker.docker_container: {{container_name}}
       # AUTOKUMA__DOCKER__HOSTS: unix:///var/run/docker.sock
