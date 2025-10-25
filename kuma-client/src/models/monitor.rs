@@ -10,7 +10,7 @@ use crate::{
 };
 use derivative::Derivative;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use serde_inline_default::serde_inline_default;
 use serde_with::{serde_as, skip_serializing_none};
 use std::collections::{HashMap, HashSet};
@@ -567,6 +567,26 @@ pub enum JsonPathOperator {
     Contains,
 }
 
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(untagged)]
+pub enum ExpectedValue {
+    String(String),
+    Number(f64),
+}
+
+impl Serialize for ExpectedValue {
+    #[inline]
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            ExpectedValue::String(ref s) => serializer.serialize_str(s),
+            ExpectedValue::Number(n) => serializer.serialize_str(&n.to_string()),
+        }
+    }
+}
+
 monitor_type! {
     MonitorGroup Group {
 
@@ -616,7 +636,7 @@ monitor_type! {
         #[cfg(not(feature = "uptime-kuma-v1"))]
         #[serde(rename = "expectedValue")]
         #[serde(alias = "expected_value")]
-        pub expected_value: Option<String>,
+        pub expected_value: Option<ExpectedValue>,
     }
 }
 
@@ -829,7 +849,7 @@ monitor_type! {
 
         #[serde(rename = "expectedValue")]
         #[serde(alias = "expected_value")]
-        pub expected_value: Option<String>,
+        pub expected_value: Option<ExpectedValue>,
 
         #[serde(rename = "url")]
         pub url: Option<String>,
@@ -1021,7 +1041,7 @@ monitor_type! {
 
         #[serde(rename = "expectedValue")]
         #[serde(alias = "expected_value")]
-        pub expected_value: Option<String>,
+        pub expected_value: Option<ExpectedValue>,
     }
 }
 
@@ -1154,7 +1174,7 @@ monitor_type! {
 
         #[serde(rename = "expectedValue")]
         #[serde(alias = "expected_value")]
-        pub expected_value: Option<String>,
+        pub expected_value: Option<ExpectedValue>,
     }
 }
 
