@@ -8,9 +8,9 @@ use crate::{
 };
 use async_trait::async_trait;
 use bollard::{
-    container::ListContainersOptions,
     models::SystemInfo,
-    service::{ContainerSummary, ListServicesOptions, Service},
+    query_parameters::{ListContainersOptionsBuilder, ListServicesOptionsBuilder},
+    service::{ContainerSummary, Service},
     Docker,
 };
 use itertools::Itertools;
@@ -46,10 +46,7 @@ async fn get_kuma_containers(
     docker: &Docker,
 ) -> Result<Vec<ContainerSummary>> {
     Ok(docker
-        .list_containers(Some(ListContainersOptions::<String> {
-            all: true,
-            ..Default::default()
-        }))
+        .list_containers(Some(ListContainersOptionsBuilder::new().all(true).build()))
         .await
         .log_warn(std::module_path!(), |_| {
             format!(
@@ -90,9 +87,7 @@ async fn get_kuma_containers(
 
 async fn get_kuma_services(state: Arc<AppState>, docker: &Docker) -> Result<Vec<Service>> {
     Ok(docker
-        .list_services(Some(ListServicesOptions::<String> {
-            ..Default::default()
-        }))
+        .list_services(Some(ListServicesOptionsBuilder::new().build()))
         .await
         .log_warn(std::module_path!(), |_| {
             format!(
