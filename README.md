@@ -46,9 +46,9 @@ AutoKuma initially supported sourcing monitor configurations from docker labels,
 ### Supported Platforms 
 | Platform | Architecture | Docker Images | Prebuild Binaries | Notes                  |
 |----------|--------------|---------------|-------------------|------------------------|
-| Windows  | x64          | ⛔︎            | ✅                 |                        |
+| Windows  | x64          | ⛔︎            | ✅                |                        |
 | Windows  | arm64        | ⛔︎            | ⛔︎                |                        |
-| Linux    | x64          | ✅             | ✅*                | CLI Snaps Experimental |
+| Linux    | x64          | ✅            | ✅*               |                        |
 | Linux    | arm64        | ⚠️*           | ⛔︎                | Experimental           |
 | Mac      | x64          | ⛔︎            | ⛔︎                |                        |
 | Mac      | arm64        | ⛔︎            | ⚠️*               | Experimental           |
@@ -59,14 +59,23 @@ Binaries for windows linux and mac are provided for [GitHub Releases](https://gi
 Latest Release:
 
 ```bash
+# For Uptime Kuma V2
 docker pull ghcr.io/bigboot/autokuma:latest
+# For Uptime Kuma V1
+docker pull ghcr.io/bigboot/autokuma:uptime-kuma-v1-latest
+
 ```
 
 Dev Version:
 
 ```bash
+# For Uptime Kuma V2
 docker pull ghcr.io/bigboot/autokuma:master
+# For Uptime Kuma V1
+docker pull ghcr.io/bigboot/autokuma:uptime-kuma-v1-master
 ```
+
+
 
 
 ❗ The dev version might break or contain breaking changes without warning, usage on a production system is not adviced.

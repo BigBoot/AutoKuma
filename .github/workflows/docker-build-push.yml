@@ -24,12 +24,12 @@ jobs:
             tag_prefix: ""
           - name: "ghcr.io/bigboot/autokuma"
             dockerfile: Dockerfile
-            features: "uptime-kuma-v2"
-            tag_prefix: "uptime-kuma-v2-"
+            features: "uptime-kuma-v1"
+            tag_prefix: "uptime-kuma-v1-"
           - name: "ghcr.io/bigboot/kuma"
             dockerfile: Dockerfile.cli
-            features: "uptime-kuma-v2"
-            tag_prefix: "uptime-kuma-v2-"
+            features: "uptime-kuma-v1"
+            tag_prefix: "uptime-kuma-v1-"
 
     steps:
       - uses: actions/checkout@v4
