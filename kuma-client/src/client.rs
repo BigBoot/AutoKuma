@@ -1,6 +1,6 @@
 use crate::{
     docker_host::{DockerHost, DockerHostList},
-    error::{Error, Result, TotpResult},
+    error::{Error, InvalidReferenceError, Result, TotpResult},
     event::Event,
     maintenance::{Maintenance, MaintenanceList, MaintenanceMonitor, MaintenanceStatusPage},
     monitor::{Monitor, MonitorList},
@@ -23,7 +23,7 @@ use rust_socketio::{
 use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs, mem,
     str::FromStr,
     sync::{Arc, Weak},
@@ -479,7 +479,8 @@ impl Worker {
         notification: &mut Notification,
     ) -> Result<()> {
         let json = serde_json::to_value(notification.clone()).unwrap();
-        let config_json = serde_json::to_value(notification.config.clone()).unwrap();
+        let config_json =
+            serde_json::to_value(notification.config.clone().unwrap_or_else(|| json!({}))).unwrap();
 
         let merge = serde_merge::omerge(config_json, &json).unwrap();
 
@@ -656,7 +657,74 @@ impl Worker {
         Ok(())
     }
 
-    pub async fn add_monitor(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
+    async fn verify_monitor(self: &Arc<Self>, monitor: &Monitor) -> Result<()> {
+        if let Some(referenced_parent) = monitor.common().parent() {
+            if !self
+                .monitors
+                .lock()
+                .await
+                .values()
+                .any(|m| m.common().id().is_some_and(|id| &id == referenced_parent))
+            {
+                return Err(Error::InvalidReference(
+                    InvalidReferenceError::InvalidParent(referenced_parent.to_string()),
+                ));
+            }
+        }
+
+        if let Some(referenced_notifications) = monitor.common().notification_id_list() {
+            let available_notifications = self
+                .notifications
+                .lock()
+                .await
+                .iter()
+                .filter_map(|n| n.id)
+                .collect::<HashSet<_>>();
+
+            for (notification_id, _) in referenced_notifications {
+                if let Some(id) = notification_id.parse::<i32>().ok() {
+                    if !available_notifications.contains(&id) {
+                        return Err(Error::InvalidReference(
+                            InvalidReferenceError::InvalidNotification(notification_id.to_owned()),
+                        ));
+                    }
+                } else {
+                    return Err(Error::InvalidReference(
+                        InvalidReferenceError::InvalidNotification(notification_id.to_owned()),
+                    ));
+                }
+            }
+        }
+
+        if let Monitor::Docker {
+            value: docker_monitor,
+        } = monitor
+        {
+            if let Some(referenced_docker_host) = &docker_monitor.docker_host {
+                if !self
+                    .docker_hosts
+                    .lock()
+                    .await
+                    .iter()
+                    .any(|dh| dh.id.is_some_and(|id| &id == referenced_docker_host))
+                {
+                    return Err(Error::InvalidReference(
+                        InvalidReferenceError::InvalidDockerHost(
+                            referenced_docker_host.to_string(),
+                        ),
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn add_monitor(self: &Arc<Self>, monitor: &mut Monitor, verify: bool) -> Result<()> {
+        if verify {
+            self.verify_monitor(monitor).await?;
+        }
+
         let tags = mem::take(monitor.common_mut().tags_mut());
         let notifications = mem::take(monitor.common_mut().notification_id_list_mut());
 
@@ -704,7 +772,7 @@ impl Worker {
             *monitor.common_mut().tag_names_mut() = tag_names;
         }
 
-        self.edit_monitor(monitor).await?;
+        self.edit_monitor(monitor, false).await?;
 
         self.monitors
             .lock()
@@ -735,7 +803,11 @@ impl Worker {
         })
     }
 
-    pub async fn edit_monitor(self: &Arc<Self>, monitor: &mut Monitor) -> Result<()> {
+    pub async fn edit_monitor(self: &Arc<Self>, monitor: &mut Monitor, verify: bool) -> Result<()> {
+        if verify {
+            self.verify_monitor(monitor).await?;
+        }
+
         let tags = mem::take(monitor.common_mut().tags_mut());
 
         #[cfg(feature = "private-api")]
@@ -1393,14 +1465,14 @@ impl Client {
     /// Adds a new monitor to Uptime Kuma.
     pub async fn add_monitor<T: Into<Monitor>>(&self, monitor: T) -> Result<Monitor> {
         let mut monitor = monitor.into();
-        self.worker.add_monitor(&mut monitor).await?;
+        self.worker.add_monitor(&mut monitor, true).await?;
         Ok(monitor)
     }
 
     /// Edits an existing monitor in Uptime Kuma.
     pub async fn edit_monitor<T: Into<Monitor>>(&self, monitor: T) -> Result<Monitor> {
         let mut monitor = monitor.into();
-        self.worker.edit_monitor(&mut monitor).await?;
+        self.worker.edit_monitor(&mut monitor, true).await?;
         Ok(monitor)
     }
 

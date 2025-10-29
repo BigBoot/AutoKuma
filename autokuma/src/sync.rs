@@ -147,7 +147,7 @@ impl Sync {
 
             if current.entity_type() != new.entity_type() {
                 info!(
-                    "Recreating entity because type changed: {} ({} -> {})",
+                    "Recreating entity because type changed: {} ({:?} -> {:?})",
                     id,
                     current.entity_type(),
                     new.entity_type()
@@ -277,11 +277,21 @@ impl Sync {
             .collect_vec();
 
         for (id, entity) in to_create {
-            self.create_entity(&kuma, id, entity).await?;
+            let _ = self
+                .create_entity(&kuma, id, entity)
+                .await
+                .log_warn(std::module_path!(), |e| {
+                    format!("Failed to create '{}': {}", id, e)
+                });
         }
 
         for (id, current, new) in to_update {
-            self.update_entity(&kuma, id, current, new).await?;
+            let _ = self
+                .update_entity(&kuma, id, current, new)
+                .await
+                .log_warn(std::module_path!(), |e| {
+                    format!("Failed to update '{}': {}", id, e)
+                });
         }
 
         if self.app_state.config.on_delete == DeleteBehavior::Delete {
@@ -308,11 +318,19 @@ impl Sync {
         }
 
         for entity in self.app_state.db.get_entities_to_delete()? {
+            let name = entity.name().to_owned();
+
             // Entity reappeared, do not delete
-            if !to_delete.iter().any(|(name, _)| *name == entity.name()) {
+            if !to_delete.iter().any(|(name, _)| name == name) {
                 continue;
             }
-            self.delete_entity_by_id(&kuma, entity).await?;
+
+            let _ = self
+                .delete_entity_by_id(&kuma, entity)
+                .await
+                .log_warn(std::module_path!(), |e| {
+                    format!("Failed to delete '{}': {}", name, e)
+                });
         }
 
         Ok(())

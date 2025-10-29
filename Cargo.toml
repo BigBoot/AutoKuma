@@ -23,6 +23,7 @@ const-str = { version = "0.7.0", features = ["proc"] }
 console-subscriber = { version = "0.4.1" }
 cute_custom_default = { version = "2.2.0" }
 derivative = { version = "2.2.0" }
+derive_more = { version = "2.0.1" }
 dirs = { version = "6.0.0" }
 flexi_logger = { version = "0.31.7", features = ["compress"] }
 futures-util = { version = "0.3.31" }
@@ -37,6 +38,7 @@ k8s-openapi = { version = "0.26.0", features = ["earliest"] }
 log = { version = "0.4.22" }
 native-tls = { version = "0.2.12" }
 owo-colors = { version = "4.1.0" }
+rand = { version = "0.9.2" }
 regex = { version = "1.11.1" }
 reqwest = { version = "0.12.9", features = ["json"] }
 rust_socketio = { version = "0.6.0", features = ["async"] }

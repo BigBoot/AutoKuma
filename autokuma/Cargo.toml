@@ -34,11 +34,13 @@ config = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
 const-str = { workspace = true }
 derivative = { workspace = true }
+derive_more = { workspace = true }
 dirs = { workspace = true }
 flexi_logger = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
+owo-colors = { workspace = true }
 regex = { workspace = true }
 rust_socketio = { workspace = true }
 seq-macro = { workspace = true }
@@ -62,3 +64,6 @@ kube = { workspace = true, optional = true }
 k8s-openapi = { workspace = true, optional = true }
 schemars = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
+
+[dev-dependencies]
+rand = { workspace = true }

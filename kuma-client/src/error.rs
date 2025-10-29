@@ -65,7 +65,7 @@ pub enum Error {
     #[error("No {0} with slug {1} could be found")]
     SlugNotFound(String, String),
 
-    /// Error when an entity with a specific slug is not found.
+    /// Error when unable to load a custom TLS certificate.
     #[error("Unable to load custom tls cert {0}: {1}")]
     InvalidTlsCert(String, String),
 
@@ -76,6 +76,10 @@ pub enum Error {
     /// Wrapper for an underlying totp_rs error.
     #[error(transparent)]
     Totp(#[from] TotpError),
+
+    /// Error when a monitor references an invalid or non-existent entity.
+    #[error(transparent)]
+    InvalidReference(#[from] InvalidReferenceError),
 }
 
 /// Custom result type for handling various errors in the kuma_client library.
@@ -103,3 +107,25 @@ pub enum TotpError {
 
 /// Custom result type for handling totp_rs errors.
 pub type TotpResult<T> = std::result::Result<T, TotpError>;
+
+/// This error indicates that a monitor references an invalid or non-existent entity.
+#[derive(Error, Debug)]
+pub enum InvalidReferenceError {
+    /// The parent monitor ID is invalid.
+    #[error("Unknown parent monitor ID {0}")]
+    InvalidParent(String),
+
+    /// The referenced notification ID is invalid.
+    #[error("Unknown notification ID {0}")]
+    InvalidNotification(String),
+
+    /// The referenced monitor ID is invalid.
+    #[error("Unknown docker host ID {0}")]
+    InvalidDockerHost(String),
+}
+
+impl From<Error> for Vec<Error> {
+    fn from(err: Error) -> Self {
+        vec![err]
+    }
+}
