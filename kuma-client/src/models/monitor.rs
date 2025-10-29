@@ -160,9 +160,9 @@ macro_rules! monitor_type {
 
             #[cfg(not(feature = "uptime-kuma-v1"))]
             #[serde(rename = "conditions")]
-            #[serde_as(as = "Option<DeserializeVecLenient<MonitorCondition>>")]
-            #[serde_inline_default(Some(vec![]))]
-            pub conditions: Option<Vec<MonitorCondition>>,
+            #[serde_as(as = "DeserializeVecLenient<MonitorCondition>")]
+            #[serde_inline_default(vec![])]
+            pub conditions: Vec<MonitorCondition>,
 
             $($field)*
         }
