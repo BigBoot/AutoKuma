@@ -39,7 +39,7 @@ jobs:
           key: ${{ matrix.runs-on }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@1.85.0
+        uses: dtolnay/rust-toolchain@1.89.0
 
       - name: Setup NASM
         uses: ilammy/setup-nasm@v1

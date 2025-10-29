@@ -3,64 +3,64 @@ adopt-info: kuma
 summary: A cli for uptime-kuma
 icon: icon.svg
 description: |
-  Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting with Uptime Kuma (1).
-  With Kuma CLI you can easily configure, monitor and manage your applications from the command line.
+    Kuma CLI is a Command Line Interface (CLI) tool for managing and interacting with Uptime Kuma (1).
+    With Kuma CLI you can easily configure, monitor and manage your applications from the command line.
 
-  All configuration options can also be specified as environment variables:
-  KUMA__URL="http://localhost:3001/"
-  KUMA__USERNAME="<username>"
-  KUMA__PASSWORD="<password>"
-  ...
+    All configuration options can also be specified as environment variables:
+    KUMA__URL="http://localhost:3001/"
+    KUMA__USERNAME="<username>"
+    KUMA__PASSWORD="<password>"
+    ...
 
-  Additionally Kuma CLI will read configuration from ~/snap/kuma/current/.config/kuma/config.{toml,yaml,json}.
+    Additionally Kuma CLI will read configuration from ~/snap/kuma/current/.config/kuma/config.{toml,yaml,json}.
 
-  Usage: kuma [OPTIONS] [COMMAND]
+    Usage: kuma [OPTIONS] [COMMAND]
 
-  Commands:
-    monitor       Manage Monitors
-    notification  Manage Notifications
-    tag           Manage Tags
-    maintenance   Manage Maintenances
-    status-page   Manage Status Pages
-    docker-host   Manage Docker Hosts
-    login         Authenticate with the uptime kuma server
-    help          Print this message or the help of the given subcommand(s)
+    Commands:
+      monitor       Manage Monitors
+      notification  Manage Notifications
+      tag           Manage Tags
+      maintenance   Manage Maintenances
+      status-page   Manage Status Pages
+      docker-host   Manage Docker Hosts
+      login         Authenticate with the uptime kuma server
+      help          Print this message or the help of the given subcommand(s)
 
-  Options:
-        --url <URL>
-            The URL AutoKuma should use to connect to Uptime Kuma
-        --username <USERNAME>
-            The username for logging into Uptime Kuma (required unless auth is disabled)
-        --password <PASSWORD>
-            The password for logging into Uptime Kuma (required unless auth is disabled)
-        --mfa-token <MFA_TOKEN>
-            The MFA token for logging into Uptime Kuma (required if MFA is enabled)
-        --mfa-secret <MFA_SECRET>
-            The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single use mfa_token)
-        --auth-token <AUTH_TOKEN>
-            Log in using an jwt auth token (alternative to using username and password, does not require a mfa token). Can be obtained using the `login` command
-        --store-token
-            Store the auth token after a successful login. The token will be used for subseqent logins bypassing the need for a mfa token
-        --header <KEY=VALUE>
-            Add a HTTP header when connecting to Uptime Kuma
-        --connect-timeout <CONNECT_TIMEOUT>
-            The timeout for the initial connection to Uptime Kuma [default: 30.0]
-        --call-timeout <CALL_TIMEOUT>
-            The timeout for executing calls to the Uptime Kuma server [default: 30.0]
-        --format <OUTPUT_FORMAT>
-            The output format [default: json] [possible values: json, yaml]
-        --tls-no-verify
-            Disable TLS certificate verification
-        --tls-certificate <TLS_CERTIFICATE>
-            Path to custom TLS certificate in PEM format to use for connecting to Uptime Kuma
-        --pretty
-            Whether the output should be pretty printed or condensed
-    -h, --help
-            Print help
-    -V, --version
-            Print version
+    Options:
+          --url <URL>
+              The URL AutoKuma should use to connect to Uptime Kuma
+          --username <USERNAME>
+              The username for logging into Uptime Kuma (required unless auth is disabled)
+          --password <PASSWORD>
+              The password for logging into Uptime Kuma (required unless auth is disabled)
+          --mfa-token <MFA_TOKEN>
+              The MFA token for logging into Uptime Kuma (required if MFA is enabled)
+          --mfa-secret <MFA_SECRET>
+              The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single use mfa_token)
+          --auth-token <AUTH_TOKEN>
+              Log in using an jwt auth token (alternative to using username and password, does not require a mfa token). Can be obtained using the `login` command
+          --store-token
+              Store the auth token after a successful login. The token will be used for subseqent logins bypassing the need for a mfa token
+          --header <KEY=VALUE>
+              Add a HTTP header when connecting to Uptime Kuma
+          --connect-timeout <CONNECT_TIMEOUT>
+              The timeout for the initial connection to Uptime Kuma [default: 30.0]
+          --call-timeout <CALL_TIMEOUT>
+              The timeout for executing calls to the Uptime Kuma server [default: 30.0]
+          --format <OUTPUT_FORMAT>
+              The output format [default: json] [possible values: json, yaml]
+          --tls-no-verify
+              Disable TLS certificate verification
+          --tls-certificate <TLS_CERTIFICATE>
+              Path to custom TLS certificate in PEM format to use for connecting to Uptime Kuma
+          --pretty
+              Whether the output should be pretty printed or condensed
+      -h, --help
+              Print help
+      -V, --version
+              Print version
 
-  (1) https://uptime.kuma.pet/
+    (1) https://uptime.kuma.pet/
 
 issues: https://github.com/BigBoot/AutoKuma/issues
 contact: https://github.com/BigBoot/AutoKuma/issues
@@ -72,24 +72,24 @@ confinement: strict
 base: core24
 
 apps:
-  kuma:
-    command: bin/kuma
-    plugs:
-      - network
+    kuma:
+        command: bin/kuma
+        plugs:
+            - network
 
 parts:
-  kuma:
-    plugin: rust
-    rust-channel: "1.85"
-    source: .
-    source-subdir: kuma-cli
-    build-packages:
-      - libssl-dev
-    override-pull: |
-      craftctl default
+    kuma:
+        plugin: rust
+        rust-channel: "1.89"
+        source: .
+        source-subdir: kuma-cli
+        build-packages:
+            - libssl-dev
+        override-pull: |
+            craftctl default
 
-      git config --global --add safe.directory '*'
-      version="$(git describe --always --tags | sed -e 's/^v//;s/-/+git/;y/-/./')"
-      [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
-      craftctl set version="$version"
-      craftctl set grade="$grade"
+            git config --global --add safe.directory '*'
+            version="$(git describe --always --tags | sed -e 's/^v//;s/-/+git/;y/-/./')"
+            [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
+            craftctl set version="$version"
+            craftctl set grade="$grade"
