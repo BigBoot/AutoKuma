@@ -112,7 +112,9 @@ impl ParseValue for Monitor {
             MonitorType::Steam => parse_entity!(Monitor, MonitorSteam, v),
             MonitorType::SqlServer => parse_entity!(Monitor, MonitorSqlServer, v),
             MonitorType::TailscalePing => parse_entity!(Monitor, MonitorTailscalePing, v),
+            #[cfg(not(feature = "uptime-kuma-v1"))]
             MonitorType::SNMP => parse_entity!(Monitor, MonitorSNMP, v),
+            #[cfg(not(feature = "uptime-kuma-v1"))]
             MonitorType::RabbitMQ => parse_entity!(Monitor, MonitorRabbitMQ, v),
         }
         .map_err(|e| Error::LabelParseError(e.to_string()))
