@@ -8,7 +8,7 @@ COPY . .
 RUN --mount=type=cache,target=/cache/$TARGETARCH,id=cache-ghcr.io/bigboot/autokuma-${FEATURES} \
     cargo install --features "${FEATURES}" --locked --target-dir /cache/$TARGETARCH --path ./autokuma 
  
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
