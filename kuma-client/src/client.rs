@@ -238,24 +238,44 @@ impl Worker {
     async fn on_event(self: &Arc<Self>, event: Event, payload: Value) -> Result<()> {
         match event {
             Event::MonitorList => {
-                self.on_monitor_list(serde_json::from_value(payload).unwrap())
-                    .await?
+                self.on_monitor_list(
+                    serde_json::from_value(payload)
+                        .log_error(module_path!(), |_| "Failed to deserialize MonitorList")
+                        .unwrap(),
+                )
+                .await?
             }
             Event::NotificationList => {
-                self.on_notification_list(serde_json::from_value(payload).unwrap())
-                    .await?
+                self.on_notification_list(
+                    serde_json::from_value(payload)
+                        .log_error(module_path!(), |_| "Failed to deserialize NotificationList")
+                        .unwrap(),
+                )
+                .await?
             }
             Event::MaintenanceList => {
-                self.on_maintenance_list(serde_json::from_value(payload).unwrap())
-                    .await?
+                self.on_maintenance_list(
+                    serde_json::from_value(payload)
+                        .log_error(module_path!(), |_| "Failed to deserialize MaintenanceList")
+                        .unwrap(),
+                )
+                .await?
             }
             Event::StatusPageList => {
-                self.on_status_page_list(serde_json::from_value(payload).unwrap())
-                    .await?
+                self.on_status_page_list(
+                    serde_json::from_value(payload)
+                        .log_error(module_path!(), |_| "Failed to deserialize StatusPageList")
+                        .unwrap(),
+                )
+                .await?
             }
             Event::DockerHostList => {
-                self.on_docker_host_list(serde_json::from_value(payload).unwrap())
-                    .await?
+                self.on_docker_host_list(
+                    serde_json::from_value(payload)
+                        .log_error(module_path!(), |_| "Failed to deserialize DockerHostList")
+                        .unwrap(),
+                )
+                .await?
             }
             Event::Info => self.on_info().await?,
             Event::AutoLogin => self.on_auto_login().await?,

@@ -15,6 +15,7 @@ private-api = []
 uptime-kuma-v1 = []
 
 [dependencies]
+dateparser = { workspace = true }
 config = { workspace = true }
 const-str = { workspace = true }
 derivative = { workspace = true }

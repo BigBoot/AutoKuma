@@ -233,8 +233,23 @@ impl<'de> DeserializeAs<'de, Option<Range<PrimitiveDateTime>>> for SerializeDate
             let value = source
                 .into_iter()
                 .map(|o| {
-                    o.map(|s| PrimitiveDateTime::parse(&s, &Iso8601::DATE_TIME))
-                        .transpose()
+                    o.map(|s| -> Result<PrimitiveDateTime, D::Error> {
+                        if let Ok(dt) = dateparser::parse(&s) {
+                            return Ok(PrimitiveDateTime::parse(
+                                &dt.to_rfc3339(),
+                                &Iso8601::DATE_TIME,
+                            )
+                            .unwrap());
+                        }
+                        if let Ok(dt) = PrimitiveDateTime::parse(&s, &Iso8601::DATE_TIME) {
+                            return Ok(dt);
+                        }
+                        Err(serde::de::Error::custom(format!(
+                            "Unable to parse {} as DateTime",
+                            s
+                        )))
+                    })
+                    .transpose()
                 })
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(serde::de::Error::custom)?;

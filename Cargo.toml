@@ -22,6 +22,7 @@ config = { version = "0.15.11" }
 const-str = { version = "0.7.0", features = ["proc"] }
 console-subscriber = { version = "0.4.1" }
 cute_custom_default = { version = "2.2.0" }
+dateparser = { version = "0.2.1" }
 derivative = { version = "2.2.0" }
 derive_more = { version = "2.0.1" }
 dirs = { version = "6.0.0" }
