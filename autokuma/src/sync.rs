@@ -18,6 +18,7 @@ pub struct Sync {
     app_state: Arc<AppState>,
     auth_token: Option<String>,
     sources: Vec<Box<dyn Source>>,
+    client: Option<Arc<Client>>,
 }
 
 impl Sync {
@@ -27,6 +28,7 @@ impl Sync {
             app_state: state.clone(),
             auth_token: state.config.kuma.auth_token.clone(),
             sources: crate::sources::get_sources(state),
+            client: None,
         })
     }
 
@@ -199,12 +201,21 @@ impl Sync {
         })
     }
 
+    async fn get_connection(&mut self) -> Result<Arc<Client>> {
+        if self.client.is_none() {
+            let kuma_config = kuma_client::Config {
+                auth_token: self.auth_token.clone(),
+                ..self.app_state.config.kuma.clone()
+            };
+            let kuma = Client::connect(kuma_config).await?;
+            self.client = Some(Arc::new(kuma));
+        }
+
+        Ok(self.client.as_ref().unwrap().clone())
+    }
+
     async fn do_sync(&mut self) -> Result<()> {
-        let kuma_config = kuma_client::Config {
-            auth_token: self.auth_token.clone(),
-            ..self.app_state.config.kuma.clone()
-        };
-        let kuma = Client::connect(kuma_config).await?;
+        let kuma = self.get_connection().await?;
 
         crate::migrations::migrate(&self.app_state, &kuma).await?;
 

@@ -22,4 +22,6 @@ pub(crate) enum Event {
     StatusPageList,
     Uptime,
     LoginRequired,
+    UpdateMonitorIntoList,
+    DeleteMonitorFromList,
 }
