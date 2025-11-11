@@ -1,6 +1,8 @@
 //! Models related to Uptime Kuma notification services
 
-use crate::deserialize::{DeserializeNumberLenient, DeserializeValueLenient};
+use crate::deserialize::{
+    DeserializeBoolLenient, DeserializeNumberLenient, DeserializeValueLenient,
+};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 
@@ -20,6 +22,7 @@ pub struct Notification {
 
     /// Indicates whether the notification service is active or not.
     #[serde(rename = "active")]
+    #[serde_as(as = "Option<DeserializeBoolLenient>")]
     pub active: Option<bool>,
 
     /// The user identifier associated with the notification service.
@@ -30,6 +33,7 @@ pub struct Notification {
     /// Indicates whether the notification service is enabled by default.
     #[serde(rename = "isDefault")]
     #[serde(alias = "is_default")]
+    #[serde_as(as = "Option<DeserializeBoolLenient>")]
     pub is_default: Option<bool>,
 
     /// Additional service specific configuration in JSON format.
