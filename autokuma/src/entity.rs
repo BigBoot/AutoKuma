@@ -17,7 +17,6 @@ use log::warn;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::HashMap, sync::Arc};
-use strum::Display;
 use unescaper::unescape;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, derive_more::From)]
@@ -30,7 +29,7 @@ pub enum Entity {
     StatusPage(StatusPage),
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Display)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityType {
     #[serde(rename = "docker_host")]
     DockerHost,
@@ -42,6 +41,16 @@ pub enum EntityType {
     StatusPage,
     #[serde(untagged)]
     Monitor(MonitorType),
+}
+
+impl std::fmt::Display for EntityType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        serde_json::to_value(self)
+            .map_err(|_| std::fmt::Error)?
+            .as_str()
+            .ok_or(std::fmt::Error)?
+            .fmt(f)
+    }
 }
 
 impl Entity {
@@ -478,7 +487,12 @@ pub fn get_entity_from_settings(
             .chain(defaults.into_iter())
             .sorted_by(|a, b| Ord::cmp(&a.0, &b.0))
             .unique_by(|(key, _)| key.to_owned())
-            .map(|(key, value)| format!("{} = {}", key, value))
+            .map(|(key, value)| match value {
+                serde_json::Value::String(s) if s.starts_with("\"") && s.ends_with("\"") => {
+                    format!("{} = {}", key, s)
+                }
+                other => format!("{} = {}", key, other),
+            })
             .join("\n"),
         context,
     )?;
