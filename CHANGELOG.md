@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2025-11-12
+### Changed
+- ⚠️ BREAKING CHANGE ⚠️ Uptime Kuma v2 support is now enabled by default, v1 compatible images are available with the `uptime-kuma-v1-` prefix, please make sure to use the correct tag.
+- AutoKuma now keeps the connection alive between syncs, this should dramatically reduce the load on uptime kuma
+- Improve error messages for label parsing
+
+### Fixed
+- Improve parsing for `expected_value` properties
+- DateTime parsing now works for MariaDB backed uptime kuma instances
+- Improve parsing for `notification.active` and `notifcation.is_default`
+- Default values not being applied correctly
+
+### Added
+- Add container exclusion patterns for Docker Compose temporary containers, see #141 [@Laptop765](https://github.com/Laptop765)
+- Remote Database Shrink and Remote Database GetSize command, see #144 [@ianmclinden](https://github.com/ianmclinden)
+
 ## [1.0.0] - 2025-05-09
 ### Changed
 - ⚠️ BREAKING CHANGE ⚠️ AutoKuma now requires persistent storage:  

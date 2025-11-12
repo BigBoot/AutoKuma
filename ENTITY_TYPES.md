@@ -1,13 +1,13 @@
 # AutoKuma specific properties:
 
 AutoKuma adds a few special properties which are handled internally and aren't sent to Uptime Kuma:
-| Property             | Example Value                              | Description                                                                           |
-|----------------------|--------------------------------------------|---------------------------------------------------------------------------------------|
-| `parent_name`        | `apps`                                     | The autokuma id of the parent group                                                   |
-| `notification_names` | `["matrix", "discord"]`                    | List of autokuma ids of enabled notification providers,                               |
-| `tag_names`          | `[{"name": "mytag", "value": "A value" }]` | List of structs containing the id and optionally a values for labels,                 |
-| `docker_host_name`   | `local_socket`                             | The autokuma id of the docker socket for a docker monitor                             |
-| `create_paused`      | false                                      | If true new monitors will be added in paused state, does not effect existing monitors |
+| Property                 | Example Value                              | Description                                                                           |
+|--------------------------|--------------------------------------------|---------------------------------------------------------------------------------------|
+| `parent_name`            | `apps`                                     | The autokuma id of the parent group                                                   |
+| `notification_name_list` | `["matrix", "discord"]`                    | List of autokuma ids of enabled notification providers,                               |
+| `tag_names`              | `[{"name": "mytag", "value": "A value" }]` | List of structs containing the id and optionally a values for labels,                 |
+| `docker_host_name`       | `local_socket`                             | The autokuma id of the docker socket for a docker monitor                             |
+| `create_paused`          | false                                      | If true new monitors will be added in paused state, does not effect existing monitors |
 
 # `docker_host`
 | Property          | Example Value          |
@@ -23,28 +23,32 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `config`     | nested provider specific settings.  Too many to list here. I suggest creating a notification with your provider in the WebUI and then using the `kuma` CLI to inspect the options |
 
 # Monitor Types
-- [`dns`](#dns)
-- [`docker`](#docker)
-- [`gamedig`](#gamedig)
-- [`group`](#group)
-- [`grpc-keyword`](#grpc-keyword)
-- [`http`](#http)
-- [`json-query`](#json-query)
-- [`kafka-producer`](#kafka-producer)
-- [`keyword`](#keyword)
-- [`mongodb`](#mongodb)
-- [`mqtt`](#mqtt)
-- [`mysql`](#mysql)
-- [`ping`](#ping)
-- [`port`](#port)
-- [`postgres`](#postgres)
-- [`push`](#push)
-- [`radius`](#radius)
-- [`real-browser`](#real-browser)
-- [`redis`](#redis)
-- [`steam`](#steam)
-- [`sqlserver`](#sqlserver)
-- [`tailscale-ping`](#tailscale-ping)
+- [AutoKuma specific properties:](#autokuma-specific-properties)
+- [`docker_host`](#docker_host)
+- [`notification`](#notification)
+- [Monitor Types](#monitor-types)
+  - [`dns`](#dns)
+  - [`docker`](#docker)
+  - [`gamedig`](#gamedig)
+  - [`group`](#group)
+  - [`grpc-keyword`](#grpc-keyword)
+  - [`http`](#http)
+  - [`json-query`](#json-query)
+  - [`kafka-producer`](#kafka-producer)
+  - [`keyword`](#keyword)
+  - [`mongodb`](#mongodb)
+  - [`mqtt`](#mqtt)
+  - [`mysql`](#mysql)
+  - [`ping`](#ping)
+  - [`port`](#port)
+  - [`postgres`](#postgres)
+  - [`push`](#push)
+  - [`radius`](#radius)
+  - [`real-browser`](#real-browser)
+  - [`redis`](#redis)
+  - [`steam`](#steam)
+  - [`sqlserver`](#sqlserver)
+  - [`tailscale-ping`](#tailscale-ping)
 
 
 ## `dns`
