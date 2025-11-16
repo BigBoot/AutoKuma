@@ -1345,7 +1345,8 @@ impl Worker {
         debug!("Connection opened!");
         *self.socket_io.lock().await = client;
 
-        for i in 0..10 {
+        let iters = self.config.connect_timeout.max(0.0).ceil() as u64;
+        for i in 0..iters {
             if self.is_ready().await {
                 debug!("Connected!");
                 return Ok(());
