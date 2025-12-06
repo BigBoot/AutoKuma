@@ -181,7 +181,7 @@ AutoKuma interprets Docker container labels with the following format:
 - `<prefix>`: Default is `kuma` unless changed using the `DOCKER__LABEL_PREFIX` env variable.
 - `<id>`: A unique identifier for the monitor (ensure it's unique between all monitors).
 - `<type>`: The type of the monitor as configured in Uptime Kuma.
-- `<setting>`: The key of the value to be set.
+- `<setting>`: The key of the value to be set (also called "property").
 - `<value>`: The value for the option.
 
 Labels are grouped by `<id>` into a single monitor. For example, to create a simple HTTP monitor, use the following labels:
@@ -212,7 +212,7 @@ kuma.mynotificationprovider.notification.active: 'true'
 kuma.mynotificationprovider.notification.config: '{"type": "matrix", "accessToken": "XXXXXXXXXXXXXXXXXX", "homeserverUrl": "https://matrix.org", "internalRoomId": "!xxxxxxxxxxxxxxxxxx:matrix.org"}'
 
 kuma.mymonitor.http.name: 'This is a Monitor with a notification provider'
-kuma.mymonitor.http.notification_names: '["mynotificationprovider"]'
+kuma.mymonitor.http.notification_name_list: '["mynotificationprovider"]'
 kuma.mymonitor.http.url: 'https://example.com'
 ```
 
