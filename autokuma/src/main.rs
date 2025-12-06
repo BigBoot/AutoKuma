@@ -202,7 +202,9 @@ async fn main() {
                 )
                 .required(false),
             )
-            .add_source(File::new("autokuma", FileFormat::Toml).required(false))
+            .add_source(File::new("autokuma.toml", FileFormat::Toml).required(false))
+            .add_source(File::new("autokuma.yaml", FileFormat::Yaml).required(false))
+            .add_source(File::new("autokuma.json", FileFormat::Json).required(false))
             .add_source(
                 Environment::with_prefix("AUTOKUMA")
                     .separator("__")
