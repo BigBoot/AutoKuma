@@ -164,6 +164,11 @@ macro_rules! monitor_type {
             #[serde_inline_default(vec![])]
             pub conditions: Vec<MonitorCondition>,
 
+            #[serde(rename = "resendInterval")]
+            #[serde(alias = "resend_interval")]
+            #[serde_as(as = "Option<DeserializeNumberLenient>")]
+            pub resend_interval: Option<i32>,
+
             $($field)*
         }
 
@@ -786,11 +791,6 @@ monitor_type! {
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub timeout: Option<i32>,
 
-        #[serde(rename = "resendInterval")]
-        #[serde(alias = "resend_interval")]
-        #[serde_as(as = "Option<DeserializeNumberLenient>")]
-        pub resend_interval: Option<i32>,
-
         #[serde(rename = "expiryNotification")]
         #[serde(alias = "expiry_notification")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
@@ -858,11 +858,6 @@ monitor_type! {
         #[serde_inline_default(Some(48))]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub timeout: Option<i32>,
-
-        #[serde(rename = "resendInterval")]
-        #[serde(alias = "resend_interval")]
-        #[serde_as(as = "Option<DeserializeNumberLenient>")]
-        pub resend_interval: Option<i32>,
 
         #[serde(rename = "expiryNotification")]
         #[serde(alias = "expiry_notification")]
@@ -956,11 +951,6 @@ monitor_type! {
         #[serde_inline_default(Some(48))]
         #[serde_as(as = "Option<DeserializeNumberLenient>")]
         pub timeout: Option<i32>,
-
-        #[serde(rename = "resendInterval")]
-        #[serde(alias = "resend_interval")]
-        #[serde_as(as = "Option<DeserializeNumberLenient>")]
-        pub resend_interval: Option<i32>,
 
         #[serde(rename = "expiryNotification")]
         #[serde(alias = "expiry_notification")]
