@@ -111,6 +111,7 @@ services:
       #    {{container_name}}_docker.docker.name: {{container_name}} Docker
       #    {{container_name}}_docker.docker.docker_container: {{container_name}}
       # AUTOKUMA__DOCKER__HOSTS: unix:///var/run/docker.sock
+      # AUTOKUMA__DOCKER__HOSTS: '[{"url":"tcp://docker-a:2376","tls_verify":true,"tls_cert_path":"/certs/docker-a"}]'
       # AUTOKUMA__DOCKER__LABEL_PREFIX: kuma
       # AUTOKUMA__DOCKER__EXCLUDE_CONTAINER_PATTERNS: "^[a-f0-9]{12}_.*_"  # Exclude Docker Compose temporary containers
       
@@ -142,15 +143,19 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__KUMA__PASSWORD`         | `kuma.password`         | The password for logging into Uptime Kuma (required unless auth is disabled)                                             |
 | `AUTOKUMA__KUMA__MFA_TOKEN`        | `kuma.mfa_token`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                                  |
 | `AUTOKUMA__KUMA__MFA_SECRET`       | `kuma.mfa_secret`       | The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single_use mfa_token)           |
+| `AUTOKUMA__KUMA__AUTH_TOKEN`       | `kuma.auth_token`       | JWT auth token received after a successful login, can be used instead of username/password                                |
 | `AUTOKUMA__KUMA__HEADERS`          | `kuma.headers`          | List of HTTP headers to send when connecting to Uptime Kuma                                                              |
 | `AUTOKUMA__KUMA__CONNECT_TIMEOUT`  | `kuma.connect_timeout`  | The timeout for the initial connection to Uptime Kuma                                                                    |
 | `AUTOKUMA__KUMA__CALL_TIMEOUT`     | `kuma.call_timeout`     | The timeout for executing calls to the Uptime Kuma server                                                                |
-| `AUTOKUMA__DOCKER__HOSTS`          | `docker.hosts`          | List of Docker hosts.  Use a semicolon separated string when setting using an env variable.                              |
+| `AUTOKUMA__KUMA__TLS__VERIFY`      | `kuma.tls.verify`       | Whether to verify the TLS certificate for Uptime Kuma connections                                                        |
+| `AUTOKUMA__KUMA__TLS__CERT`        | `kuma.tls.cert`         | Path to a custom PEM certificate for Uptime Kuma connections                                                             |
+| `AUTOKUMA__DOCKER__ENABLED`        | `docker.enabled`        | Enable/disable Docker source                                                                                             |
+| `AUTOKUMA__DOCKER__HOSTS`          | `docker.hosts`          | Docker hosts list; supports semicolon string (`url1;url2`) and JSON array string with `{url,tls_verify,tls_cert_path}` |
 | `AUTOKUMA__DOCKER__LABEL_PREFIX`   | `docker.label_prefix`   | Prefix used when scanning for container labels                                                                           |
 | `AUTOKUMA__DOCKER__SOURCE`         | `docker.source`         | Whether monitors should be created from `Containers` or `Services` labels (or `Both`).                                   |
 | `AUTOKUMA__DOCKER__EXCLUDE_CONTAINER_PATTERNS` | `docker.exclude_container_patterns` | Regex patterns to exclude containers by name (semicolon-separated)                                          |
-| `AUTOKUMA__DOCKER__TLS__VERIFY`    | `docker.tls.verify`     | Whether to verify the TLS certificate or not.                                                                            |
-| `AUTOKUMA__DOCKER__TLS__CERT`      | `docker.tls.cert`       | The path to a custom tls certificate in PEM format.                                                                      |
+| `AUTOKUMA__KUBERNETES__ENABLED`    | `kubernetes.enabled`    | Enable/disable Kubernetes source                                                                                         |
+| `AUTOKUMA__FILES__ENABLED`         | `files.enabled`         | Enable/disable Files source                                                                                              |
 | `AUTOKUMA__FILES__FOLLOW_SYMLINKS` | `files.follow_symlinks` | Whether AutoKuma should follow symlinks when looking for "static monitors" (Defaults to false)                           |
 
 AutoKuma will read configuration from a file named `autokuma.{toml,yaml,json}` in the current directory and in the following locations:
@@ -167,6 +172,41 @@ An example `.toml` config could look like the following:
 url = "http://localhost:3001/"
 username = "<username>"
 password = "<password>"
+
+[kuma.tls]
+verify = true
+# cert = "/path/to/kuma-ca.pem"
+
+[docker]
+enabled = true
+source = "both"
+label_prefix = "kuma"
+# hosts = "tcp://docker-a:2375;tcp://docker-b:2375" # legacy format
+
+[[docker.hosts]]
+url = "tcp://docker-a:2376"
+tls_verify = true
+tls_cert_path = "/certs/docker-a"
+
+[[docker.hosts]]
+url = "unix:///var/run/docker.sock"
+
+[files]
+enabled = true
+follow_symlinks = false
+
+[kubernetes]
+enabled = false
+```
+
+For environment variables, `AUTOKUMA__DOCKER__HOSTS` supports both formats:
+
+```bash
+# legacy
+AUTOKUMA__DOCKER__HOSTS="tcp://docker-a:2375;tcp://docker-b:2375"
+
+# JSON array string (for per-host TLS settings)
+AUTOKUMA__DOCKER__HOSTS='[{"url":"tcp://docker-a:2376","tls_verify":true,"tls_cert_path":"/certs/docker-a"}]'
 ```
 
 

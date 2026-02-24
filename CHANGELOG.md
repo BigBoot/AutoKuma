@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added advanced docker host config for connecting to docker using TLS with custom certs, see #162
+
+### Fixed
+- Fix autokuma trying to use itself as a config file, see #149
+- Fix resend_interval missing for most monitor types, see #152
 
 ## [2.0.0] - 2025-11-12
 ### Changed

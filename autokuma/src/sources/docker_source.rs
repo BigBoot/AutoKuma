@@ -1,7 +1,7 @@
 use crate::{
     app_state::AppState,
-    config,
-    entity::{get_entities_from_labels, Entity},
+    config::{self, DockerHostConfig},
+    entity::{Entity, get_entities_from_labels},
     error::Result,
     kuma::get_kuma_labels,
     sources::source::Source,
@@ -199,7 +199,12 @@ impl Source for DockerSource {
             .docker
             .hosts
             .clone()
-            .map(|f| f.into_iter().map(Some).collect::<Vec<_>>())
+            .map(|hosts| {
+                hosts
+                    .into_iter()
+                    .map(|host| Some(host))
+                    .collect::<Vec<_>>()
+            })
             .unwrap_or_else(|| {
                 vec![self
                     .state
@@ -207,20 +212,28 @@ impl Source for DockerSource {
                     .docker
                     .socket_path
                     .as_ref()
-                    .and_then(|path| Some(format!("unix://{}", path)))]
+                    .and_then(|path| Some(DockerHostConfig{url: format!("unix://{}", path), tls_verify: None, tls_cert_path: None}))]
             });
 
         let mut entities = vec![];
 
         for docker_host in docker_hosts {
             if let Some(docker_host) = &docker_host {
-                env::set_var("DOCKER_HOST", docker_host);
+                env::set_var("DOCKER_HOST", docker_host.url.clone());
+                if let Some(tls_verify) = docker_host.tls_verify {
+                    env::set_var("DOCKER_TLS_VERIFY", tls_verify.to_string());
+                }
+                if let Some(tls_cert_path) = &docker_host.tls_cert_path {
+                    env::set_var("DOCKER_CERT_PATH", tls_cert_path);
+                }
             }
 
             let docker = Docker::connect_with_defaults().log_warn(std::module_path!(), |_| {
                 format!(
-                    "Using DOCKER_HOST={}",
-                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned())
+                    "Using DOCKER_HOST={}, DOCKER_TLS_VERIFY={}, DOCKER_CERT_PATH={}",
+                    env::var("DOCKER_HOST").unwrap_or_else(|_| "None".to_owned()),
+                    env::var("DOCKER_TLS_VERIFY").unwrap_or_else(|_| "None".to_owned()),
+                    env::var("DOCKER_CERT_PATH").unwrap_or_else(|_| "None".to_owned())
                 )
             })?;
 
