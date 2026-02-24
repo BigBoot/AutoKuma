@@ -1,5 +1,5 @@
 use crate::utils::{OutputFormat, ResultOrDie as _};
-use clap::{arg, command, ArgAction, CommandFactory, Parser, Subcommand};
+use clap::{ArgAction, CommandFactory, Parser, Subcommand};
 use config::{File, FileFormat};
 use kuma_client::{
     build::{LONG_VERSION, SHORT_VERSION},

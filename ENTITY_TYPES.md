@@ -49,6 +49,9 @@ AutoKuma adds a few special properties which are handled internally and aren't s
   - [`steam`](#steam)
   - [`sqlserver`](#sqlserver)
   - [`tailscale-ping`](#tailscale-ping)
+  - [`smtp`](#smtp)
+  - [`snmp`](#snmp)
+  - [`rabbitmq`](#rabbitmq)
 
 
 ## `dns`
@@ -74,8 +77,8 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
 | `description`          | A Monitor     |
-| `docker_container`     |               |
-| `docker_host`          |               |
+| `docker_container`     | nginx         |
+| `docker_host`          | 1             |
 | `interval`             | 60            |
 | `max_retries`          | 0             |
 | `name`                 | Example       |
@@ -89,8 +92,8 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `accepted_statuscodes`    | 200-299       |
 | `active`                  | true          |
 | `description`             | A Monitor     |
-| `game`                    |               |
-| `gamedig_given_port_only` |               |
+| `game`                    | minecraft     |
+| `gamedig_given_port_only` | false         |
 | `hostname`                | localhost     |
 | `interval`                | 60            |
 | `max_retries`             | 0             |
@@ -118,17 +121,18 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
+| `cache_bust`           | false         |
 | `description`          | A Monitor     |
-| `grpc_body`            |               |
-| `grpc_enable_tls`      |               |
-| `grpc_metadata`        |               |
-| `grpc_method`          |               |
-| `grpc_protobuf`        |               |
-| `grpc_service_name`    |               |
-| `grpc_url`             |               |
+| `grpc_body`            | {}            |
+| `grpc_enable_tls`      | false         |
+| `grpc_metadata`        | {"authorization":"Bearer token"} |
+| `grpc_method`          | Check         |
+| `grpc_protobuf`        | health.proto  |
+| `grpc_service_name`    | grpc.health.v1.Health |
+| `grpc_url`             | localhost:50051 |
 | `interval`             | 60            |
-| `invert_keyword`       |               |
-| `keyword`              |               |
+| `invert_keyword`       | false         |
+| `keyword`              | healthy       |
 | `max_retries`          | 0             |
 | `max_redirects`        | 10            |
 | `name`                 | Example       |
@@ -141,34 +145,35 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------------|
 | `accepted_statuscodes` | 200-299             |
 | `active`               | true                |
-| `auth_domain`          |                     |
-| `authMethod`           |                     |
-| `auth_workstation`     |                     |
-| `basic_auth_user`      |                     |
-| `basic_auth_pass`      |                     |
-| `body`                 |                     |
+| `authMethod`           | basic               |
+| `basic_auth_user`      | monitor             |
+| `basic_auth_pass`      | secret              |
+| `oauth_auth_method`    | client_secret_basic |
+| `oauth_client_id`      | monitor-client      |
+| `oauth_token_url`      | https://auth.example.com/oauth/token |
+| `oauth_client_secret`  | secret              |
+| `oauth_scopes`         | uptime.read         |
+| `auth_domain`          | EXAMPLE             |
+| `auth_workstation`     | WORKSTATION1        |
+| `tls_cert`             | -----BEGIN CERTIFICATE-----... |
+| `tls_key`              | -----BEGIN PRIVATE KEY-----... |
+| `tls_ca`               | -----BEGIN CERTIFICATE-----... |
+| `body`                 | {"status":"ok"} |
+| `cache_bust`           | false               |
 | `description`          | A Monitor           |
 | `expiry_notification`  | true                |
-| `http_body_encoding`   |                     |
+| `headers`              | {"X-Api-Key":"secret"} |
+| `http_body_encoding`   | json                |
 | `ignore_tls`           | false               |
 | `interval`             | 60                  |
 | `max_redirects`        | 10                  |
 | `max_retries`          | 0                   |
 | `method`               | GET                 |
 | `name`                 | Example             |
-| `oauth_auth_method`    |                     |
-| `oauth_client_id`      |                     |
-| `oauth_client_secret`  |                     |
-| `oauth_scopes`         |                     |
-| `oauth_token_url`      |                     |
 | `parent`               | 0                   |
-| `proxy_id`             |                     |
-| `resend_interval`      | 60                  |
+| `proxy_id`             | 1                   |
 | `retry_interval`       | 60                  |
 | `timeout`              | 48                  |
-| `tls_ca`               |                     |
-| `tls_cert`             |                     |
-| `tls_key`              |                     |
 | `upside_down`          | false               |
 | `url`                  | https://example.com |
 
@@ -177,36 +182,38 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------------|
 | `accepted_statuscodes` | 200-299             |
 | `active`               | true                |
-| `auth_domain`          |                     |
-| `authMethod`           |                     |
-| `auth_workstation`     |                     |
-| `basic_auth_user`      |                     |
-| `basic_auth_pass`      |                     |
-| `body`                 |                     |
+| `authMethod`           | basic               |
+| `basic_auth_user`      | monitor             |
+| `basic_auth_pass`      | secret              |
+| `oauth_auth_method`    | client_secret_basic |
+| `oauth_client_id`      | monitor-client      |
+| `oauth_token_url`      | https://auth.example.com/oauth/token |
+| `oauth_client_secret`  | secret              |
+| `oauth_scopes`         | uptime.read         |
+| `auth_domain`          | EXAMPLE             |
+| `auth_workstation`     | WORKSTATION1        |
+| `tls_cert`             | -----BEGIN CERTIFICATE-----... |
+| `tls_key`              | -----BEGIN PRIVATE KEY-----... |
+| `tls_ca`               | -----BEGIN CERTIFICATE-----... |
+| `body`                 | {"status":"ok"} |
+| `grpc_metadata`        | false               |
 | `description`          | A Monitor           |
-| `expected_value`       |                     |
+| `expected_value`       | up                  |
 | `expiry_notification`  | true                |
-| `http_body_encoding`   |                     |
+| `headers`              | {"X-Api-Key":"secret"} |
+| `http_body_encoding`   | json                |
 | `ignore_tls`           | false               |
 | `interval`             | 60                  |
-| `json_path`            |                     |
+| `json_path`            | $.status            |
+| `json_path_operator`   | eq                  |
 | `max_redirects`        | 10                  |
 | `max_retries`          | 0                   |
 | `method`               | GET                 |
 | `name`                 | Example             |
-| `oauth_auth_method`    |                     |
-| `oauth_client_id`      |                     |
-| `oauth_client_secret`  |                     |
-| `oauth_scopes`         |                     |
-| `oauth_token_url`      |                     |
 | `parent`               | 0                   |
-| `proxy_id`             |                     |
-| `resend_interval`      | 60                  |
+| `proxy_id`             | 1                   |
 | `retry_interval`       | 60                  |
 | `timeout`              | 48                  |
-| `tls_ca`               |                     |
-| `tls_cert`             |                     |
-| `tls_key`              |                     |
 | `upside_down`          | false               |
 | `url`                  | https://example.com |
 
@@ -217,18 +224,12 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `active`                                             | true          |
 | `description`                                        | A Monitor     |
 | `interval`                                           | 60            |
-| `kafka_producer_allow_auto_topic_creation`           |               |
-| `kafka_producer_brokers`                             |               |
-| `kafka_producer_message`                             |               |
-| `kafka_producer_ssl`                                 |               |
-| `kafka_producer_topic`                               |               |
-| `kafka_producer_sasl_options.mechanism`              | plain         |
-| `kafka_producer_sasl_options.username`               |               |
-| `kafka_producer_sasl_options.password`               |               |
-| `kafka_producer_sasl_options.authorization_identity` |               |
-| `kafka_producer_sasl_options.access_key_id`          |               |
-| `kafka_producer_sasl_options.secret_access_key`      |               |
-| `kafka_producer_sasl_options.session_token`          |               |
+| `kafka_producer_allow_auto_topic_creation`           | true          |
+| `kafka_producer_brokers`                             | ["localhost:9092"] |
+| `kafka_producer_message`                             | autokuma test message |
+| `kafka_producer_sasl_options`                        | {"mechanism":"plain","username":"kafka-user","password":"kafka-pass"} |
+| `kafka_producer_ssl`                                 | false         |
+| `kafka_producer_topic`                               | monitor-events |
 | `max_retries`                                        | 0             |
 | `name`                                               | Example       |
 | `parent`                                             | 0             |
@@ -240,37 +241,36 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------|---------------------|
 | `accepted_statuscodes` | 200-299             |
 | `active`               | true                |
-| `auth_domain`          |                     |
-| `authMethod`           |                     |
-| `auth_workstation`     |                     |
-| `basic_auth_user`      |                     |
-| `basic_auth_pass`      |                     |
-| `body`                 |                     |
+| `authMethod`           | basic               |
+| `basic_auth_user`      | monitor             |
+| `basic_auth_pass`      | secret              |
+| `oauth_auth_method`    | client_secret_basic |
+| `oauth_client_id`      | monitor-client      |
+| `oauth_token_url`      | https://auth.example.com/oauth/token |
+| `oauth_client_secret`  | secret              |
+| `oauth_scopes`         | uptime.read         |
+| `auth_domain`          | EXAMPLE             |
+| `auth_workstation`     | WORKSTATION1        |
+| `tls_cert`             | -----BEGIN CERTIFICATE-----... |
+| `tls_key`              | -----BEGIN PRIVATE KEY-----... |
+| `tls_ca`               | -----BEGIN CERTIFICATE-----... |
+| `body`                 | {"status":"ok"} |
 | `description`          | A Monitor           |
 | `expiry_notification`  | true                |
-| `http_body_encoding`   |                     |
+| `headers`              | {"X-Api-Key":"secret"} |
+| `http_body_encoding`   | json                |
 | `ignore_tls`           | false               |
 | `interval`             | 60                  |
-| `invert_keyword`       |                     |
-| `keyword`              |                     |
+| `invert_keyword`       | false               |
+| `keyword`              | healthy             |
 | `max_redirects`        | 10                  |
 | `max_retries`          | 0                   |
 | `method`               | GET                 |
-| `method`               | GET                 |
 | `name`                 | Example             |
-| `oauth_auth_method`    |                     |
-| `oauth_client_id`      |                     |
-| `oauth_client_secret`  |                     |
-| `oauth_scopes`         |                     |
-| `oauth_token_url`      |                     |
 | `parent`               | 0                   |
-| `proxy_id`             |                     |
-| `resend_interval`      | 60                  |
+| `proxy_id`             | 1                   |
 | `retry_interval`       | 60                  |
 | `timeout`              | 48                  |
-| `tls_ca`               |                     |
-| `tls_cert`             |                     |
-| `tls_key`              |                     |
 | `upside_down`          | false               |
 | `url`                  | https://example.com |
 
@@ -279,9 +279,12 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------------|---------------|
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
-| `database_connection_string` |               |
+| `command`                    | {"ping":1}   |
+| `database_connection_string` | mongodb://localhost:27017/admin |
 | `description`                | A Monitor     |
+| `expected_value`             | 1             |
 | `interval`                   | 60            |
+| `json_path`                  | $.ok          |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
 | `parent`                     | 0             |
@@ -291,16 +294,20 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 ## `mqtt`
 | Property               | Example Value |
 |------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
 | `active`               | true          |
 | `description`          | A Monitor     |
+| `expected_value`       | online        |
 | `interval`             | 60            |
 | `hostname`             | localhost     |
+| `json_path`            | $.status      |
+| `json_path_operator`   | eq            |
 | `max_retries`          | 0             |
-| `mqtt_check_type`      |               |
-| `mqtt_password`        |               |
-| `mqtt_success_message` |               |
-| `mqtt_topic`           |               |
-| `mqtt_username`        |               |
+| `mqtt_check_type`      | keyword       |
+| `mqtt_password`        | mqtt-pass     |
+| `mqtt_success_message` | online        |
+| `mqtt_topic`           | sensors/status |
+| `mqtt_username`        | mqtt-user     |
 | `name`                 | Example       |
 | `parent`               | 0             |
 | `port`                 | 0             |
@@ -312,13 +319,14 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------------|---------------|
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
-| `database_connection_string` |               |
+| `database_connection_string` | mysql://root:password@localhost:3306/mysql |
 | `description`                | A Monitor     |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
 | `parent`                     | 0             |
-| `radius_password`            |               |
+| `radius_password`            | secret        |
+| `query`                      | SELECT 1      |
 | `retry_interval`             | 60            |
 | `upside_down`                | false         |
 
@@ -357,12 +365,13 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------------|---------------|
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
-| `database_connection_string` |               |
+| `database_connection_string` | postgres://postgres:password@localhost:5432/postgres |
 | `description`                | A Monitor     |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
 | `parent`                     | 0             |
+| `query`                      | SELECT 1      |
 | `retry_interval`             | 60            |
 | `upside_down`                | false         |
 
@@ -392,11 +401,11 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `name`                      | Example       |
 | `parent`                    | 0             |
 | `port`                      | 0             |
-| `radius_called_station_id`  |               |
-| `radius_calling_station_id` |               |
-| `radius_password`           |               |
-| `radius_secret`             |               |
-| `radius_username`           |               |
+| `radius_called_station_id`  | AP-01         |
+| `radius_calling_station_id` | client-01     |
+| `radius_password`           | password      |
+| `radius_secret`             | secret        |
+| `radius_username`           | monitor       |
 | `retry_interval`            | 60            |
 | `upside_down`               | false         |
 
@@ -410,8 +419,8 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `max_retries`            | 0                   |
 | `name`                   | Example             |
 | `parent`                 | 0                   |
-| `remote_browser`         |                     |
-| `remote_browsers_toggle` |                     |
+| `remote_browser`         | ws://localhost:3000 |
+| `remote_browsers_toggle` | true                |
 | `retry_interval`         | 60                  |
 | `upside_down`            | false               |
 | `url`                    | https://example.com |
@@ -421,8 +430,9 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------------|---------------|
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
-| `database_connection_string` |               |
+| `database_connection_string` | redis://localhost:6379 |
 | `description`                | A Monitor     |
+| `ignore_tls`                 | false         |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
@@ -450,16 +460,30 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 |------------------------------|---------------|
 | `accepted_statuscodes`       | 200-299       |
 | `active`                     | true          |
-| `database_connection_string` |               |
+| `database_connection_string` | Server=localhost;Database=master;User Id=sa;Password=Password123!; |
 | `description`                | A Monitor     |
 | `interval`                   | 60            |
 | `max_retries`                | 0             |
 | `name`                       | Example       |
 | `parent`                     | 0             |
+| `query`                      | SELECT 1      |
 | `retry_interval`             | 60            |
 | `upside_down`                | false         |
 
 ## `tailscale-ping`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `description`          | A Monitor     |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `parent`               | 0             |
+| `retry_interval`       | 60            |
+| `upside_down`          | false         |
+
+## `smtp`
 | Property               | Example Value |
 |------------------------|---------------|
 | `accepted_statuscodes` | 200-299       |
@@ -470,5 +494,44 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `max_retries`          | 0             |
 | `name`                 | Example       |
 | `parent`               | 0             |
+| `port`                 | 25            |
+| `security`             | none          |
 | `retry_interval`       | 60            |
 | `upside_down`          | false         |
+
+## `snmp`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `description`          | A Monitor     |
+| `expected_value`       | 1             |
+| `hostname`             | localhost     |
+| `interval`             | 60            |
+| `json_path`            | $.value       |
+| `json_path_operator`   | eq            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `oid`                  | 1.3.6.1.2.1.1.3.0 |
+| `parent`               | 0             |
+| `radius_password`      | public        |
+| `port`                 | 161           |
+| `retry_interval`       | 60            |
+| `upside_down`          | false         |
+| `version`              | v2c           |
+
+## `rabbitmq`
+| Property               | Example Value |
+|------------------------|---------------|
+| `accepted_statuscodes` | 200-299       |
+| `active`               | true          |
+| `description`          | A Monitor     |
+| `interval`             | 60            |
+| `max_retries`          | 0             |
+| `name`                 | Example       |
+| `nodes`                | ["http://localhost:15672"] |
+| `parent`               | 0             |
+| `password`             | guest         |
+| `retry_interval`       | 60            |
+| `upside_down`          | false         |
+| `username`             | guest         |

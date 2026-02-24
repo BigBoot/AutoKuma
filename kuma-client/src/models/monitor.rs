@@ -295,6 +295,10 @@ pub enum MonitorType {
     TailscalePing,
 
     #[cfg(not(feature = "uptime-kuma-v1"))]
+    #[serde(rename = "smtp")]
+    SMTP,
+
+    #[cfg(not(feature = "uptime-kuma-v1"))]
     #[serde(rename = "snmp")]
     SNMP,
 
@@ -512,6 +516,18 @@ pub enum MonitorCondition {
         #[serde(rename = "children")]
         children: Option<Vec<MonitorCondition>>,
     },
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SMTPSecurity {
+    #[serde(rename = "secure")]
+    SMTPS,
+
+    #[serde(rename = "nostarttls")]
+    NOTLS,
+
+    #[serde(rename = "starttls")]
+    STARTTLS,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1133,6 +1149,22 @@ monitor_type! {
 
 #[cfg(not(feature = "uptime-kuma-v1"))]
 monitor_type! {
+    MonitorSMTP SMTP {
+        #[serde(rename = "hostname")]
+        pub hostname: Option<String>,
+
+        #[serde(rename = "port")]
+        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+        pub port: Option<u16>,
+
+        #[serde(rename = "smtp_security")]
+        #[serde(alias = "security")]
+        pub security: Option<SMTPSecurity>,
+    }
+}
+
+#[cfg(not(feature = "uptime-kuma-v1"))]
+monitor_type! {
     MonitorSNMP SNMP {
         #[serde(rename = "hostname")]
         pub hostname: Option<String>,
@@ -1320,6 +1352,14 @@ pub enum Monitor {
         #[serde(flatten)]
         value: MonitorTailscalePing,
     },
+
+    #[cfg(not(feature = "uptime-kuma-v1"))]
+    #[serde(rename = "smtp")]
+    SMTP {
+        #[serde(flatten)]
+        value: MonitorSMTP,
+    },
+
     #[cfg(not(feature = "uptime-kuma-v1"))]
     #[serde(rename = "snmp")]
     SNMP {
@@ -1360,6 +1400,8 @@ impl Monitor {
             Monitor::Redis { .. } => MonitorType::Redis,
             Monitor::TailscalePing { .. } => MonitorType::TailscalePing,
             #[cfg(not(feature = "uptime-kuma-v1"))]
+            Monitor::SMTP { .. } => MonitorType::SMTP,
+            #[cfg(not(feature = "uptime-kuma-v1"))]
             Monitor::SNMP { .. } => MonitorType::SNMP,
             #[cfg(not(feature = "uptime-kuma-v1"))]
             Monitor::RabbitMQ { .. } => MonitorType::RabbitMQ,
@@ -1391,6 +1433,8 @@ impl Monitor {
             Monitor::Redis { value } => Box::new(value),
             Monitor::TailscalePing { value } => Box::new(value),
             #[cfg(not(feature = "uptime-kuma-v1"))]
+            Monitor::SMTP { value } => Box::new(value),
+            #[cfg(not(feature = "uptime-kuma-v1"))]
             Monitor::SNMP { value } => Box::new(value),
             #[cfg(not(feature = "uptime-kuma-v1"))]
             Monitor::RabbitMQ { value } => Box::new(value),
@@ -1421,6 +1465,8 @@ impl Monitor {
             Monitor::Radius { value } => Box::new(value),
             Monitor::Redis { value } => Box::new(value),
             Monitor::TailscalePing { value } => Box::new(value),
+            #[cfg(not(feature = "uptime-kuma-v1"))]
+            Monitor::SMTP { value } => Box::new(value),
             #[cfg(not(feature = "uptime-kuma-v1"))]
             Monitor::SNMP { value } => Box::new(value),
             #[cfg(not(feature = "uptime-kuma-v1"))]

@@ -122,6 +122,8 @@ impl ParseValue for Monitor {
             MonitorType::SqlServer => parse_entity!(Monitor, MonitorSqlServer, v),
             MonitorType::TailscalePing => parse_entity!(Monitor, MonitorTailscalePing, v),
             #[cfg(not(feature = "uptime-kuma-v1"))]
+            MonitorType::SMTP => parse_entity!(Monitor, MonitorSMTP, v),
+            #[cfg(not(feature = "uptime-kuma-v1"))]
             MonitorType::SNMP => parse_entity!(Monitor, MonitorSNMP, v),
             #[cfg(not(feature = "uptime-kuma-v1"))]
             MonitorType::RabbitMQ => parse_entity!(Monitor, MonitorRabbitMQ, v),
