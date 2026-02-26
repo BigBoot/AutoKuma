@@ -2,7 +2,7 @@ use crate::{
     cli::Cli,
     utils::{connect, load_files, CollectOrUnwrap, PrintResult as _},
 };
-use clap::{command, Subcommand};
+use clap::Subcommand;
 use futures_util::{future::join_all, FutureExt};
 use kuma_client::{error::Result, Config};
 use std::path::PathBuf;
