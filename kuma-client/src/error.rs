@@ -1,3 +1,4 @@
+#[cfg(feature = "runtime")]
 use std::time::SystemTimeError;
 
 use thiserror::Error;
@@ -70,10 +71,12 @@ pub enum Error {
     InvalidTlsCert(String, String),
 
     /// Wrapper for an underlying reqwest error.
+    #[cfg(feature = "runtime")]
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
 
     /// Wrapper for an underlying totp_rs error.
+    #[cfg(feature = "runtime")]
     #[error(transparent)]
     Totp(#[from] TotpError),
 
@@ -86,6 +89,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Wrapper error type for totp_rs errors.
+#[cfg(feature = "runtime")]
 #[derive(Error, Debug)]
 pub enum TotpError {
     /// Wrapper for an underlying totp_rs::TotpUrlError error.
@@ -106,6 +110,7 @@ pub enum TotpError {
 }
 
 /// Custom result type for handling totp_rs errors.
+#[cfg(feature = "runtime")]
 pub type TotpResult<T> = std::result::Result<T, TotpError>;
 
 /// This error indicates that a monitor references an invalid or non-existent entity.

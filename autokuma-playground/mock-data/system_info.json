@@ -1,0 +1,317 @@
+{
+    "ID": "7TRN:IPZB:QYBB:VPBQ:UMPP:KARE:6ZNR:XE6T:7EWV:PKF4:ZOJD:TPYS",
+    "Containers": 14,
+    "ContainersRunning": 3,
+    "ContainersPaused": 1,
+    "ContainersStopped": 10,
+    "Images": 508,
+    "Driver": "overlay2",
+    "DriverStatus": [
+        [
+            "Backing Filesystem",
+            "extfs"
+        ],
+        [
+            "Supports d_type",
+            "true"
+        ],
+        [
+            "Native Overlay Diff",
+            "true"
+        ]
+    ],
+    "DockerRootDir": "/var/lib/docker",
+    "Plugins": {
+        "Volume": [
+            "local"
+        ],
+        "Network": [
+            "bridge",
+            "host",
+            "ipvlan",
+            "macvlan",
+            "null",
+            "overlay"
+        ],
+        "Authorization": [
+            "img-authz-plugin",
+            "hbm"
+        ],
+        "Log": [
+            "awslogs",
+            "fluentd",
+            "gcplogs",
+            "gelf",
+            "journald",
+            "json-file",
+            "splunk",
+            "syslog"
+        ]
+    },
+    "MemoryLimit": true,
+    "SwapLimit": true,
+    "CpuCfsPeriod": true,
+    "CpuCfsQuota": true,
+    "CPUShares": true,
+    "CPUSet": true,
+    "PidsLimit": true,
+    "OomKillDisable": true,
+    "IPv4Forwarding": true,
+    "Debug": true,
+    "NFd": 64,
+    "NGoroutines": 174,
+    "SystemTime": "2017-08-08T20:28:29.06202363Z",
+    "LoggingDriver": "string",
+    "CgroupDriver": "cgroupfs",
+    "CgroupVersion": "1",
+    "NEventsListener": 30,
+    "KernelVersion": "6.8.0-31-generic",
+    "OperatingSystem": "Ubuntu 24.04 LTS",
+    "OSVersion": "24.04",
+    "OSType": "linux",
+    "Architecture": "x86_64",
+    "NCPU": 4,
+    "MemTotal": 2095882240,
+    "IndexServerAddress": "https://index.docker.io/v1/",
+    "RegistryConfig": {
+        "InsecureRegistryCIDRs": [
+            "::1/128",
+            "127.0.0.0/8"
+        ],
+        "IndexConfigs": {
+            "127.0.0.1:5000": {
+                "Name": "127.0.0.1:5000",
+                "Mirrors": [],
+                "Secure": false,
+                "Official": false
+            },
+            "[2001:db8:a0b:12f0::1]:80": {
+                "Name": "[2001:db8:a0b:12f0::1]:80",
+                "Mirrors": [],
+                "Secure": false,
+                "Official": false
+            },
+            "docker.io": {
+                "Name": "docker.io",
+                "Mirrors": [
+                    "https://hub-mirror.corp.example.com:5000/"
+                ],
+                "Secure": true,
+                "Official": true
+            },
+            "registry.internal.corp.example.com:3000": {
+                "Name": "registry.internal.corp.example.com:3000",
+                "Mirrors": [],
+                "Secure": false,
+                "Official": false
+            }
+        },
+        "Mirrors": [
+            "https://hub-mirror.corp.example.com:5000/",
+            "https://[2001:db8:a0b:12f0::1]/"
+        ]
+    },
+    "GenericResources": [
+        {
+            "DiscreteResourceSpec": {
+                "Kind": "SSD",
+                "Value": 3
+            }
+        },
+        {
+            "NamedResourceSpec": {
+                "Kind": "GPU",
+                "Value": "UUID1"
+            }
+        },
+        {
+            "NamedResourceSpec": {
+                "Kind": "GPU",
+                "Value": "UUID2"
+            }
+        }
+    ],
+    "HttpProxy": "http://xxxxx:xxxxx@proxy.corp.example.com:8080",
+    "HttpsProxy": "https://xxxxx:xxxxx@proxy.corp.example.com:4443",
+    "NoProxy": "*.local, 169.254/16",
+    "Name": "node5.corp.example.com",
+    "Labels": [
+        "storage=ssd",
+        "production"
+    ],
+    "ExperimentalBuild": true,
+    "ServerVersion": "27.0.1",
+    "Runtimes": {
+        "runc": {
+            "path": "runc"
+        },
+        "runc-master": {
+            "path": "/go/bin/runc"
+        },
+        "custom": {
+            "path": "/usr/local/bin/my-oci-runtime",
+            "runtimeArgs": [
+                "--debug",
+                "--systemd-cgroup=false"
+            ]
+        }
+    },
+    "DefaultRuntime": "runc",
+    "Swarm": {
+        "NodeID": "k67qz4598weg5unwwffg6z1m1",
+        "NodeAddr": "10.0.0.46",
+        "LocalNodeState": "active",
+        "ControlAvailable": true,
+        "Error": "",
+        "RemoteManagers": [
+            {
+                "NodeID": "71izy0goik036k48jg985xnds",
+                "Addr": "10.0.0.158:2377"
+            },
+            {
+                "NodeID": "79y6h1o4gv8n120drcprv5nmc",
+                "Addr": "10.0.0.159:2377"
+            },
+            {
+                "NodeID": "k67qz4598weg5unwwffg6z1m1",
+                "Addr": "10.0.0.46:2377"
+            }
+        ],
+        "Nodes": 4,
+        "Managers": 3,
+        "Cluster": {
+            "ID": "abajmipo7b4xz5ip2nrla6b11",
+            "Version": {
+                "Index": 373531
+            },
+            "CreatedAt": "2016-08-18T10:44:24.496525531Z",
+            "UpdatedAt": "2017-08-09T07:09:37.632105588Z",
+            "Spec": {
+                "Name": "default",
+                "Labels": {
+                    "com.example.corp.type": "production",
+                    "com.example.corp.department": "engineering"
+                },
+                "Orchestration": {
+                    "TaskHistoryRetentionLimit": 10
+                },
+                "Raft": {
+                    "SnapshotInterval": 10000,
+                    "KeepOldSnapshots": 0,
+                    "LogEntriesForSlowFollowers": 500,
+                    "ElectionTick": 3,
+                    "HeartbeatTick": 1
+                },
+                "Dispatcher": {
+                    "HeartbeatPeriod": 5000000000
+                },
+                "CAConfig": {
+                    "NodeCertExpiry": 7776000000000000,
+                    "ExternalCAs": [
+                        {
+                            "Protocol": "cfssl",
+                            "URL": "string",
+                            "Options": {
+                                "property1": "string",
+                                "property2": "string"
+                            },
+                            "CACert": "string"
+                        }
+                    ],
+                    "SigningCACert": "string",
+                    "SigningCAKey": "string",
+                    "ForceRotate": 0
+                },
+                "EncryptionConfig": {
+                    "AutoLockManagers": false
+                },
+                "TaskDefaults": {
+                    "LogDriver": {
+                        "Name": "json-file",
+                        "Options": {
+                            "max-file": "10",
+                            "max-size": "100m"
+                        }
+                    }
+                }
+            },
+            "TLSInfo": {
+                "TrustRoot": "-----BEGIN CERTIFICATE-----\nMIIBajCCARCgAwIBAgIUbYqrLSOSQHoxD8CwG6Bi2PJi9c8wCgYIKoZIzj0EAwIw\nEzERMA8GA1UEAxMIc3dhcm0tY2EwHhcNMTcwNDI0MjE0MzAwWhcNMzcwNDE5MjE0\nMzAwWjATMREwDwYDVQQDEwhzd2FybS1jYTBZMBMGByqGSM49AgEGCCqGSM49AwEH\nA0IABJk/VyMPYdaqDXJb/VXh5n/1Yuv7iNrxV3Qb3l06XD46seovcDWs3IZNV1lf\n3Skyr0ofcchipoiHkXBODojJydSjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMB\nAf8EBTADAQH/MB0GA1UdDgQWBBRUXxuRcnFjDfR/RIAUQab8ZV/n4jAKBggqhkjO\nPQQDAgNIADBFAiAy+JTe6Uc3KyLCMiqGl2GyWGQqQDEcO3/YG36x7om65AIhAJvz\npxv6zFeVEkAEEkqIYi0omA9+CjanB/6Bz4n1uw8H\n-----END CERTIFICATE-----\n",
+                "CertIssuerSubject": "MBMxETAPBgNVBAMTCHN3YXJtLWNh",
+                "CertIssuerPublicKey": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmT9XIw9h1qoNclv9VeHmf/Vi6/uI2vFXdBveXTpcPjqx6i9wNazchk1XWV/dKTKvSh9xyGKmiIeRcE4OiMnJ1A=="
+            },
+            "RootRotationInProgress": false,
+            "DataPathPort": 4789,
+            "DefaultAddrPool": [
+                [
+                    "10.10.0.0/16",
+                    "20.20.0.0/16"
+                ]
+            ],
+            "SubnetSize": 24
+        }
+    },
+    "LiveRestoreEnabled": false,
+    "Isolation": "default",
+    "InitBinary": "docker-init",
+    "ContainerdCommit": {
+        "ID": "cfb82a876ecc11b5ca0977d1733adbe58599088a"
+    },
+    "RuncCommit": {
+        "ID": "cfb82a876ecc11b5ca0977d1733adbe58599088a"
+    },
+    "InitCommit": {
+        "ID": "cfb82a876ecc11b5ca0977d1733adbe58599088a"
+    },
+    "SecurityOptions": [
+        "name=apparmor",
+        "name=seccomp,profile=default",
+        "name=selinux",
+        "name=userns",
+        "name=rootless"
+    ],
+    "ProductLicense": "Community Engine",
+    "DefaultAddressPools": [
+        {
+            "Base": "10.10.0.0/16",
+            "Size": "24"
+        }
+    ],
+    "FirewallBackend": {
+        "Driver": "nftables",
+        "Info": [
+            [
+                "ReloadedAt",
+                "2025-01-01T00:00:00Z"
+            ]
+        ]
+    },
+    "DiscoveredDevices": [
+        {
+            "Source": "cdi",
+            "ID": "vendor.com/gpu=0"
+        }
+    ],
+    "NRI": {
+        "Info": [
+            [
+                "plugin-path",
+                "/opt/docker/nri/plugins"
+            ]
+        ]
+    },
+    "Warnings": [
+        "WARNING: No memory limit support"
+    ],
+    "CDISpecDirs": [
+        "/etc/cdi",
+        "/var/run/cdi"
+    ],
+    "Containerd": {
+        "Address": "/run/containerd/containerd.sock",
+        "Namespaces": {
+            "Containers": "moby",
+            "Plugins": "plugins.moby"
+        }
+    }
+}

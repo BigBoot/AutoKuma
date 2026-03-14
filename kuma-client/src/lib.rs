@@ -2,9 +2,13 @@
 #![doc(html_favicon_url = "https://cdn.jsdelivr.net/gh/BigBoot/AutoKuma@master/icon.svg")]
 #![doc = include_str!("../README.md")]
 
+use shadow_rs::shadow;
+
+shadow!(shadow_build);
+
 #[doc(hidden)]
 pub mod build {
-    include!(concat!(env!("OUT_DIR"), "/shadow.rs"));
+    pub use super::shadow_build::*;
 
     pub const SHORT_VERSION: &str = const_str::format!(
         "{}{}",
@@ -42,8 +46,10 @@ pub mod deserialize;
 #[doc(hidden)]
 pub(crate) mod deserialize;
 
+#[cfg(feature = "runtime")]
 #[doc(hidden)]
 pub mod client;
+#[cfg(feature = "runtime")]
 #[doc(hidden)]
 pub mod config;
 #[doc(hidden)]
@@ -53,8 +59,10 @@ pub mod models;
 #[doc(hidden)]
 pub mod util;
 
+#[cfg(feature = "runtime")]
 #[doc(inline)]
 pub use client::*;
+#[cfg(feature = "runtime")]
 #[doc(inline)]
 pub use config::*;
 #[doc(inline)]

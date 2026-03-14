@@ -11,23 +11,33 @@ categories = ["api-bindings"]
 keywords = ["uptime-kuma", "api", "monitoring"]
 
 [features]
+default = ["runtime"]
+runtime = [
+    "dep:config",
+    "dep:futures-util",
+    "dep:native-tls",
+    "dep:reqwest",
+    "dep:rust_socketio",
+    "dep:tokio",
+    "dep:totp-rs",
+]
 private-api = []
 uptime-kuma-v1 = []
 
 [dependencies]
 dateparser = { workspace = true }
-config = { workspace = true }
+config = { workspace = true, optional = true }
 const-str = { workspace = true }
 derivative = { workspace = true }
 derive_more = { workspace = true }
-futures-util = { workspace = true }
+futures-util = { workspace = true, optional = true }
 itertools = { workspace = true }
 log = { workspace = true }
-native-tls = { workspace = true }
+native-tls = { workspace = true, optional = true }
 paste = { workspace = true }
 regex = { workspace = true }
-reqwest = { workspace = true }
-rust_socketio = { workspace = true }
+reqwest = { workspace = true, optional = true }
+rust_socketio = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_alias = { workspace = true }
 serde_json = { workspace = true }
@@ -35,16 +45,16 @@ serde_merge = { workspace = true }
 serde_repr = { workspace = true }
 serde_with = { workspace = true }
 serde-inline-default = { workspace = true }
-shadow-rs = { workspace = true }
+shadow-rs = { version = "1.1.1", default-features = false }
 strum = { workspace = true }
 tap = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true }
-tokio = { workspace = true }
-totp-rs = { workspace = true }
+tokio = { workspace = true, optional = true }
+totp-rs = { workspace = true, optional = true }
 url = { workspace = true }
 
 [build-dependencies]
-shadow-rs = { workspace = true }
+shadow-rs = { version = "1.1.1" }
 serde_json = { workspace = true }
 serde = { workspace = true }

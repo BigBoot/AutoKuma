@@ -1,4 +1,6 @@
+#[cfg(feature = "runtime")]
 pub(crate) mod event;
+#[cfg(feature = "runtime")]
 pub(crate) mod response;
 
 pub mod docker_host;

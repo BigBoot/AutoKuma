@@ -1,0 +1,42 @@
+[package]
+name = "autokuma-playground"
+description = "Client-side Autokuma template playground"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+categories = ["wasm", "web-programming"]
+keywords = ["autokuma", "leptos", "tera", "wasm", "uptime-kuma"]
+
+[package.metadata.trunk.build]
+public_url = "./"
+
+[features]
+uptime-kuma-v1 = ["kuma-client/uptime-kuma-v1"]
+
+[dependencies]
+kuma-client = { path = "../kuma-client", version = "0.0.0", default-features = false, features = [
+    "private-api",
+] }
+
+console_error_panic_hook = "0.1.7"
+getrandom = { version = "0.2.17", features = ["js"] }
+itertools = { workspace = true }
+leptos = { version = "0.8.6", features = ["csr"] }
+serde = { workspace = true }
+serde-inline-default = { workspace = true }
+serde_json = { workspace = true }
+serde_alias = { workspace = true }
+serde_with = { workspace = true }
+serde_yaml = { workspace = true }
+tera = { workspace = true }
+thiserror = { workspace = true }
+toml = { workspace = true }
+unescaper = { workspace = true }
+wasm-bindgen = "0.2.100"
+web-sys = { version = "0.3.77", features = [
+    "HtmlSelectElement",
+    "HtmlTextAreaElement",
+] }

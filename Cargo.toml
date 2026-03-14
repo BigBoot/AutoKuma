@@ -1,5 +1,5 @@
 [workspace]
-members = ["autokuma", "kuma-cli", "kuma-client"]
+members = ["autokuma", "autokuma-playground", "kuma-cli", "kuma-client"]
 resolver = "2"
 
 [workspace.package]

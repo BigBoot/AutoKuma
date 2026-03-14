@@ -1,4 +1,5 @@
 /target
+*/dist
 config.toml
 autokuma.toml
 kuma.toml

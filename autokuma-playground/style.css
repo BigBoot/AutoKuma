@@ -1,0 +1,469 @@
+:root {
+    color-scheme: light;
+    --bg: #f4efe7;
+    --bg-strong: #e6d8c3;
+    --ink: #1f2430;
+    --muted: #5b6270;
+    --panel: rgba(255, 251, 245, 0.84);
+    --panel-strong: rgba(255, 247, 235, 0.96);
+    --line: rgba(31, 36, 48, 0.12);
+    --accent: #0f7b6c;
+    --accent-2: #c56b2d;
+    --error: #8f2d2d;
+    --shadow: 0 18px 60px rgba(72, 48, 24, 0.12);
+    font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    color: var(--ink);
+    background:
+        radial-gradient(circle at top left, rgba(197, 107, 45, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(15, 123, 108, 0.16), transparent 28%),
+        linear-gradient(180deg, #f8f3eb 0%, var(--bg) 100%);
+}
+
+code,
+pre,
+textarea,
+select {
+    font-family: "IBM Plex Mono", "Fira Code", monospace;
+}
+
+.shell {
+    width: min(1520px, calc(100vw - 2rem));
+    margin: 0 auto;
+    padding: 2rem 0 3rem;
+}
+
+.hero {
+    display: grid;
+    grid-template-columns: 1.4fr 0.9fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.hero-card,
+.panel,
+.subpanel,
+.error-block {
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px);
+}
+
+.hero>div,
+.panel {
+    padding: 1.25rem;
+}
+
+.eyebrow {
+    margin: 0 0 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.76rem;
+    color: var(--accent);
+}
+
+h1,
+h2,
+h3,
+ol,
+p {
+    margin: 0;
+}
+
+h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: clamp(2.6rem, 5vw, 4.6rem);
+    line-height: 0.96;
+    max-width: 12ch;
+}
+
+.lede {
+    margin-top: 1rem;
+    max-width: 72ch;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.hero-card {
+    padding: 1.25rem;
+    align-self: end;
+    background: linear-gradient(180deg, rgba(255, 247, 235, 0.98), rgba(241, 232, 221, 0.92));
+}
+
+.hero-card ol {
+    margin-top: 0.8rem;
+    padding-left: 1.2rem;
+    color: var(--muted);
+    line-height: 1.8;
+}
+
+.grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.inputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace {
+    grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.22fr);
+}
+
+.outputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+}
+
+.split {
+    align-items: flex-start;
+}
+
+.badge {
+    padding: 0.34rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(15, 123, 108, 0.12);
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.editor,
+.target-select,
+.format-picker select {
+    width: 100%;
+    border: 1px solid rgba(31, 36, 48, 0.14);
+    border-radius: 18px;
+    padding: 0.95rem 1rem;
+    background: var(--panel-strong);
+    color: var(--ink);
+}
+
+.editor {
+    min-height: 220px;
+    resize: vertical;
+    line-height: 1.55;
+}
+
+.editor.tall {
+    min-height: 360px;
+}
+
+.stack-label,
+.format-picker {
+    display: grid;
+    gap: 0.45rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.subpanel {
+    margin-top: 0.9rem;
+    padding: 1rem;
+    background: rgba(255, 252, 247, 0.72);
+}
+
+.stacked-subsections {
+    display: grid;
+    gap: 1rem;
+}
+
+.stacked-subsections>.subpanel {
+    margin-top: 0;
+}
+
+.nested-subpanel {
+    margin-top: 0.9rem;
+}
+
+.variable-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.variable-card {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.9rem;
+    border: 1px solid rgba(31, 36, 48, 0.1);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.variable-meta {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.variable-meta code {
+    font-size: 0.88rem;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.variable-meta p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+.empty-state {
+    color: var(--muted);
+}
+
+.variable-render {
+    display: grid;
+    gap: 0.6rem;
+    overflow-x: auto;
+}
+
+.scalar-value {
+    color: var(--ink);
+}
+
+.variable-empty {
+    color: var(--muted);
+    font-family: "IBM Plex Mono", "Fira Code", monospace;
+    font-size: 0.86rem;
+}
+
+.json-details {
+    display: inline;
+}
+
+.json-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    list-style: none;
+    color: var(--ink);
+}
+
+.json-summary::-webkit-details-marker {
+    display: none;
+}
+
+.json-toggle {
+    display: inline-block;
+    width: 0.8rem;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.json-details>.json-summary .json-toggle-collapsed,
+.json-details>.json-summary .json-preview {
+    display: inline-block;
+}
+
+.json-details>.json-summary .json-toggle-expanded,
+.json-details>.json-summary .json-opening-inline,
+.json-details>.json-expanded {
+    display: none;
+}
+
+.json-details[open]>.json-summary .json-toggle-collapsed,
+.json-details[open]>.json-summary .json-preview {
+    display: none;
+}
+
+.json-details[open]>.json-summary .json-toggle-expanded,
+.json-details[open]>.json-summary .json-opening-inline {
+    display: inline-block;
+}
+
+.json-expanded,
+.json-nested,
+.json-block {
+    display: grid;
+    gap: 0.1rem;
+}
+
+.json-details[open]>.json-expanded {
+    display: grid;
+}
+
+.json-expanded {
+    margin-top: 0.1rem;
+}
+
+.json-nested {
+    margin-left: 0.7rem;
+    padding-left: 0.45rem;
+}
+
+.json-line {
+    display: block;
+    line-height: 1.5;
+}
+
+.json-key,
+.json-opening,
+.json-closing,
+.json-preview,
+.json-comma,
+.variable-render {
+    font-family: "IBM Plex Mono", "Fira Code", monospace;
+    font-size: 0.86rem;
+}
+
+.json-key {
+    color: var(--ink);
+}
+
+.json-colon,
+.json-opening,
+.json-closing,
+.json-comma {
+    color: var(--muted);
+}
+
+.json-line-value {
+    display: inline;
+    min-width: 0;
+}
+
+.json-opening,
+.json-closing {
+    padding-left: 0;
+}
+
+.json-opening,
+.json-closing,
+.json-line {
+    white-space: nowrap;
+}
+
+.json-closing {
+    margin-left: 0;
+}
+
+.hint {
+    margin-top: 0.8rem;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    font-size: 0.86rem;
+}
+
+.error-block {
+    padding: 1rem;
+    background: rgba(193, 64, 64, 0.08);
+    border-color: rgba(143, 45, 45, 0.28);
+}
+
+.error-block h3,
+.error-text {
+    color: var(--error);
+}
+
+.app-footer {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: rgba(255, 251, 245, 0.72);
+    box-shadow: var(--shadow);
+}
+
+.app-footer-summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 1rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.app-footer-summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-footer-summary::before {
+    content: "+";
+    display: inline-block;
+    width: 0.8rem;
+    color: var(--muted);
+    font-family: "IBM Plex Mono", "Fira Code", monospace;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.app-footer[open] .app-footer-summary::before {
+    content: "-";
+}
+
+.footer-label,
+.footer-version,
+.footer-lines {
+    font-family: "IBM Plex Mono", "Fira Code", monospace;
+    font-size: 0.84rem;
+}
+
+.footer-label {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.footer-version {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.footer-lines {
+    display: grid;
+    gap: 0.25rem;
+    color: var(--muted);
+    white-space: pre-wrap;
+    margin-top: 0.55rem;
+}
+
+@media (max-width: 1120px) {
+
+    .hero,
+    .inputs,
+    .workspace,
+    .outputs {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .shell {
+        width: min(100vw - 1rem, 100%);
+        padding-top: 1rem;
+    }
+
+    .hero>div,
+    .panel {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+    }
+}
