@@ -40,6 +40,12 @@ pub trait MonitorCommon {
     fn notification_id_list_mut(&mut self) -> &mut Option<HashMap<String, bool>>;
     fn accepted_statuscodes(&self) -> &Vec<String>;
     fn accepted_statuscodes_mut(&mut self) -> &mut Vec<String>;
+    fn resend_interval(&self) -> &Option<i32>;
+    fn resend_interval_mut(&mut self) -> &mut Option<i32>;
+    #[cfg(not(feature = "uptime-kuma-v1"))]
+    fn conditions(&self) -> &Vec<MonitorCondition>;
+    #[cfg(not(feature = "uptime-kuma-v1"))]
+    fn conditions_mut(&mut self) -> &mut Vec<MonitorCondition>;
 
     #[cfg(feature = "private-api")]
     fn parent_name(&self) -> &Option<String>;
@@ -59,162 +65,332 @@ pub trait MonitorCommon {
     fn tag_names_mut(&mut self) -> &mut Option<Vec<super::tag::TagValue>>;
 }
 
-macro_rules! monitor_type {
-    ($struct_name:ident $type:ident {
-        $($field:tt)*
-    }) => {
+/// Invokes a callback macro in item position.
+macro_rules! invoke_monitor_fields_item {
+    ($callback:ident, $($args:tt)*) => {
+        $callback! {
+            $($args)*
+        }
+    };
+}
+
+/// Invokes a callback macro in expression position.
+macro_rules! invoke_monitor_fields_expr {
+    ($callback:ident, $($args:tt)*) => {
+        $callback!(
+            $($args)*
+        )
+    };
+}
+
+/// Expands the single source of truth for fields shared by all monitor structs.
+///
+/// Each entry carries field attributes, cfg-only attributes, the field name, and
+/// the field type so the same metadata can drive struct generation and trait impls
+macro_rules! with_monitor_common_fields_impl {
+    ($invoker:ident, $callback:ident, $($args:tt)*) => {
+        $invoker! {
+            $callback,
+            $($args)*
+            [
+                (
+                    {
+                        #[serde(rename = "id")]
+                        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+                    }
+                    {}
+                    id, Option<i32>
+                ),
+                (
+                    {
+                        #[serde(rename = "name")]
+                    }
+                    {}
+                    name, Option<String>
+                ),
+                (
+                    {
+                        #[serde(rename = "description")]
+                    }
+                    {}
+                    description, Option<String>
+                ),
+                (
+                    {
+                        #[serde(rename = "interval")]
+                        #[serde_inline_default(Some(60))]
+                        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+                    }
+                    {}
+                    interval, Option<i32>
+                ),
+                (
+                    {
+                        #[serde(rename = "active")]
+                        #[serde_inline_default(None)]
+                        #[serde_as(as = "Option<DeserializeBoolLenient>")]
+                        #[derivative(PartialEq="ignore")]
+                        #[derivative(Hash = "ignore")]
+                    }
+                    {}
+                    active, Option<bool>
+                ),
+                (
+                    {
+                        #[serde(rename = "maxretries")]
+                        #[serde(alias = "max_retries")]
+                        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+                    }
+                    {}
+                    max_retries, Option<i32>
+                ),
+                (
+                    {
+                        #[serde(rename = "retryInterval")]
+                        #[serde(alias = "retry_interval")]
+                        #[serde_inline_default(Some(60))]
+                        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+                    }
+                    {}
+                    retry_interval, Option<i32>
+                ),
+                (
+                    {
+                        #[serde(rename = "upsideDown")]
+                        #[serde(alias = "upside_down")]
+                        #[serde_as(as = "Option<DeserializeBoolLenient>")]
+                    }
+                    {}
+                    upside_down, Option<bool>
+                ),
+                (
+                    {
+                        #[serde(rename = "parent")]
+                        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+                        #[serialize_always]
+                    }
+                    {}
+                    parent, Option<i32>
+                ),
+                (
+                    {
+                        #[serde(rename = "tags")]
+                        #[serde(skip_serializing_if = "Vec::is_empty")]
+                        #[serde(default)]
+                        #[serde_as(as = "DeserializeVecLenient<Tag>")]
+                        #[derivative(PartialEq(compare_with = "compare_tags"))]
+                    }
+                    {}
+                    tags, Vec<Tag>
+                ),
+                (
+                    {
+                        #[serde(rename = "notificationIDList")]
+                        #[serde(alias = "notification_id_list")]
+                        #[serde_as(as = "Option<DeserializeHashMapLenient<String, bool>>")]
+                    }
+                    {}
+                    notification_id_list, Option<HashMap<String, bool>>
+                ),
+                (
+                    {
+                        #[serde(rename = "accepted_statuscodes")]
+                        #[serde_as(as = "DeserializeVecLenient<String>")]
+                        #[serde_inline_default(vec!["200-299".to_owned()])]
+                    }
+                    {}
+                    accepted_statuscodes, Vec<String>
+                ),
+                (
+                    {
+                        #[cfg(feature = "private-api")]
+                        #[serde(rename = "parent_name")]
+                        #[derivative(PartialEq = "ignore")]
+                        #[derivative(Hash = "ignore")]
+                    }
+                    {
+                        #[cfg(feature = "private-api")]
+                    }
+                    parent_name, Option<String>
+                ),
+                (
+                    {
+                        #[cfg(feature = "private-api")]
+                        #[serde(rename = "create_paused")]
+                        #[serde_inline_default(None)]
+                        #[serde_as(as = "Option<DeserializeBoolLenient>")]
+                        #[derivative(PartialEq = "ignore")]
+                        #[derivative(Hash = "ignore")]
+                    }
+                    {
+                        #[cfg(feature = "private-api")]
+                    }
+                    create_paused, Option<bool>
+                ),
+                (
+                    {
+                        #[cfg(feature = "private-api")]
+                        #[serde(rename = "notification_name_list")]
+                        #[derivative(PartialEq = "ignore")]
+                        #[derivative(Hash = "ignore")]
+                        #[serde_as(as = "Option<DeserializeVecLenient<String>>")]
+                    }
+                    {
+                        #[cfg(feature = "private-api")]
+                    }
+                    notification_names, Option<Vec<String>>
+                ),
+                (
+                    {
+                        #[cfg(feature = "private-api")]
+                        #[serde(rename = "tag_names")]
+                        #[derivative(PartialEq = "ignore")]
+                        #[derivative(Hash = "ignore")]
+                        #[serde_as(as = "Option<DeserializeVecLenient<super::tag::TagValue>>")]
+                    }
+                    {
+                        #[cfg(feature = "private-api")]
+                    }
+                    tag_names, Option<Vec<super::tag::TagValue>>
+                ),
+                (
+                    {
+                        #[cfg(not(feature = "uptime-kuma-v1"))]
+                        #[serde(rename = "conditions")]
+                        #[serde_as(as = "DeserializeVecLenient<MonitorCondition>")]
+                        #[serde_inline_default(vec![])]
+                    }
+                    {
+                        #[cfg(not(feature = "uptime-kuma-v1"))]
+                    }
+                    conditions, Vec<MonitorCondition>
+                ),
+                (
+                    {
+                        #[serde(rename = "resendInterval")]
+                        #[serde(alias = "resend_interval")]
+                        #[serde_as(as = "Option<DeserializeNumberLenient>")]
+                    }
+                    {}
+                    resend_interval, Option<i32>
+                )
+            ]
+        }
+    };
+}
+
+/// Expands shared monitor fields for callback macros that produce items.
+macro_rules! with_monitor_common_fields {
+    ($callback:ident $($args:tt)*) => {
+        with_monitor_common_fields_impl!(invoke_monitor_fields_item, $callback, $($args)*);
+    };
+}
+
+/// Expands shared monitor fields for callback macros that produce expressions.
+macro_rules! with_monitor_common_fields_expr {
+    ($callback:ident $($args:tt)*) => {
+        with_monitor_common_fields_impl!(invoke_monitor_fields_expr, $callback, $($args)*)
+    };
+}
+
+/// Emits `MonitorCommon` getter and mutable getter methods from shared field metadata.
+macro_rules! emit_monitor_common_methods {
+    () => {};
+
+    (({$($field_attr:tt)*} {$($cfg_attr:tt)*} $field:ident, $ty:ty) $(, $rest:tt)*) => {
+        paste::paste! {
+            $($cfg_attr)* fn $field(&self) -> &$ty { &self.$field }
+            $($cfg_attr)* fn [<$field _mut>](&mut self) -> &mut $ty { &mut self.$field }
+        }
+        emit_monitor_common_methods!($($rest),*);
+    };
+}
+
+/// Generates a monitor struct containing the shared monitor fields plus custom fields.
+macro_rules! emit_monitor_struct {
+    ($struct_name:ident $(<$($generic:ident),+>)? { $($extra:tt)* } [$(({$($field_attr:tt)*} {$($cfg_attr:tt)*} $field:ident, $ty:ty)),* $(,)?]) => {
         #[serde_inline_default]
         #[skip_serializing_none]
         #[serde_as]
         #[derive(Clone, Debug, Derivative, Serialize, Deserialize)]
         #[derivative(PartialEq)]
-        pub struct $struct_name {
-            #[serde(rename = "id")]
-            #[serde_as(as = "Option<DeserializeNumberLenient>")]
-            pub id: Option<i32>,
-
-            #[serde(rename = "name")]
-            pub name: Option<String>,
-
-            #[serde(rename = "description")]
-            pub description: Option<String>,
-
-            #[serde(rename = "interval")]
-            #[serde_inline_default(Some(60))]
-            #[serde_as(as = "Option<DeserializeNumberLenient>")]
-            pub interval: Option<i32>,
-
-            #[serde(rename = "active")]
-            #[serde_inline_default(None)]
-            #[serde_as(as = "Option<DeserializeBoolLenient>")]
-            #[derivative(PartialEq="ignore")]
-            #[derivative(Hash = "ignore")]
-            pub active: Option<bool>,
-
-            #[serde(rename = "maxretries")]
-            #[serde(alias = "max_retries")]
-            #[serde_as(as = "Option<DeserializeNumberLenient>")]
-            pub max_retries: Option<i32>,
-
-            #[serde(rename = "retryInterval")]
-            #[serde(alias = "retry_interval")]
-            #[serde_inline_default(Some(60))]
-            #[serde_as(as = "Option<DeserializeNumberLenient>")]
-            pub retry_interval: Option<i32>,
-
-            #[serde(rename = "upsideDown")]
-            #[serde(alias = "upside_down")]
-            #[serde_as(as = "Option<DeserializeBoolLenient>")]
-            pub upside_down: Option<bool>,
-
-            #[serde(rename = "parent")]
-            #[serde_as(as = "Option<DeserializeNumberLenient>")]
-            #[serialize_always]
-            pub parent: Option<i32>,
-
-            #[serde(rename = "tags")]
-            #[serde(skip_serializing_if = "Vec::is_empty")]
-            #[serde(default)]
-            #[serde_as(as = "DeserializeVecLenient<Tag>")]
-            #[derivative(PartialEq(compare_with = "compare_tags"))]
-            pub tags: Vec<Tag>,
-
-            #[serde(rename = "notificationIDList")]
-            #[serde(alias = "notification_id_list")]
-            #[serde_as(as = "Option<DeserializeHashMapLenient<String, bool>>")]
-            pub notification_id_list: Option<HashMap<String, bool>>,
-
-            #[serde(rename = "accepted_statuscodes")]
-            #[serde_as(as = "DeserializeVecLenient<String>")]
-            #[serde_inline_default(vec!["200-299".to_owned()])]
-            pub accepted_statuscodes: Vec<String>,
-
-            #[cfg(feature = "private-api")]
-            #[serde(rename = "parent_name")]
-            #[derivative(PartialEq = "ignore")]
-            #[derivative(Hash = "ignore")]
-            pub parent_name: Option<String>,
-
-            #[cfg(feature = "private-api")]
-            #[serde(rename = "create_paused")]
-            #[serde_inline_default(None)]
-            #[serde_as(as = "Option<DeserializeBoolLenient>")]
-            #[derivative(PartialEq = "ignore")]
-            #[derivative(Hash = "ignore")]
-            pub create_paused: Option<bool>,
-
-            #[cfg(feature = "private-api")]
-            #[serde(rename = "notification_name_list")]
-            #[derivative(PartialEq = "ignore")]
-            #[derivative(Hash = "ignore")]
-            #[serde_as(as = "Option<DeserializeVecLenient<String>>")]
-            pub notification_names: Option<Vec<String>>,
-
-            #[cfg(feature = "private-api")]
-            #[serde(rename = "tag_names")]
-            #[derivative(PartialEq = "ignore")]
-            #[derivative(Hash = "ignore")]
-            #[serde_as(as = "Option<DeserializeVecLenient<super::tag::TagValue>>")]
-            pub tag_names: Option<Vec<super::tag::TagValue>>,
-
-
-            #[cfg(not(feature = "uptime-kuma-v1"))]
-            #[serde(rename = "conditions")]
-            #[serde_as(as = "DeserializeVecLenient<MonitorCondition>")]
-            #[serde_inline_default(vec![])]
-            pub conditions: Vec<MonitorCondition>,
-
-            #[serde(rename = "resendInterval")]
-            #[serde(alias = "resend_interval")]
-            #[serde_as(as = "Option<DeserializeNumberLenient>")]
-            pub resend_interval: Option<i32>,
-
-            $($field)*
+        pub struct $struct_name $(<$($generic),+>)? {
+            $($($field_attr)* pub $field: $ty,)*
+            $($extra)*
         }
+    };
+}
 
-        impl MonitorCommon for $struct_name {
-            fn id(&self) -> &Option<i32> { &self.id }
-            fn id_mut(&mut self) -> &mut Option<i32> { &mut self.id }
-            fn name(&self) -> &Option<String> { &self.name }
-            fn name_mut(&mut self) -> &mut Option<String> { &mut self.name }
-            fn description(&self) -> &Option<String> { &self.description }
-            fn description_mut(&mut self) -> &mut Option<String> { &mut self.description }
-            fn interval(&self) -> &Option<i32> { &self.interval }
-            fn interval_mut(&mut self) -> &mut Option<i32> { &mut self.interval }
-            fn active(&self) -> &Option<bool> { &self.active }
-            fn active_mut(&mut self) -> &mut Option<bool> { &mut self.active }
-            fn max_retries(&self) -> &Option<i32> { &self.max_retries }
-            fn max_retries_mut(&mut self) -> &mut Option<i32> { &mut self.max_retries }
-            fn retry_interval(&self) -> &Option<i32> { &self.retry_interval }
-            fn retry_interval_mut(&mut self) -> &mut Option<i32> { &mut self.retry_interval }
-            fn upside_down(&self) -> &Option<bool> { &self.upside_down }
-            fn upside_down_mut(&mut self) -> &mut Option<bool> { &mut self.upside_down }
-            fn parent(&self) -> &Option<i32> { &self.parent }
-            fn parent_mut(&mut self) -> &mut Option<i32> { &mut self.parent }
-            fn tags(&self) -> &Vec<Tag> { &self.tags }
-            fn tags_mut(&mut self) -> &mut Vec<Tag> { &mut self.tags }
-            fn notification_id_list(&self) -> &Option<HashMap<String, bool>> { &self.notification_id_list }
-            fn notification_id_list_mut(&mut self) -> &mut Option<HashMap<String, bool>> { &mut self.notification_id_list }
-            fn accepted_statuscodes(&self) -> &Vec<String> { &self.accepted_statuscodes }
-            fn accepted_statuscodes_mut(&mut self) -> &mut Vec<String> { &mut self.accepted_statuscodes }
-
-            #[cfg(feature = "private-api")]
-            fn parent_name(&self) -> &Option<String> { &self.parent_name }
-            #[cfg(feature = "private-api")]
-            fn parent_name_mut(&mut self) -> &mut Option<String> { &mut self.parent_name }
-            #[cfg(feature = "private-api")]
-            fn create_paused(&self) -> &Option<bool> { &self.create_paused }
-            #[cfg(feature = "private-api")]
-            fn create_paused_mut(&mut self) -> &mut Option<bool> { &mut self.create_paused }
-            #[cfg(feature = "private-api")]
-            fn notification_names(&self) -> &Option<Vec<String>> { &self.notification_names }
-            #[cfg(feature = "private-api")]
-            fn notification_names_mut(&mut self) -> &mut Option<Vec<String>> { &mut self.notification_names }
-            #[cfg(feature = "private-api")]
-            fn tag_names(&self) -> &Option<Vec<super::tag::TagValue>> { &self.tag_names }
-            #[cfg(feature = "private-api")]
-            fn tag_names_mut(&mut self) -> &mut Option<Vec<super::tag::TagValue>> { &mut self.tag_names }
+/// Implements `MonitorCommon` for a generated monitor struct.
+macro_rules! emit_monitor_common_impl {
+    ($struct_name:ident $(<$($generic:ident),+>)? [$(({$($field_attr:tt)*} {$($cfg_attr:tt)*} $field:ident, $ty:ty)),* $(,)?]) => {
+        impl$(<$($generic),+>)? MonitorCommon for $struct_name $(<$($generic),+>)? {
+            emit_monitor_common_methods!($(({$($field_attr)*} {$($cfg_attr)*} $field, $ty)),*);
         }
+    };
+}
+
+/// Builds the wrapper-format value used when converting a public monitor struct.
+macro_rules! emit_monitor_wrapper_value {
+    ($wrapper_name:ident, $value:ident, $subtype:expr, [$(({$($field_attr:tt)*} {$($cfg_attr:tt)*} $field:ident, $ty:ty)),* $(,)?]) => {
+        $wrapper_name {
+            $($($cfg_attr)* $field: $value.$field,)*
+            subtype: $subtype,
+        }
+    };
+}
+
+/// Declares a monitor struct with the shared monitor fields and custom fields.
+macro_rules! define_monitor_struct {
+    ($struct_name:ident $(<$($generic:ident),+>)? {
+        $($field:tt)*
+    }) => {
+        with_monitor_common_fields!(emit_monitor_struct $struct_name $(<$($generic),+>)? { $($field)* });
+    };
+}
+
+/// Declares a monitor struct and, for generic wrappers, its conversion into a wrapper struct.
+macro_rules! monitor_struct {
+    ($struct_name:ident <$($generic:ident),+> => $wrapper_name:ident where ($($bounds:tt)+) {
+        $($field:tt)*
+    }) => {
+        define_monitor_struct!($struct_name<$($generic),+> { $($field)* });
+
+        impl<$($generic),+> From<$struct_name<$($generic),+>> for $wrapper_name
+        where
+            $($bounds)+
+        {
+            fn from(value: $struct_name<$($generic),+>) -> Self {
+                let wrapper = with_monitor_common_fields_expr!(
+                    emit_monitor_wrapper_value $wrapper_name, value, value.subtype.into(),
+                );
+                wrapper
+            }
+        }
+    };
+
+    ($struct_name:ident $(<$($generic:ident),+>)? {
+        $($field:tt)*
+    }) => {
+        define_monitor_struct!($struct_name $(<$($generic),+>)? { $($field)* });
+    };
+}
+
+/// Implements `MonitorCommon` for a previously declared monitor struct.
+macro_rules! impl_monitor_common {
+    ($struct_name:ident $(<$($generic:ident),+>)?) => {
+        with_monitor_common_fields!(emit_monitor_common_impl $struct_name $(<$($generic),+>)?);
+    };
+}
+
+/// Declares a concrete monitor type, its `MonitorCommon` impl, and conversion into `Monitor`.
+macro_rules! monitor_type {
+    ($struct_name:ident $type:ident {
+        $($field:tt)*
+    }) => {
+        define_monitor_struct!($struct_name { $($field)* });
+
+        impl_monitor_common!($struct_name);
 
         impl From<$struct_name> for Monitor {
             fn from(value: $struct_name) -> Self {
@@ -236,6 +412,9 @@ pub enum MonitorType {
 
     #[serde(rename = "gamedig")]
     GameDig,
+
+    #[serde(rename = "globalping")]
+    GlobalPing,
 
     #[serde(rename = "group")]
     Group,
@@ -319,6 +498,15 @@ pub enum DnsResolverType {
     SOA,
     SRV,
     TXT,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum GlobalPingIpFamily {
+    #[serde(rename = "ipv4")]
+    IPv4,
+
+    #[serde(rename = "ipv6")]
+    IPv6,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -433,6 +621,9 @@ pub enum HttpAuth {
 
         #[serde(rename = "oauth_scopes")]
         scopes: Option<String>,
+
+        #[serde(rename = "oauth_audience")]
+        audience: Option<String>,
     },
 
     #[serde(rename = "ntlm")]
@@ -608,6 +799,174 @@ impl Serialize for ExpectedValue {
     }
 }
 
+#[serde_inline_default]
+#[skip_serializing_none]
+#[serde_as]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalPingPing {
+    #[serde(rename = "location")]
+    #[serde_inline_default(Some("world".to_owned()))]
+    pub location: Option<String>,
+
+    #[serde(rename = "hostname")]
+    pub hostname: Option<String>,
+
+    #[serde(rename = "protocol")]
+    pub protocol: Option<String>,
+
+    #[serde(rename = "ipFamily")]
+    #[serde(alias = "ip_family")]
+    pub ip_family: Option<GlobalPingIpFamily>,
+
+    #[serde(rename = "port")]
+    #[serde_as(as = "Option<DeserializeNumberLenient>")]
+    pub port: Option<u16>,
+
+    #[serde(rename = "ping_count")]
+    #[serde_inline_default(Some(3))]
+    #[serde_as(as = "Option<DeserializeNumberLenient>")]
+    pub ping_count: Option<i32>,
+}
+
+#[serde_inline_default]
+#[skip_serializing_none]
+#[serde_as]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalPingHttp {
+    #[serde(rename = "location")]
+    #[serde_inline_default(Some("world".to_owned()))]
+    pub location: Option<String>,
+
+    #[serde(rename = "url")]
+    pub url: Option<String>,
+
+    #[serde(rename = "method")]
+    #[serde_inline_default(Some(HttpMethod::GET))]
+    pub method: Option<HttpMethod>,
+
+    #[serde(rename = "protocol")]
+    pub protocol: Option<String>,
+
+    #[serde(rename = "ipFamily")]
+    #[serde(alias = "ip_family")]
+    pub ip_family: Option<GlobalPingIpFamily>,
+
+    #[serde(rename = "dns_resolve_server")]
+    pub dns_resolve_server: Option<String>,
+
+    #[serde(rename = "headers")]
+    pub headers: Option<String>,
+
+    #[serde(flatten)]
+    pub auth: Option<HttpAuth>,
+
+    #[serde(rename = "expiryNotification")]
+    #[serde(alias = "expiry_notification")]
+    #[serde_as(as = "Option<DeserializeBoolLenient>")]
+    pub expiry_notification: Option<bool>,
+
+    #[serde(rename = "ignoreTls")]
+    #[serde(alias = "ignore_tls")]
+    #[serde_as(as = "Option<DeserializeBoolLenient>")]
+    pub ignore_tls: Option<bool>,
+
+    #[serde(rename = "cacheBust")]
+    #[serde(alias = "cache_bust")]
+    #[serde_as(as = "Option<DeserializeBoolLenient>")]
+    pub cache_bust: Option<bool>,
+
+    #[serde(rename = "keyword")]
+    pub keyword: Option<String>,
+
+    #[serde(rename = "invertKeyword")]
+    #[serde(alias = "invert_keyword")]
+    #[serde_as(as = "Option<DeserializeBoolLenient>")]
+    pub invert_keyword: Option<bool>,
+
+    #[serde(rename = "jsonPath")]
+    #[serde(alias = "json_path")]
+    pub json_path: Option<String>,
+
+    #[serde(rename = "jsonPathOperator")]
+    #[serde(alias = "json_path_operator")]
+    pub json_path_operator: Option<JsonPathOperator>,
+
+    #[serde(rename = "expectedValue")]
+    #[serde(alias = "expected_value")]
+    pub expected_value: Option<ExpectedValue>,
+}
+
+#[serde_inline_default]
+#[skip_serializing_none]
+#[serde_as]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalPingDns {
+    #[serde(rename = "location")]
+    #[serde_inline_default(Some("world".to_owned()))]
+    pub location: Option<String>,
+
+    #[serde(rename = "hostname")]
+    pub hostname: Option<String>,
+
+    #[serde(rename = "protocol")]
+    pub protocol: Option<String>,
+
+    #[serde(rename = "ipFamily")]
+    #[serde(alias = "ip_family")]
+    pub ip_family: Option<GlobalPingIpFamily>,
+
+    #[serde(rename = "dns_resolve_server")]
+    pub dns_resolve_server: Option<String>,
+
+    #[serde(rename = "port")]
+    #[serde_as(as = "Option<DeserializeNumberLenient>")]
+    pub port: Option<u16>,
+
+    #[serde(rename = "dns_resolve_type")]
+    #[serde_inline_default(Some("A".to_owned()))]
+    pub dns_resolve_type: Option<String>,
+
+    #[serde(rename = "dns_last_result")]
+    pub dns_last_result: Option<String>,
+
+    #[serde(rename = "keyword")]
+    pub keyword: Option<String>,
+}
+
+crate::default_from_serde!(GlobalPingPing);
+crate::default_from_serde!(GlobalPingHttp);
+crate::default_from_serde!(GlobalPingDns);
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, derive_more::From)]
+#[serde(tag = "subtype")]
+pub enum GlobalPingSubtype {
+    #[serde(rename = "ping")]
+    Ping {
+        #[serde(flatten)]
+        value: GlobalPingPing,
+    },
+
+    #[serde(rename = "http")]
+    Http {
+        #[serde(flatten)]
+        value: GlobalPingHttp,
+    },
+
+    #[serde(rename = "dns")]
+    Dns {
+        #[serde(flatten)]
+        value: GlobalPingDns,
+    },
+}
+
+impl Default for GlobalPingSubtype {
+    fn default() -> Self {
+        Self::Ping {
+            value: GlobalPingPing::default(),
+        }
+    }
+}
+
 monitor_type! {
     MonitorGroup Group {
 
@@ -743,6 +1102,33 @@ monitor_type! {
         #[serde(alias = "gamedig_given_port_only")]
         #[serde_as(as = "Option<DeserializeBoolLenient>")]
         pub gamedig_given_port_only: Option<bool>,
+    }
+}
+
+monitor_type! {
+    MonitorGlobalPingWrapper GlobalPing {
+        #[serde(flatten)]
+        #[serde(default)]
+        pub subtype: GlobalPingSubtype,
+    }
+}
+
+monitor_struct!(MonitorGlobalPing<T> => MonitorGlobalPingWrapper where (T: Into<GlobalPingSubtype>) {
+    #[serde(flatten)]
+    #[serde(default)]
+    pub subtype: T,
+});
+
+impl_monitor_common!(MonitorGlobalPing<T>);
+
+crate::default_from_serde!(MonitorGlobalPing<T> where T: Default + serde::de::DeserializeOwned);
+
+impl<T> From<MonitorGlobalPing<T>> for Monitor
+where
+    T: Into<GlobalPingSubtype>,
+{
+    fn from(value: MonitorGlobalPing<T>) -> Self {
+        Monitor::GlobalPing { value: value.into() }
     }
 }
 
@@ -1299,6 +1685,12 @@ pub enum Monitor {
         value: MonitorGameDig,
     },
 
+    #[serde(rename = "globalping")]
+    GlobalPing {
+        #[serde(flatten)]
+        value: MonitorGlobalPingWrapper,
+    },
+
     #[serde(rename = "mqtt")]
     Mqtt {
         #[serde(flatten)]
@@ -1390,6 +1782,7 @@ impl Monitor {
             Monitor::Push { .. } => MonitorType::Push,
             Monitor::Steam { .. } => MonitorType::Steam,
             Monitor::GameDig { .. } => MonitorType::GameDig,
+            Monitor::GlobalPing { .. } => MonitorType::GlobalPing,
             Monitor::Mqtt { .. } => MonitorType::Mqtt,
             Monitor::KafkaProducer { .. } => MonitorType::KafkaProducer,
             Monitor::SqlServer { .. } => MonitorType::SqlServer,
@@ -1423,6 +1816,7 @@ impl Monitor {
             Monitor::Push { value } => value,
             Monitor::Steam { value } => value,
             Monitor::GameDig { value } => value,
+            Monitor::GlobalPing { value } => value,
             Monitor::Mqtt { value } => value,
             Monitor::KafkaProducer { value } => value,
             Monitor::SqlServer { value } => value,
@@ -1456,6 +1850,7 @@ impl Monitor {
             Monitor::Push { value } => value,
             Monitor::Steam { value } => value,
             Monitor::GameDig { value } => value,
+            Monitor::GlobalPing { value } => value,
             Monitor::Mqtt { value } => value,
             Monitor::KafkaProducer { value } => value,
             Monitor::SqlServer { value } => value,

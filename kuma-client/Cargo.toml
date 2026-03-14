@@ -19,10 +19,12 @@ dateparser = { workspace = true }
 config = { workspace = true }
 const-str = { workspace = true }
 derivative = { workspace = true }
+derive_more = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
 native-tls = { workspace = true }
+paste = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true }
 rust_socketio = { workspace = true }

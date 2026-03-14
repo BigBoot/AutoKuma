@@ -102,6 +102,7 @@ impl ParseValue for Monitor {
             MonitorType::Dns => parse_entity!(Monitor, MonitorDns, v),
             MonitorType::Docker => parse_entity!(Monitor, MonitorDocker, v),
             MonitorType::GameDig => parse_entity!(Monitor, MonitorGameDig, v),
+            MonitorType::GlobalPing => parse_entity!(Monitor, MonitorGlobalPingWrapper, v),
             MonitorType::Group => parse_entity!(Monitor, MonitorGroup, v),
             MonitorType::GrpcKeyword => parse_entity!(Monitor, MonitorGrpcKeyword, v),
             MonitorType::Http => parse_entity!(Monitor, MonitorHttp, v),

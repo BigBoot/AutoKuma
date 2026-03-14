@@ -120,4 +120,24 @@ macro_rules! default_from_serde {
             }
         }
     };
+
+    ($struct_name:ident<$($generic:ident),+> where $($bounds:tt)+) => {
+        impl<$($generic),+> Default for $struct_name<$($generic),+>
+        where
+            $($bounds)+
+        {
+            fn default() -> Self {
+                serde_json::from_value(serde_json::json!({})).unwrap()
+            }
+        }
+
+        impl<$($generic),+> $struct_name<$($generic),+>
+        where
+            $($bounds)+
+        {
+            pub fn new() -> Self {
+                Default::default()
+            }
+        }
+    };
 }

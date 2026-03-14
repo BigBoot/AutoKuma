@@ -30,6 +30,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
   - [`dns`](#dns)
   - [`docker`](#docker)
   - [`gamedig`](#gamedig)
+  - [`globalping`](#globalping)
   - [`group`](#group)
   - [`grpc-keyword`](#grpc-keyword)
   - [`http`](#http)
@@ -102,6 +103,49 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `port`                    | 0             |
 | `retry_interval`          | 60            |
 | `upside_down`             | false         |
+
+## `globalping`
+| Property                 | Example Value |
+|--------------------------|---------------|
+| `accepted_statuscodes`   | 200-299       |
+| `active`                 | true          |
+| `authMethod`             | basic         |
+| `basic_auth_user`        | monitor       |
+| `basic_auth_pass`        | secret        |
+| `oauth_auth_method`      | client_secret_basic |
+| `oauth_client_id`        | monitor-client |
+| `oauth_token_url`        | https://auth.example.com/oauth/token |
+| `oauth_client_secret`    | secret        |
+| `oauth_scopes`           | uptime.read   |
+| `oauth_audience`         | https://api.example.com |
+| `cache_bust`             | false         |
+| `description`            | A Monitor     |
+| `dns_last_result`        | 93.184.216.34 |
+| `dns_resolve_server`     | 1.1.1.1       |
+| `dns_resolve_type`       | A             |
+| `expected_value`         | success       |
+| `expiry_notification`    | false         |
+| `headers`                | {"X-Api-Key":"secret"} |
+| `hostname`               | example.com   |
+| `ignore_tls`             | false         |
+| `interval`               | 60            |
+| `ip_family`              | ipv4          |
+| `json_path`              | $.status      |
+| `json_path_operator`     | ==            |
+| `keyword`                | healthy       |
+| `invert_keyword`         | false         |
+| `location`               | world         |
+| `max_retries`            | 0             |
+| `method`                 | GET           |
+| `name`                   | Example       |
+| `parent`                 | 0             |
+| `ping_count`             | 3             |
+| `port`                   | 80            |
+| `protocol`               | ICMP          |
+| `retry_interval`         | 60            |
+| `subtype`                | ping          |
+| `upside_down`            | false         |
+| `url`                    | https://example.com |
 
 ## `group`
 | Property               | Example Value |
