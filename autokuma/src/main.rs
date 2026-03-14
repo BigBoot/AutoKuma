@@ -99,12 +99,14 @@ fn module_style(module: &str) -> Style {
 
 #[test]
 fn test_module_style() {
+    use rand::RngExt;
+    
     for i in 0..10 {
         let mut rng = rand::rng();
         let msg = loop {
             let mut msg = String::new();
             for _ in 0..32 {
-                msg.push(rand::Rng::sample(&mut rng, rand::distr::Alphanumeric) as char);
+                msg.push(rng.sample(rand::distr::Alphanumeric) as char);
             }
 
             let mut hash = DefaultHasher::default();

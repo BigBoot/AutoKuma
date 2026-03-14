@@ -1,11 +1,12 @@
 use crate::utils::{OutputFormat, ResultOrDie as _};
 use clap::{ArgAction, CommandFactory, Parser, Subcommand};
-use config::{File, FileFormat};
+use config::{ConfigBuilder, File, FileFormat, builder::DefaultState};
 use kuma_client::{
     build::{LONG_VERSION, SHORT_VERSION},
     Config,
 };
 use serde_json::json;
+use tap::Pipe;
 
 #[derive(Parser, Clone, Debug)]
 #[command(author, version = SHORT_VERSION, long_version = LONG_VERSION, about, long_about = None, arg_required_else_help = true)]
@@ -73,6 +74,44 @@ pub(crate) struct Cli {
     pub command: Option<Commands>,
 }
 
+fn load_autokuma_config(mut builder: ConfigBuilder<DefaultState>) -> ConfigBuilder<DefaultState> {
+    use std::path::Path;
+
+    macro_rules! load_from_file {
+        ($file:expr, $parser:expr) => {
+            if $file.is_file() {
+                if let Ok(contents) = std::fs::read($file) {
+                    if let Ok(config) = $parser(&contents) {
+                        if let Some(kuma_config) = config.get("kuma") {
+                            if let Ok(kuma_config) = serde_json::to_string(kuma_config) {
+                                builder = builder.add_source(File::from_str(&kuma_config, FileFormat::Json));
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    if let Some(config_dir) = dirs::config_local_dir().map(|dir| dir.join("kuma").join("config")) {
+        load_from_file!(config_dir.join("autokuma.toml"), toml::from_slice::<serde_json::Value>);
+        load_from_file!(config_dir.join("autokuma.yaml"), serde_yaml::from_slice::<serde_json::Value>);
+        load_from_file!(config_dir.join("autokuma.json"), serde_json::from_slice::<serde_json::Value>);
+    }
+
+    load_from_file!(Path::new("autokuma.toml"), toml::from_slice::<serde_json::Value>);
+    load_from_file!(Path::new("autokuma.yaml"), serde_yaml::from_slice::<serde_json::Value>);
+    load_from_file!(Path::new("autokuma.json"), serde_json::from_slice::<serde_json::Value>);
+
+    builder = builder.add_source(
+        config::Environment::with_prefix("AUTOKUMA__KUMA")
+            .separator("__")
+            .prefix_separator("__"),
+    );
+
+    builder
+}
+
 impl From<Cli> for Config {
     fn from(value: Cli) -> Self {
         config::Config::builder()
@@ -80,8 +119,11 @@ impl From<Cli> for Config {
                 &serde_json::to_string(&json!({"tls": {}})).unwrap(),
                 FileFormat::Json,
             ))
+            .pipe(|builder| load_autokuma_config(builder))
             .add_source(config::File::with_name(&dirs::config_local_dir().map(|dir| dir.join("kuma").join("config").to_string_lossy().to_string()).unwrap_or_default()).required(false))
-            .add_source(config::File::with_name("kuma").required(false))
+            .add_source(File::new("kuma.toml", FileFormat::Toml).required(false))
+            .add_source(File::new("kuma.yaml", FileFormat::Yaml).required(false))
+            .add_source(File::new("kuma.json", FileFormat::Json).required(false))
             .add_source(
                 config::Environment::with_prefix("KUMA")
                     .separator("__")

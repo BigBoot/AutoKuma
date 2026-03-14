@@ -6,9 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- The kuma cli will automatically pick up an existing autokuma config so it's possible to use a shared config. (This works for both env variable config as well as config files) 
+
 ### Added
 - Added advanced docker host config for connecting to docker using TLS with custom certs, see #162
 - Support for SMTP entity type, see #159
+- Add `kuma` cli to the autokuma docker container for easier troubleshooting
 
 ### Fixed
 - Fix autokuma trying to use itself as a config file, see #149
