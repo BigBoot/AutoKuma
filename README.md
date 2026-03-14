@@ -17,6 +17,8 @@
             <a href="#kuma-cli---">Kuma CLI</a> 
             &nbsp&nbsp
             <a href="#kuma-client--">Kuma Client</a> 
+            &nbsp&nbsp
+            <a href="https://autokuma-playground.bigboot.dev">Playground</a> 
         </b>
     </p>
 </div>
@@ -311,6 +313,9 @@ AutoKuma allows the usage of [Tera](https://keats.github.io/tera/) templates in 
 |                | `service`        | Nested structure with service details   | See the [Docker Engine Documentation](https://docs.docker.com/reference/api/engine/v1.45/#tag/System/operation/ContainerList) for the available data |
 |                | `system_info`    | Nested structure with host details      | See the [Docker Engine Documentation](https://docs.docker.com/reference/api/engine/v1.45/#tag/System/operation/SystemInfo) for the available data    |
 
+> [!TIP]
+> Head over to the [Playground](https://autokuma-playground.bigboot.dev/) to explore and test your templates directly in the browser
+
 ### Snippets 📝
 AutoKuma provides the ability to define reusable snippets. Snippets need to be defined in the configuration, for example, using environment variables:
 
@@ -391,6 +396,9 @@ Keyword monitor with custom status_codes:
 ```yaml
 kuma.__web: '{ "name": "Example HTTP", "url": "https://example.com", "keyword": "Example Domain", "status_codes": ["200"] }'
 ```
+
+> [!TIP]
+> Head over to the [Playground](https://autokuma-playground.bigboot.dev/) to explore and test your templates directly in the browser
 
 #### !Snippets
 There's a special case for snippets starting with a `!`, these snippets will apply to labels without requiring the prefix (i.e. `kuma.__`). The purpose of these is to be able to reuse existing labels from other tools. (Note: Due to this !Snippets will always receive a single string argument containing the label value instead of a structured list). 

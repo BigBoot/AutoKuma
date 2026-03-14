@@ -1,63 +1,63 @@
 name: Deploy Playground to GitHub Pages
 
 on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
+    push:
+        branches:
+            - master
+    workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+    contents: read
+    pages: write
+    id-token: write
 
 concurrency:
-  group: playground-pages
-  cancel-in-progress: true
+    group: playground-pages
+    cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+            - name: Configure Pages
+              uses: actions/configure-pages@v5
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@1.89.0
-        with:
-          targets: wasm32-unknown-unknown
+            - name: Set up Rust
+              uses: dtolnay/rust-toolchain@1.89.0
+              with:
+                  targets: wasm32-unknown-unknown
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
+            - name: Cache Rust dependencies
+              uses: Swatinem/rust-cache@v2
 
-      - name: Install Trunk
-        uses: taiki-e/install-action@v2
-        with:
-          tool: trunk
+            - name: Install Trunk
+              uses: taiki-e/install-action@v2
+              with:
+                  tool: trunk
 
-      - name: Build playground
-        working-directory: autokuma-playground
-        run: trunk build --release
+            - name: Build playground
+              working-directory: autokuma-playground
+              run: trunk build --release
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: autokuma-playground/dist
+            - name: Upload Pages artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: autokuma-playground/dist
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
 
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        steps:
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

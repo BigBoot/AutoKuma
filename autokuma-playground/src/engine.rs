@@ -122,6 +122,7 @@ pub struct ParsedEntity {
     pub entity: Entity,
 }
 
+#[cfg(test)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnippetOutput {
     pub rendered: String,
@@ -221,6 +222,7 @@ impl PlaygroundEngine {
         Ok(entities)
     }
 
+    #[cfg(test)]
     pub fn render_snippet(
         &self,
         target: &MockTarget,
@@ -228,8 +230,7 @@ impl PlaygroundEngine {
         compose_entities: &[ParsedEntity],
     ) -> Result<SnippetOutput> {
         let context = target.context();
-        let rendered = fill_templates(self, snippet, &context)?;
-        let rendered = rendered.trim_matches(|ch| ch == '\n' || ch == '\r').to_owned();
+        let rendered = self.render_template(target, snippet)?;
         let extracted_labels = parse_snippet_lines(&rendered)?;
         let mut entities = parse_entities_from_labels(self, extracted_labels.clone(), &context)?;
         resolve_names_locally(&mut entities, compose_entities)?;
@@ -239,6 +240,14 @@ impl PlaygroundEngine {
             extracted_labels,
             entities,
         })
+    }
+
+    pub fn render_template(&self, target: &MockTarget, template: &str) -> Result<String> {
+        let context = target.context();
+        let rendered = fill_templates(self, template, &context)?;
+        Ok(rendered
+            .trim_matches(|ch| ch == '\n' || ch == '\r')
+            .to_owned())
     }
 }
 

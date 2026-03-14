@@ -316,13 +316,10 @@ fn App() -> impl IntoView {
     });
 
     let snippet_preview = Memo::new(move |_| -> Result<String, engine::PlaygroundError> {
-        match (engine.get(), active_target.get(), compose_entities.get()) {
-            (Err(err), _, _) => Err(err),
-            (_, _, Err(err)) => Err(err),
-            (Ok(_), None, _) => Ok("Select a mocked target to render the custom snippet.".to_owned()),
-            (Ok(engine), Some(target), Ok(compose_entities)) => engine
-                .render_snippet(&target, &snippet_input.get(), &compose_entities)
-                .map(|preview| preview.rendered),
+        match (engine.get(), active_target.get()) {
+            (Err(err), _) => Err(err),
+            (Ok(_), None) => Ok("Select a mocked target to render the custom snippet.".to_owned()),
+            (Ok(engine), Some(target)) => engine.render_template(&target, &snippet_input.get()),
         }
     });
 
