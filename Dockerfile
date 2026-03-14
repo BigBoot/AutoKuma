@@ -7,7 +7,7 @@ WORKDIR /usr/src/autokuma
 COPY . .
 RUN --mount=type=cache,target=/cache/$TARGETARCH,id=cache-ghcr.io/bigboot/autokuma-${FEATURES} \
     cargo install --features "${FEATURES}" --locked --target-dir /cache/$TARGETARCH --path ./autokuma && \
-    cargo install --features "${FEATURES} autokuma-config" --locked --target-dir /cache/$TARGETARCH --path ./kuma-cli
+    cargo install --features "${FEATURES}" --locked --target-dir /cache/$TARGETARCH --path ./kuma-cli
  
 FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y \
