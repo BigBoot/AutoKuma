@@ -24,7 +24,7 @@ console-subscriber = { version = "0.5.0" }
 cute_custom_default = { version = "2.2.0" }
 dateparser = { version = "0.2.1" }
 derivative = { version = "2.2.0" }
-derive_more = { version = "2.0.1" }
+derive_more = { version = "2.0.1", features = ["from"] }
 dirs = { version = "6.0.0" }
 flexi_logger = { version = "0.31.7", features = ["compress"] }
 futures-util = { version = "0.3.31" }
