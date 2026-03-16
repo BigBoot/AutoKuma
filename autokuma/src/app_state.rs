@@ -494,11 +494,12 @@ impl AppState {
         let defaults = config
             .default_settings
             .lines()
+            .filter(|line| !line.trim().is_empty())
             .map(|line| {
                 line.split_once(":")
                     .map(|(key, value)| (key.trim().to_owned(), value.trim().to_owned()))
                     .ok_or_else(|| {
-                        Error::InvalidConfig("kuma.default_settings".to_owned(), line.to_owned())
+                        Error::InvalidConfig("default_settings".to_owned(), line.to_owned())
                     })
             })
             .collect::<Result<Vec<_>>>()?;
