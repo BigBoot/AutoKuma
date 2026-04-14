@@ -120,7 +120,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - autokuma-data:/data
-
+      - ./config.toml:/root/.config/autokuma/config.toml
+      - ./static-monitors:/root/.config/autokuma/static-monitors
 volumes:
   autokuma-data:
 ```
@@ -164,6 +165,7 @@ AutoKuma will read configuration from a file named `autokuma.{toml,yaml,json}` i
 
 | Platform | Value                                                                | Example                                                       |
 |----------|----------------------------------------------------------------------|---------------------------------------------------------------|
+| Docker   | /root/.config/autokuma/config.{toml,yaml,json}                       | /root/.config/autokuma/config.toml                            |
 | Linux    | `$XDG_CONFIG_HOME`/autokuma/config.{toml,yaml,json}                  | /home/alice/.config/autokuma/config.toml                      |
 | macOS    | `$HOME`/Library/Application Support/autokuma/config.{toml,yaml,json} | /Users/Alice/Library/Application Support/autokuma/config.toml |
 | Windows  | `%LocalAppData%`\autokuma\config.{toml,yaml,json}                    | C:\Users\Alice\AppData\Local\autokuma\config.toml             |
@@ -427,6 +429,7 @@ The default directory for static monitors is:
 
 | Platform | Value                                                         | Example                                                            |
 |----------|---------------------------------------------------------------|--------------------------------------------------------------------|
+| Docker   | /root/.config/autokuma/static-monitors/                       | /root/.config/autokuma/static-monitors/                            |
 | Linux    | `$XDG_CONFIG_HOME`/autokuma/static-monitors/                  | /home/alice/.config/autokuma/static-monitors/                      |
 | macOS    | `$HOME`/Library/Application Support/autokuma/static-monitors/ | /Users/Alice/Library/Application Support/autokuma/static-monitors/ |
 | Windows  | `%LocalAppData%`\autokuma\static-monitors\                    | C:\Users\Alice\AppData\Local\autokuma\static-monitors\             |
