@@ -237,7 +237,7 @@ impl Source for DockerSource {
                 )
             })?;
 
-            let system_info: bollard::secret::SystemInfo = docker.info().await.unwrap_or_default();
+            let system_info: bollard::config::SystemInfo = docker.info().await.unwrap_or_default();
 
             if self.state.config.docker.source == config::DockerSource::Containers
                 || self.state.config.docker.source == config::DockerSource::Both
