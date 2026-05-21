@@ -182,6 +182,12 @@ fn init_console_subscriber() {}
 async fn main() {
     init_console_subscriber();
 
+    // Resolve secret env vars from _FILE variants before loading config
+    if let Err(e) = kuma_client::Config::resolve_secrets() {
+        eprintln!("Error resolving secret environment variables: {}", e);
+        std::process::exit(1);
+    }
+
     let config: Arc<crate::config::Config> = Arc::new(
         Config::builder()
             .add_source(File::from_str(
