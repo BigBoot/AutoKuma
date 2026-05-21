@@ -143,9 +143,13 @@ AutoKuma can be configured using the following environment variables/config keys
 | `AUTOKUMA__KUMA__URL`              | `kuma.url`              | The URL AutoKuma should use to connect to Uptime Kuma                                                                    |
 | `AUTOKUMA__KUMA__USERNAME`         | `kuma.username`         | The username for logging into Uptime Kuma (required unless auth is disabled)                                             |
 | `AUTOKUMA__KUMA__PASSWORD`         | `kuma.password`         | The password for logging into Uptime Kuma (required unless auth is disabled)                                             |
+| `AUTOKUMA__KUMA__PASSWORD_FILE`    | N/A                     | Path to a file containing the password (alternative to direct value; cannot be set alongside PASSWORD)                  |
 | `AUTOKUMA__KUMA__MFA_TOKEN`        | `kuma.mfa_token`        | The MFA token for logging into Uptime Kuma (required if MFA is enabled)                                                  |
+| `AUTOKUMA__KUMA__MFA_TOKEN_FILE`   | N/A                     | Path to a file containing the MFA token (alternative to direct value; cannot be set alongside MFA_TOKEN)                |
 | `AUTOKUMA__KUMA__MFA_SECRET`       | `kuma.mfa_secret`       | The MFA secret. Used to generate a tokens for logging into Uptime Kuma (alternative to a single_use mfa_token)           |
+| `AUTOKUMA__KUMA__MFA_SECRET_FILE`  | N/A                     | Path to a file containing the MFA secret (alternative to direct value; cannot be set alongside MFA_SECRET)              |
 | `AUTOKUMA__KUMA__AUTH_TOKEN`       | `kuma.auth_token`       | JWT auth token received after a successful login, can be used instead of username/password                                |
+| `AUTOKUMA__KUMA__AUTH_TOKEN_FILE`  | N/A                     | Path to a file containing the auth token (alternative to direct value; cannot be set alongside AUTH_TOKEN)              |
 | `AUTOKUMA__KUMA__HEADERS`          | `kuma.headers`          | List of HTTP headers to send when connecting to Uptime Kuma                                                              |
 | `AUTOKUMA__KUMA__CONNECT_TIMEOUT`  | `kuma.connect_timeout`  | The timeout for the initial connection to Uptime Kuma                                                                    |
 | `AUTOKUMA__KUMA__CALL_TIMEOUT`     | `kuma.call_timeout`     | The timeout for executing calls to the Uptime Kuma server                                                                |
