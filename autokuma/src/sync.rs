@@ -178,6 +178,9 @@ impl Sync {
                 (Entity::Tag(merge), Entity::Tag(_)) => {
                     kuma.edit_tag(merge).await?;
                 }
+                (Entity::StatusPage(merge), Entity::StatusPage(_)) => {
+                    kuma.edit_status_page(merge).await?;
+                }
                 _ => {}
             }
         }
