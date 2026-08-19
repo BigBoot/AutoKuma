@@ -25,6 +25,11 @@ pub struct PublicGroupMonitor {
     #[derivative(Hash = "ignore")]
     pub name: Option<String>,
 
+    #[serde(skip_serializing)]
+    #[derivative(PartialEq = "ignore")]
+    #[derivative(Hash = "ignore")]
+    pub entity_id: Option<String>,
+
     #[serde(rename = "weight")]
     #[serde_as(as = "Option<DeserializeBoolLenient>")]
     pub weight: Option<bool>,
@@ -55,7 +60,7 @@ pub struct PublicGroup {
     #[serde_as(as = "Option<DeserializeNumberLenient>")]
     pub weight: Option<i32>,
 
-    #[serde(rename = "monitorList", default)]
+    #[serde(rename = "monitorList", alias = "monitor_list", default)]
     pub monitor_list: PublicGroupMonitorList,
 }
 crate::default_from_serde!(PublicGroup);
@@ -145,7 +150,7 @@ pub struct StatusPage {
     #[serde_as(as = "Option<DeserializeBoolLenient>")]
     pub show_certificate_expiry: Option<bool>,
 
-    #[serde(rename = "publicGroupList")]
+    #[serde(rename = "publicGroupList", alias = "public_group_list")]
     #[serde_as(as = "Option<DeserializeVecLenient<PublicGroup>>")]
     pub public_group_list: Option<PublicGroupList>,
 }
@@ -154,3 +159,48 @@ crate::default_from_serde!(StatusPage);
 pub type StatusPageList = HashMap<String, StatusPage>;
 pub type PublicGroupList = Vec<PublicGroup>;
 pub type PublicGroupMonitorList = Vec<PublicGroupMonitor>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn status_page_deserializes_snake_case_aliases_and_entity_id() {
+        let json = serde_json::json!({
+            "type": "status_page",
+            "slug": "production",
+            "title": "Production Status",
+            "public_group_list": [
+                {
+                    "name": "Services",
+                    "monitor_list": [
+                        { "entity_id": "my-app-kuma" },
+                        { "entity_id": "my-db-kuma" },
+                    ]
+                }
+            ]
+        });
+
+        let page: StatusPage = serde_json::from_value(json).expect("should parse status page");
+        let group = page.public_group_list.expect("should have groups").into_iter().next().expect("should have one group");
+        assert_eq!(group.name.as_deref(), Some("Services"));
+        assert_eq!(group.monitor_list.len(), 2);
+        assert_eq!(group.monitor_list[0].entity_id.as_deref(), Some("my-app-kuma"));
+        assert!(group.monitor_list[0].id.is_none());
+    }
+
+    #[test]
+    fn public_group_monitor_skips_entity_id_on_serialization() {
+        let monitor = PublicGroupMonitor {
+            id: Some(42),
+            name: None,
+            entity_id: Some("my-app-kuma".to_owned()),
+            weight: None,
+            monitor_type: None,
+        };
+
+        let json = serde_json::to_value(&monitor).expect("should serialize");
+        assert!(json.get("entity_id").is_none());
+        assert_eq!(json.get("id").and_then(|v| v.as_i64()), Some(42));
+    }
+}

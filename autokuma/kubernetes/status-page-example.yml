@@ -1,0 +1,16 @@
+apiVersion: autokuma.bigboot.dev/v1
+kind: KumaEntity
+metadata:
+  name: production-status
+  namespace: default
+spec:
+  config:
+    type: status_page
+    slug: production
+    title: Production Status
+    published: true
+    public_group_list:
+      - name: Services
+        monitorList:
+          - entity_id: my-app-kuma
+          - entity_id: my-db-kuma

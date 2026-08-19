@@ -378,6 +378,37 @@ pub fn get_entities_from_labels(
         .collect()
 }
 
+fn resolve_status_page_names(state: Arc<AppState>, status_page: &mut StatusPage) -> Result<()> {
+    if let Some(groups) = status_page.public_group_list.as_mut() {
+        for group in groups.iter_mut() {
+            for monitor in group.monitor_list.iter_mut() {
+                if monitor.id.is_some() {
+                    continue;
+                }
+
+                let entity_id = monitor
+                    .entity_id
+                    .clone()
+                    .ok_or_else(|| Error::DeserializeError(
+                        "Status page monitor entry must have either `id` or `entity_id`".to_owned(),
+                    ))?;
+
+                let name = Name::Monitor(entity_id);
+                let id = state
+                    .db
+                    .get_id::<i32>(name.clone())
+                    .ok()
+                    .flatten()
+                    .ok_or_else(|| Error::NameNotFound(name))?;
+
+                monitor.id = Some(id);
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn resolve_names(state: Arc<AppState>, monitor: &mut Monitor) -> Result<()> {
     if let Some(group_name) = monitor.common().parent_name().clone() {
         let name = Name::Monitor(group_name.clone());
@@ -516,7 +547,11 @@ pub fn get_entity_from_settings(
 
     if let Entity::Monitor(monitor) = &mut entity {
         monitor.validate(id)?;
-        resolve_names(state, monitor)?;
+        resolve_names(state.clone(), monitor)?;
+    }
+
+    if let Entity::StatusPage(status_page) = &mut entity {
+        resolve_status_page_names(state, status_page)?;
     }
 
     Ok(entity)

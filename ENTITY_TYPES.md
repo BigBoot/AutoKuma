@@ -8,6 +8,7 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `tag_names`              | `[{"name": "mytag", "value": "A value" }]` | List of structs containing the id and optionally a values for labels,                 |
 | `docker_host_name`       | `local_socket`                             | The autokuma id of the docker socket for a docker monitor                             |
 | `create_paused`          | false                                      | If true new monitors will be added in paused state, does not effect existing monitors |
+| `entity_id`              | `my-app-kuma`                              | Inside a `status_page` `public_group_list` monitor entry, the autokuma id of the monitor to include. Resolved to the Uptime Kuma monitor id before saving. |
 
 # `docker_host`
 | Property          | Example Value          |
@@ -22,10 +23,11 @@ AutoKuma adds a few special properties which are handled internally and aren't s
 | `is_default` | `true` (Note: this is only used by the WebUI, AutoKuma does not respect this setting for technical reasons)                                                                       |
 | `config`     | nested provider specific settings.  Too many to list here. I suggest creating a notification with your provider in the WebUI and then using the `kuma` CLI to inspect the options |
 
-# Monitor Types
+# Entity Types
 - [AutoKuma specific properties:](#autokuma-specific-properties)
 - [`docker_host`](#docker_host)
 - [`notification`](#notification)
+- [`status_page`](#status_page)
 - [Monitor Types](#monitor-types)
   - [`dns`](#dns)
   - [`docker`](#docker)
@@ -54,6 +56,30 @@ AutoKuma adds a few special properties which are handled internally and aren't s
   - [`snmp`](#snmp)
   - [`rabbitmq`](#rabbitmq)
 
+
+## `status_page`
+| Property          | Example Value                                              |
+|-------------------|------------------------------------------------------------|
+| `slug`            | `production`                                               |
+| `title`           | `Production Status`                                        |
+| `description`     | `Status page for the production environment`               |
+| `published`       | `true`                                                     |
+| `icon`            | `/icon.svg`                                                |
+| `theme`           | `auto`                                                     |
+| `showTags`        | `false`                                                    |
+| `domainNameList`  | `["status.example.com"]`                                   |
+| `customCSS`       | `body {\n  \n}\n`                                          |
+| `footerText`      | `Managed by AutoKuma`                                      |
+| `showPoweredBy`   | `true`                                                     |
+| `analyticsType`   | `google`                                                   |
+| `analyticsId`     | `G-XXXXXXXXXX`                                             |
+| `analyticsScriptUrl` | `https://analytics.example.com/script.js`               |
+| `showCertificateExpiry` | `true`                                                |
+| `publicGroupList` | `[{"name": "Services", "monitorList": [{"entity_id": "my-app-kuma"}, {"entity_id": "my-db-kuma"}]}]` |
+
+Inside `publicGroupList` each monitor entry supports either:
+- `id`: the numeric Uptime Kuma monitor id.
+- `entity_id`: the autokuma id of the monitor. AutoKuma resolves this to the numeric `id` using the internal mapping before saving the status page. The referenced monitor must already be known to AutoKuma (created in a previous sync or an earlier resource in the same source); otherwise the status page will be skipped until the monitor exists.
 
 ## `dns`
 | Property               | Example Value |
