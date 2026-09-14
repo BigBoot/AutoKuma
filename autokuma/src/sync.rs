@@ -228,7 +228,15 @@ impl Sync {
                     | KumaError::CallTimeout(_)
                     | KumaError::NotAuthenticated
                     | KumaError::Disconnected
+                    | KumaError::LoginError(_)
             )
+        ) || matches!(
+            // ServerError also covers unrelated server-side errors (e.g. "Cannot read
+            // properties of null"), so only treat it as a connection error when it's the
+            // session-lost case - otherwise a transient, unrelated server error would
+            // force a full client drop/reconnect for no reason.
+            err,
+            crate::error::Error::Kuma(KumaError::ServerError(msg)) if msg.contains("not logged in")
         )
     }
 
@@ -462,5 +470,32 @@ impl Sync {
                 format!("Failed to gracefully shutdown source: {}", e)
             });
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn server_error_not_logged_in_is_a_connection_error() {
+        let err = crate::error::Error::Kuma(KumaError::ServerError(
+            "You are not logged in.".to_owned(),
+        ));
+        assert!(Sync::is_connection_error(&err));
+    }
+
+    #[test]
+    fn unrelated_server_error_is_not_a_connection_error() {
+        let err = crate::error::Error::Kuma(KumaError::ServerError(
+            "Cannot read properties of null (reading 'id')".to_owned(),
+        ));
+        assert!(!Sync::is_connection_error(&err));
+    }
+
+    #[test]
+    fn login_error_is_a_connection_error() {
+        let err = crate::error::Error::Kuma(KumaError::LoginError("Invalid Username/Password".to_owned()));
+        assert!(Sync::is_connection_error(&err));
     }
 }
