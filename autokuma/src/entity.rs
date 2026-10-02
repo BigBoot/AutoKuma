@@ -556,3 +556,53 @@ pub fn merge_entities(current: &Entity, new: &Entity, addition_tags: Option<Vec<
 
     serde_merge::omerge(current, new).unwrap()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_settings_raw_ids() {
+        let dir = std::env::temp_dir().join(format!("autokuma-test-{}", std::process::id()));
+        let config: crate::config::Config = serde_json::from_value(json!({
+            "kuma": {"url": "http://localhost", "tls": {}}, "docker": {}, "kubernetes": {}, "files": {},
+            "data_path": dir.to_string_lossy(),
+            "default_settings": "docker.notification_id_list: {\"1\": true}\ndocker.tags: [{\"tag_id\": 2}]",
+        }))
+        .unwrap();
+        let state = Arc::new(AppState::new(Arc::new(config)).unwrap());
+
+        let entity = get_entity_from_settings(
+            state,
+            "test",
+            &EntityType::Monitor(MonitorType::Docker),
+            vec![
+                ("name".to_owned(), json!("Test")),
+                ("docker_container".to_owned(), json!("test")),
+                ("docker_host".to_owned(), json!("1")),
+            ],
+            &tera::Context::new(),
+        )
+        .unwrap();
+
+        let Entity::Monitor(monitor) = entity else {
+            panic!("expected monitor")
+        };
+        assert_eq!(
+            monitor.common().notification_id_list(),
+            &Some(HashMap::from([("1".to_owned(), true)]))
+        );
+        assert_eq!(monitor.common().tags()[0].tag_id, Some(2));
+
+        // Kuma returns the tag with name/color filled in; that must not count as a diff.
+        let mut current = monitor.clone();
+        current.common_mut().tags_mut()[0] = Tag {
+            tag_id: Some(2),
+            name: Some("Containers".to_owned()),
+            color: Some("#000000".to_owned()),
+            value: Some("".to_owned()),
+        };
+        let current = Entity::Monitor(current);
+        assert!(merge_entities(&current, &Entity::Monitor(monitor), None) == current);
+    }
+}

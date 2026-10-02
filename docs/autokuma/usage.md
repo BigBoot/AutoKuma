@@ -125,3 +125,10 @@ The following properties are handled internally by AutoKuma and are not passed t
 | `tag_names` | `[{"name": "mytag", "value": "val"}]` | Tags to attach to the monitor |
 | `docker_host_name` | `local_socket` | AutoKuma ID of the Docker host for a docker monitor |
 | `create_paused` | `false` | If `true`, new monitors are added in a paused state |
+
+To reference existing (not AutoKuma-managed) notification providers or tags, use their raw Uptime Kuma IDs instead:
+
+- Notifications: `notification_id_list`, e.g. `kuma.mymonitor.http.notification_id_list: '{"1": true}'`
+- Tags: `tags`, e.g. `kuma.mymonitor.http.tags: '[{"tag_id": 2, "value": "optional"}]'`
+
+Both also work in `AUTOKUMA__DEFAULT_SETTINGS`, e.g. `docker.tags: [{"tag_id": 2}]`. A label on the monitor replaces the default for the same setting, it is not merged with it.
