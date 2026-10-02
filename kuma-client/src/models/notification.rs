@@ -7,7 +7,17 @@ use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none};
 
-const IGNORE_ATTRIBUTES: [&str; 6] = ["isDefault", "id", "active", "user_id", "config", "name"];
+// `applyExisting` is added to the stored config by Uptime Kuma itself, comparing it
+// would cause an endless update loop.
+const IGNORE_ATTRIBUTES: [&str; 7] = [
+    "isDefault",
+    "id",
+    "active",
+    "user_id",
+    "config",
+    "name",
+    "applyExisting",
+];
 
 /// Represents a notification service in Uptime Kuma.
 #[skip_serializing_none]
@@ -76,3 +86,23 @@ fn config_eq(a: &Option<serde_json::Value>, b: &Option<serde_json::Value>) -> bo
 
 /// A list of notification services.
 pub type NotificationList = Vec<Notification>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn config_eq_ignores_server_added_fields() {
+        let desired = json!({"type": "telegram", "telegramChatID": "1"});
+        let stored = json!({
+            "type": "telegram", "telegramChatID": "1", "applyExisting": false,
+            "id": 4, "isDefault": false, "name": "x", "active": true, "config": {}
+        });
+        assert!(config_eq(&Some(stored.clone()), &Some(desired)));
+        assert!(!config_eq(
+            &Some(stored),
+            &Some(json!({"type": "telegram", "telegramChatID": "2"}))
+        ));
+    }
+}
