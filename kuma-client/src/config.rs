@@ -72,6 +72,14 @@ pub struct Config {
     #[serde_inline_default(30.0)]
     pub call_timeout: f64,
 
+    /// How long to wait, after the socket is open, for Uptime Kuma to finish
+    /// sending its initial state (monitor list, notifications, ...) before the
+    /// connection attempt is given up. A busy server, e.g. one that just
+    /// restarted while many clients reconnect, can need well over the
+    /// previous fixed ~9 seconds.
+    #[serde_inline_default(9.0)]
+    pub ready_timeout: f64,
+
     /// TLS Configuration for the [Client](crate::Client).
     pub tls: TlsConfig,
 }
@@ -88,6 +96,7 @@ impl Default for Config {
             headers: Vec::new(),
             connect_timeout: 30.0,
             call_timeout: 30.0,
+            ready_timeout: 9.0,
             tls: TlsConfig::default(),
         }
     }

@@ -27,7 +27,7 @@ use std::{
     fs, mem,
     str::FromStr,
     sync::{Arc, Weak},
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tap::prelude::*;
 use tokio::{runtime::Handle, sync::Mutex};
@@ -1344,17 +1344,34 @@ impl Worker {
         debug!("Connection opened!");
         *self.socket_io.lock().await = client;
 
-        for i in 0..10 {
+        // Poll with a growing backoff (200 ms, 400 ms, ... capped at 2 s) until
+        // Kuma has sent everything we need or `ready_timeout` has elapsed. A
+        // busy Kuma (e.g. right after a restart, with many clients logging in
+        // at once) needs longer than the previous fixed ~9 s to deliver the
+        // monitor list; giving up early and reconnecting only adds to its load.
+        let ready_deadline = Instant::now() + Duration::from_secs_f64(self.config.ready_timeout);
+        let mut backoff_step: u64 = 0;
+        loop {
             if self.is_ready().await {
                 debug!("Connected!");
                 return Ok(());
             }
 
+            let now = Instant::now();
+            if now >= ready_deadline {
+                break;
+            }
+
             debug!("Waiting for Kuma to get ready...");
-            tokio::time::sleep(Duration::from_millis(200 * i)).await;
+            backoff_step += 1;
+            let backoff = Duration::from_millis((200 * backoff_step).min(2000));
+            tokio::time::sleep(backoff.min(ready_deadline - now)).await;
         }
 
-        warn!("Timeout while waiting for Kuma to get ready...");
+        warn!(
+            "Timeout while waiting for Kuma to get ready after {:.1}s (kuma.ready_timeout)...",
+            self.config.ready_timeout
+        );
         match *self.is_connected.lock().await {
             true => Err(Error::NotAuthenticated),
             false => Err(Error::ConnectionTimeout),

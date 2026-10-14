@@ -28,6 +28,7 @@ AutoKuma is configured through environment variables or a configuration file. Al
 | `AUTOKUMA__KUMA__HEADERS` | `kuma.headers` | Extra HTTP headers sent to Uptime Kuma |
 | `AUTOKUMA__KUMA__CONNECT_TIMEOUT` | `kuma.connect_timeout` | Timeout for the initial connection |
 | `AUTOKUMA__KUMA__CALL_TIMEOUT` | `kuma.call_timeout` | Timeout for API calls |
+| `AUTOKUMA__KUMA__READY_TIMEOUT` | `kuma.ready_timeout` | Seconds to wait after connecting for Uptime Kuma to send its initial state (monitor list etc.) before giving up (default: `9`). Raise it if Kuma is slow to serve logins, e.g. right after a restart with many AutoKuma instances reconnecting |
 | `AUTOKUMA__KUMA__TLS__VERIFY` | `kuma.tls.verify` | Whether to verify the TLS certificate |
 | `AUTOKUMA__KUMA__TLS__CERT` | `kuma.tls.cert` | Path to a custom PEM certificate |
 | `AUTOKUMA__DOCKER__ENABLED` | `docker.enabled` | Enable or disable the Docker source |

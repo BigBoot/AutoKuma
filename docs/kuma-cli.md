@@ -53,6 +53,8 @@ Options:
           Connection timeout [default: 30.0]
       --call-timeout <CALL_TIMEOUT>
           API call timeout [default: 30.0]
+      --ready-timeout <READY_TIMEOUT>
+          Time to wait for Uptime Kuma to send its initial state after connecting [default: 9.0]
       --format <OUTPUT_FORMAT>
           Output format [default: json] [possible values: json, toml, yaml]
       --pretty

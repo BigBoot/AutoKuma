@@ -52,6 +52,10 @@ pub(crate) struct Cli {
     #[arg(long, default_value = "30.0", global = true)]
     pub call_timeout: Option<f64>,
 
+    /// How long to wait for Uptime Kuma to send its initial state after connecting.
+    #[arg(long, default_value = "9.0", global = true)]
+    pub ready_timeout: Option<f64>,
+
     /// The output format
     #[arg(value_enum, long = "format", default_value_t = OutputFormat::Json, global = true)]
     pub output_format: OutputFormat,
@@ -167,6 +171,7 @@ impl From<Cli> for Config {
             ).unwrap()
             .set_override_option("connect_timeout", value.connect_timeout).unwrap()
             .set_override_option("call_timeout", value.call_timeout).unwrap()
+            .set_override_option("ready_timeout", value.ready_timeout).unwrap()
             .set_override_option("tls.verify", value.tls_no_verify.map(|v| !v)).unwrap()
             .set_override_option("tls.cert", value.tls_certificate.clone()).unwrap()
             .build()

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Add `kuma.ready_timeout` config option (`AUTOKUMA__KUMA__READY_TIMEOUT`, `--ready-timeout` in kuma-cli) for how long to wait after connecting for Uptime Kuma to send its initial state. The wait was fixed at ~9 s, which a busy Kuma (e.g. just restarted, with many AutoKuma instances reconnecting at once) can exceed; each instance then gave up and reconnected on the next sync, adding to the very load that made Kuma slow. Default unchanged (9 s)
 
 ## [2.1.0-rc.2] - 2026-06-18
 ### Added
